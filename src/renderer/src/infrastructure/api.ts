@@ -977,31 +977,31 @@ export const hostingApi = {
     window.api.hosting.openCreatePR(remoteUrl, source, target),
   createPR: (remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string; forgejo?: string }, opts: CreatePrOpts) =>
     window.api.hosting.createPR(remoteUrl, tokens, opts) as Promise<CreatePrResult>,
-  prDetail: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string }, number: number) =>
+  prDetail: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number) =>
     window.api.hosting.prDetail(remoteUrl, tokens, number) as Promise<PrDetail>,
-  prComment: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string }, number: number, body: string) =>
+  prComment: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number, body: string) =>
     window.api.hosting.prComment(remoteUrl, tokens, number, body) as Promise<void>,
   prReplyReviewComment: (
     remoteUrl: string,
-    tokens: { github?: string; gitlab?: string; forgejo?: string },
+    tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string },
     number: number,
     inReplyTo: number | string,
     body: string
   ) => window.api.hosting.prReplyReviewComment(remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
-  prChecks: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string }, number: number) =>
+  prChecks: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number) =>
     window.api.hosting.prChecks(remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCheck[]>,
-  prFiles: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string }, number: number) =>
+  prFiles: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number) =>
     window.api.hosting.prFiles(remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFile[]>,
   prReview: (
     remoteUrl: string,
-    tokens: { github?: string; gitlab?: string; forgejo?: string },
+    tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string },
     number: number,
     event: PrReviewEvent,
     body: string
   ) => window.api.hosting.prReview(remoteUrl, tokens, number, event, body) as Promise<void>,
   prMerge: (
     remoteUrl: string,
-    tokens: { github?: string; gitlab?: string; forgejo?: string },
+    tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string },
     number: number,
     method: PrMergeMethod
   ) => window.api.hosting.prMerge(remoteUrl, tokens, number, method) as Promise<void>,

@@ -77,6 +77,17 @@ import type {
   RepoHost,
   GithubStackInfo
 } from '../shared/types'
+import {
+  azureComment,
+  azureMerge,
+  azurePrChecks,
+  azurePrDetail,
+  azurePrFiles,
+  azureReply,
+  azureReview,
+  type Ado,
+  type AzureRepo
+} from './azurePr'
 
 interface ParsedRemote {
   provider: Exclude<HostingProvider, null>
@@ -1200,6 +1211,20 @@ interface GhUser {
   avatar_url?: string
 }
 
+/**
+ * An Azure DevOps remote, and an `ado` caller for it: the profile's credential
+ * (remoteApiToken) with the same retry-on-revoked-helper-credential the list
+ * uses, so azurePr.ts needs to know nothing about auth.
+ */
+async function azRepoOf(remoteUrl: string, sent: string | undefined): Promise<{ ado: Ado; repo: AzureRepo }> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'azure') throw new Error('Not an Azure DevOps repository.')
+  const auth = await remoteApiToken(remoteUrl, 'azure', sent)
+  if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
+  const ado: Ado = (url, init) => withAzureRetry(remoteUrl, auth, (token) => adoJson(url, token, init))
+  return { ado, repo: { org: parsed.owner, project: parsed.project, repo: parsed.repo } }
+}
+
 /** Resolve a Forgejo remote to its instance, owner/repo and token — through
  *  remoteApiToken, so only the profile owning that instance's token is used. */
 async function fjRepoOf(
@@ -1222,6 +1247,10 @@ async function pullRequestDetail(
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoPullDetail(f.base, f.owner, f.repo, f.token, number)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azurePrDetail(a.ado, a.repo, number)
   }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
@@ -1359,6 +1388,10 @@ async function pullRequestChecks(
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoPullChecks(f.base, f.owner, f.repo, f.token, number)
   }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azurePrChecks(a.ado, a.repo, number)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const pr = await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)
@@ -1383,6 +1416,10 @@ async function pullRequestFiles(
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoPullFiles(f.base, f.owner, f.repo, f.token, number)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azurePrFiles(a.ado, a.repo, number)
   }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   type GhFile = {
@@ -1421,6 +1458,10 @@ async function replyReviewComment(
     // The page hides the reply box for Forgejo; this guards any other caller.
     throw new Error('Forgejo has no API to reply inside a line thread — reply on the host.')
   }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureReply(a.ado, a.repo, number, Number(inReplyTo), body)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') {
     return glReplyReviewComment(remoteUrl, tokens.gitlab, number, String(inReplyTo), body)
   }
@@ -1442,6 +1483,10 @@ async function commentOnPr(
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoComment(f.base, f.owner, f.repo, f.token, number, body)
   }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureComment(a.ado, a.repo, number, body)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}/comments`, token, {
     method: 'POST',
@@ -1461,6 +1506,10 @@ async function reviewPr(
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoReview(f.base, f.owner, f.repo, f.token, number, event, body)
   }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureReview(a.ado, a.repo, number, event, body)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/reviews`, token, {
     method: 'POST',
@@ -1478,6 +1527,10 @@ async function mergePr(
   if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
     const f = await fjRepoOf(remoteUrl, tokens.forgejo)
     return forgejoMerge(f.base, f.owner, f.repo, f.token, number, method)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureMerge(a.ado, a.repo, number, method)
   }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/merge`, token, {

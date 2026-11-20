@@ -117,9 +117,10 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     () => ({
       github: profile.githubToken || undefined,
       gitlab: profile.gitlabToken || undefined,
-      forgejo: profile.forgejoToken || undefined
+      forgejo: profile.forgejoToken || undefined,
+      azure: profile.azureToken || undefined
     }),
-    [profile.githubToken, profile.gitlabToken, profile.forgejoToken]
+    [profile.githubToken, profile.gitlabToken, profile.forgejoToken, profile.azureToken]
   )
   // Forgejo has no API to reply inside an existing line thread.
   const canReplyInThread = provider !== 'forgejo'

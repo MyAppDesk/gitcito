@@ -3,7 +3,7 @@ title: Terminal integrado
 category: Ferramentas de workspace
 order: 90
 summary: Um PTY de verdade acoplado embaixo do repo, com abas por repositório.
-keywords: terminal shell pty xterm console abas tabs acoplado
+keywords: terminal shell pty xterm console abas tabs acoplado autocompletar npm run scripts make makefile composer branch checkout
 ---
 
 # Terminal integrado
@@ -39,6 +39,17 @@ projeto aparece no cursor, filtrada enquanto você digita: `npm run loc` acha o
 | **Tab** | Completa o script selecionado |
 | **↑ / ↓** | Escolhe outro |
 | **Esc** | Fecha a lista até você digitar de novo |
+
+Outros comandos ganham a própria lista:
+
+| Digitado | Lista | Lido de |
+|----------|-------|---------|
+| `composer run ` | Scripts do Composer | o `composer.json` mais próximo |
+| `make ` | Alvos do Makefile, com o `## texto` depois do alvo como descrição | o `Makefile` da pasta atual, como o `make` lê |
+| `git checkout `, `switch`, `merge`, `rebase` | Branches locais, depois as remotas pelo nome curto | o repositório em que o shell está |
+
+Um alvo de Makefile montado com variáveis ou padrão (`%.o`) não aparece, e
+`git checkout -b` não ganha lista: ele dá nome a uma branch nova.
 
 Os scripts vêm do `package.json` mais próximo da pasta **atual** do shell, então
 depois de `cd frontend` aparecem os do frontend. Nomes que começam com o que você

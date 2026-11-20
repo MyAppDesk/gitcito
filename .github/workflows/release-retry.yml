@@ -1,0 +1,35 @@
+name: Release retry
+
+# A Release run whose failed job never got a runner (GitHub's macOS arm64 queue
+# runs dry now and then: "The job was not acquired by Runner…") is re-run, up to
+# three attempts, without anyone having to notice the stuck draft. A real build
+# failure ran steps, and scripts/release-retry.mjs leaves it alone.
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  retry:
+    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt < 3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Re-run jobs that never started
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+        run: |
+          set -euo pipefail
+          verdict="$(gh api "repos/${{ github.repository }}/actions/runs/$RUN_ID/attempts/$ATTEMPT/jobs" | node scripts/release-retry.mjs)"
+          echo "$verdict"
+          if [ "$verdict" = "retry" ]; then
+            gh run rerun "$RUN_ID" --repo "${{ github.repository }}" --failed
+          fi

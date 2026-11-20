@@ -728,6 +728,20 @@ export const shots = [
     }
   },
   {
+    out: 'remote-sign-in',
+    repos: ['octopus-merge'],
+    prepare: async ({ repoPaths, run }) => {
+      const repo = repoPaths['octopus-merge']
+      const names = (await run('git', ['-C', repo, 'remote'])).trim().split(/\s+/).filter(Boolean)
+      for (const name of names) await run('git', ['-C', repo, 'remote', 'remove', name])
+      await run('git', ['-C', repo, 'remote', 'add', 'origin', 'git@forge.example.org:studio/catalog.git'])
+    },
+    drive: async (page, repos) => {
+      await page.evaluate((path) => window.__shot.ui.getState().openModal({ kind: 'remoteAuth', path }), repos['octopus-merge'])
+      await page.locator('.remote-auth-card').waitFor()
+    }
+  },
+  {
     // Integrations with the keychain off — the default every shot launches with
     // (`keychain` unset) — so the notice under the token field says the token
     // lasts until quit, with its Enable button.

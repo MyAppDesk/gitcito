@@ -37,13 +37,14 @@ export interface BasicCredential {
 export function gitCredentialEnv(
   url: string,
   cred: BasicCredential,
-  base: NodeJS.ProcessEnv = process.env
+  base: NodeJS.ProcessEnv = process.env,
+  scope: 'host' | 'repository' = 'host'
 ): NodeJS.ProcessEnv | null {
   let origin: string
   try {
     const u = new URL(url)
     if (u.protocol !== 'https:') return null
-    origin = `${u.protocol}//${u.host}`
+    origin = u.origin + (scope === 'repository' ? u.pathname : '')
   } catch {
     return null
   }
@@ -52,15 +53,18 @@ export function gitCredentialEnv(
   // Append to config the caller may already pass this way rather than replace it.
   const n = Number.parseInt(base.GIT_CONFIG_COUNT ?? '', 10)
   const at = Number.isFinite(n) && n > 0 ? n : 0
+  // Each destination of a multi-URL push needs its own helper and secret variables.
+  const usernameVar = scope === 'repository' ? GIT_USERNAME_VAR + '_' + at : GIT_USERNAME_VAR
+  const passwordVar = scope === 'repository' ? GIT_PASSWORD_VAR + '_' + at : GIT_PASSWORD_VAR
   const key = `credential.${origin}.helper`
   return {
     GIT_CONFIG_COUNT: String(at + 2),
     [`GIT_CONFIG_KEY_${at}`]: key,
     [`GIT_CONFIG_VALUE_${at}`]: '',
     [`GIT_CONFIG_KEY_${at + 1}`]: key,
-    [`GIT_CONFIG_VALUE_${at + 1}`]: HELPER,
-    [GIT_USERNAME_VAR]: cred.username,
-    [GIT_PASSWORD_VAR]: cred.password
+    [`GIT_CONFIG_VALUE_${at + 1}`]: HELPER.replace(GIT_USERNAME_VAR, usernameVar).replace(GIT_PASSWORD_VAR, passwordVar),
+    [usernameVar]: cred.username,
+    [passwordVar]: cred.password
   }
 }
 

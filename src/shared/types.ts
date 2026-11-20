@@ -853,7 +853,7 @@ export interface RemoteAuthCheck {
   /** Scopes the host reported; absent when it does not report them (fine-grained tokens). */
   scopes?: string[]
   /** Whether the scopes allow pushing at all. Absent when unknown. */
-  canPush?: boolean
+  scopeAllowsPush?: boolean
   /** GitHub only: whether pushes that change `.github/workflows` are allowed. Absent when unknown. */
   canPushWorkflows?: boolean
 }

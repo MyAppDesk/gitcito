@@ -88,6 +88,10 @@ O próximo push pergunta uma vez, e o helper guarda a nova resposta.
 
 ## Qual conta um push usa
 
+Cada URL de push é verificada separadamente. Um escopo de escrita indica uma capacidade do token. A verificação não testa a participação no repositório, as regras da branch nem a permissão para alterar um arquivo específico. A leitura pública pode funcionar sem credenciais.
+
+![Verificação de login do remoto](../../screenshots/remote-sign-in.webp)
+
 Um push pode entrar de várias formas: o token de um perfil, um login do GitHub
 CLI vinculado a um perfil, o helper do próprio git, uma senha esquecida na URL
 do remote ou uma chave SSH. Quando ele é recusado, primeiro é preciso saber qual

@@ -28,18 +28,18 @@ export function remoteAuthSourceKey(c: RemoteAuthCheck): TranslationKey {
  */
 export function remoteAuthFindings(c: RemoteAuthCheck): RemoteAuthFinding[] {
   if (c.source === 'ssh') return [{ status: 'ok', key: 'remoteAuth.ssh' }]
-  if (c.source === 'none') return [{ status: 'fail', key: 'remoteAuth.noCred' }]
+  if (c.source === 'none') return [{ status: 'warn', key: 'remoteAuth.noCred' }]
   if (c.rejected) return [{ status: 'fail', key: 'remoteAuth.rejected' }]
   if (c.linkMissing) return [{ status: 'fail', key: 'remoteAuth.linkMissing', vars: { login: c.login ?? '' } }]
 
   const out: RemoteAuthFinding[] = []
   if (c.source === 'embedded') out.push({ status: 'warn', key: 'remoteAuth.embedded' })
-  if (c.canPush === false) out.push({ status: 'fail', key: 'remoteAuth.noPush' })
+  if (c.scopeAllowsPush === false) out.push({ status: 'fail', key: 'remoteAuth.noPush' })
   if (c.canPushWorkflows === false) out.push({ status: 'warn', key: 'remoteAuth.noWorkflow' })
   if (c.source === 'helper' && !c.provider) out.push({ status: 'ok', key: 'remoteAuth.otherHost' })
   if (out.some((f) => f.status !== 'ok')) return out
 
-  if (c.canPush) out.unshift({ status: 'ok', key: 'remoteAuth.ok' })
+  if (c.scopeAllowsPush) out.unshift({ status: 'ok', key: 'remoteAuth.ok' })
   else if ((c.provider === 'github' || c.provider === 'gitlab' || c.provider === 'forgejo') && !c.scopes) {
     out.unshift({ status: 'ok', key: 'remoteAuth.okUnknown' })
   }

@@ -50,7 +50,7 @@ export function RemoteAuthModal({ spec }: { spec: Extract<ModalSpec, { kind: 're
         ) : checks.length === 0 ? (
           <p className="settings-hint">{t('remoteAuth.empty')}</p>
         ) : (
-          checks.map((c) => <RemoteAuthCard key={c.remote} check={c} />)
+          checks.map((c, i) => <RemoteAuthCard key={JSON.stringify([c.remote, c.url, i])} check={c} />)
         )}
       </div>
       <div className="modal-actions">

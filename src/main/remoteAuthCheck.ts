@@ -1,8 +1,8 @@
-import { apiToken, credentialFor, providerOfHost } from './credentials'
+import { apiToken, credentialFor, providerOfHost, type ApiAuth } from './credentials'
 import { activeProfileAuth, boundProfileAuth, readSettings } from './settings'
 import { pickHostAuth } from '../shared/hostToken'
 import { parseRemoteUrl } from './hosting'
-import type { RemoteAuthCheck, RepoHost } from '../shared/types'
+import type { AccountLink, RemoteAuthCheck, RepoHost } from '../shared/types'
 
 /**
  * "Which account will this push use, and can it?" — per remote.
@@ -57,19 +57,19 @@ export function parseScopeHeader(header: string | null): string[] | null {
  * What GitHub scopes allow. Absent header → a fine-grained token or an app
  * token, whose permissions the API does not list: unknown, not "no".
  */
-export function githubScopeVerdict(scopes: string[] | null): Pick<RemoteAuthCheck, 'scopes' | 'canPush' | 'canPushWorkflows'> {
+export function githubScopeVerdict(scopes: string[] | null): Pick<RemoteAuthCheck, 'scopes' | 'scopeAllowsPush' | 'canPushWorkflows'> {
   if (!scopes) return {}
   return {
     scopes,
-    canPush: scopes.includes('repo') || scopes.includes('public_repo'),
+    scopeAllowsPush: scopes.includes('repo') || scopes.includes('public_repo'),
     canPushWorkflows: scopes.includes('workflow')
   }
 }
 
 /** GitLab: `write_repository` (or the all-purpose `api`) is what a push needs. */
-export function gitlabScopeVerdict(scopes: string[] | null): Pick<RemoteAuthCheck, 'scopes' | 'canPush'> {
+export function gitlabScopeVerdict(scopes: string[] | null): Pick<RemoteAuthCheck, 'scopes' | 'scopeAllowsPush'> {
   if (!scopes) return {}
-  return { scopes, canPush: scopes.includes('write_repository') || scopes.includes('api') }
+  return { scopes, scopeAllowsPush: scopes.includes('write_repository') || scopes.includes('api') }
 }
 
 // ─── Asking the host ────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ async function get(url: string, headers: Record<string, string>): Promise<Respon
   }
 }
 
-type HostVerdict = Pick<RemoteAuthCheck, 'login' | 'rejected' | 'scopes' | 'canPush' | 'canPushWorkflows'>
+type HostVerdict = Pick<RemoteAuthCheck, 'login' | 'rejected' | 'scopes' | 'scopeAllowsPush' | 'canPushWorkflows'>
 
 async function askGithub(token: string): Promise<HostVerdict> {
   const res = await get('https://api.github.com/user', {
@@ -156,18 +156,29 @@ async function profileName(repoPath: string): Promise<{ name?: string; bound: bo
   return { name: p?.name, bound }
 }
 
+export async function profileCredentialForUrl(repoPath: string, url: string): Promise<{
+  credential?: ApiAuth
+  missing?: AccountLink
+}> {
+  if (!/^https:\/\//i.test(url) || remoteUrlKind(url) !== 'https') return {}
+  await readSettings() // populate self-managed host registry on first use
+  const provider = providerOfHost(new URL(url).hostname)
+  if (!provider) return {}
+  const auth = await pickHostAuth({
+    bound: await boundProfileAuth(provider, repoPath, url),
+    active: () => activeProfileAuth(provider, url)
+  })
+  const credential = await apiToken(url, auth).catch(() => null)
+  return credential ? { credential } : { missing: auth.link }
+}
+
 export async function checkRemoteAuth(repoPath: string, remote: string, pushUrl: string): Promise<RemoteAuthCheck> {
   const url = urlWithoutUserinfo(pushUrl)
   const kind = remoteUrlKind(pushUrl)
   if (kind === 'ssh' || kind === 'other') return { remote, url, source: kind === 'ssh' ? 'ssh' : 'none' }
 
-  let host: string | undefined
-  try {
-    host = new URL(pushUrl).host
-  } catch {
-    host = undefined
-  }
-  const provider = host ? providerOfHost(new URL(pushUrl).hostname) : undefined
+  const resolved = await profileCredentialForUrl(repoPath, pushUrl)
+  const provider = providerOfHost(new URL(pushUrl).hostname)
   const base = { remote, url, ...(provider ? { provider } : {}) }
 
   // git uses a password in the URL before asking any helper.
@@ -178,34 +189,25 @@ export async function checkRemoteAuth(repoPath: string, remote: string, pushUrl:
     } catch {
       return { ...base, source: 'embedded' }
     }
-    return { ...base, source: 'embedded', ...(provider && host ? await askHost(provider, pushUrl, password) : {}) }
+    return { ...base, source: 'embedded', ...(provider ? await askHost(provider, pushUrl, password) : {}) }
   }
 
-  if (provider && host) {
-    const auth = await pickHostAuth({
-      // The remote's URL is what lets profileAuth refuse a token from another
-      // GitLab/Forgejo instance — without it, the check would ask the wrong server.
-      bound: await boundProfileAuth(provider, repoPath, pushUrl),
-      active: () => activeProfileAuth(provider, pushUrl)
-    })
-    if (auth.token || auth.link) {
-      const who = await profileName(repoPath)
-      const profile = { ...(who.name ? { profile: who.name } : {}), bound: who.bound }
-      if (auth.token) return { ...base, ...profile, source: 'token', ...(await askHost(provider, pushUrl, auth.token)) }
-      const link = auth.link as NonNullable<typeof auth.link>
-      const linked = await apiToken(pushUrl, { link }).catch(() => null)
-      if (!linked) return { ...base, ...profile, source: link.source, login: link.login, linkMissing: true }
-      return { ...base, ...profile, source: link.source, login: link.login, ...(await askHost(provider, pushUrl, linked.token)) }
-    }
+  if (provider && resolved.credential) {
+    const { token, source, login } = resolved.credential
+    const who = await profileName(repoPath)
+    return { ...base, profile: who.name, bound: who.bound, source, login, ...(await askHost(provider, pushUrl, token)) }
   }
 
   // No profile credential: git's own helper answers, if it has anything.
   const cred = await credentialFor(pushUrl, { repoPath }).catch(() => null)
-  if (!cred) return { ...base, source: 'none' }
+  if (!cred) {
+    if (resolved.missing) return { ...base, source: resolved.missing.source, login: resolved.missing.login, linkMissing: true }
+    return { ...base, source: 'none' }
+  }
   return {
     ...base,
     source: 'helper',
     ...(cred.username ? { login: cred.username } : {}),
-    ...(provider && host ? await askHost(provider, pushUrl, cred.password) : {})
+    ...(provider ? await askHost(provider, pushUrl, cred.password) : {})
   }
 }

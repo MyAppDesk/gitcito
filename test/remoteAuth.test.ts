@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { execFileSync } from 'node:child_process'
+import { cloneFixture, cleanupFixtures } from './fixtures'
+import { gitService } from '../src/main/git'
+import { afterAll, describe, it, expect } from 'vitest'
 import {
   githubScopeVerdict,
   gitlabScopeVerdict,
@@ -36,15 +39,15 @@ describe('host scope verdicts', () => {
   })
 
   it('GitHub: repo allows push, workflow allows workflow files', () => {
-    expect(githubScopeVerdict(['repo', 'gist'])).toEqual({ scopes: ['repo', 'gist'], canPush: true, canPushWorkflows: false })
-    expect(githubScopeVerdict(['read:org'])).toMatchObject({ canPush: false })
+    expect(githubScopeVerdict(['repo', 'gist'])).toEqual({ scopes: ['repo', 'gist'], scopeAllowsPush: true, canPushWorkflows: false })
+    expect(githubScopeVerdict(['read:org'])).toMatchObject({ scopeAllowsPush: false })
     expect(githubScopeVerdict(null)).toEqual({})
   })
 
   it('GitLab: write_repository or api allow push', () => {
-    expect(gitlabScopeVerdict(['read_repository'])).toMatchObject({ canPush: false })
-    expect(gitlabScopeVerdict(['write_repository']).canPush).toBe(true)
-    expect(gitlabScopeVerdict(['api']).canPush).toBe(true)
+    expect(gitlabScopeVerdict(['read_repository'])).toMatchObject({ scopeAllowsPush: false })
+    expect(gitlabScopeVerdict(['write_repository']).scopeAllowsPush).toBe(true)
+    expect(gitlabScopeVerdict(['api']).scopeAllowsPush).toBe(true)
   })
 })
 
@@ -52,19 +55,19 @@ describe('remoteAuthFindings', () => {
   const base: RemoteAuthCheck = { remote: 'origin', url: 'https://github.com/o/r.git', provider: 'github', source: 'gh' }
 
   it('the missing workflow scope is a warning, not a failure', () => {
-    const c = { ...base, scopes: ['repo'], canPush: true, canPushWorkflows: false }
+    const c = { ...base, scopes: ['repo'], scopeAllowsPush: true, canPushWorkflows: false }
     expect(remoteAuthFindings(c).map((f) => f.key)).toEqual(['remoteAuth.noWorkflow'])
     expect(remoteAuthStatus(c)).toBe('warn')
   })
 
   it('a refused credential stops the list', () => {
-    const c = { ...base, rejected: true, canPush: false }
+    const c = { ...base, rejected: true, scopeAllowsPush: false }
     expect(remoteAuthFindings(c).map((f) => f.key)).toEqual(['remoteAuth.rejected'])
     expect(remoteAuthStatus(c)).toBe('fail')
   })
 
   it('reports a healthy token, and an unknown one as unknown', () => {
-    expect(remoteAuthFindings({ ...base, scopes: ['repo', 'workflow'], canPush: true, canPushWorkflows: true })[0].key).toBe(
+    expect(remoteAuthFindings({ ...base, scopes: ['repo', 'workflow'], scopeAllowsPush: true, canPushWorkflows: true })[0].key).toBe(
       'remoteAuth.ok'
     )
     expect(remoteAuthFindings({ ...base, source: 'token' })[0].key).toBe('remoteAuth.okUnknown')
@@ -112,5 +115,24 @@ describe('checkRemoteAuth across GitLab instances', () => {
       getPath.mockRestore()
       rmSync(dir, { recursive: true, force: true })
     }
+  })
+})
+
+describe('push destination diagnostics', () => {
+  afterAll(cleanupFixtures)
+  it('lists explicit push destinations separately from the fetch URL', async () => {
+    const repo = cloneFixture('octopus-merge')
+    const git = (...args: string[]): void => { execFileSync('git', ['-C', repo, ...args]) }
+    git('remote', 'add', 'review', 'git@fetch.example:team/project.git')
+    git('remote', 'set-url', '--add', '--push', 'review', 'git@first.example:team/project.git')
+    git('remote', 'set-url', '--add', '--push', 'review', 'git@second.example:team/project.git')
+    const rows = (await gitService.remoteAuthChecks(repo)).filter((r) => r.remote === 'review')
+    expect(rows.map((r) => r.url)).toEqual(['git@first.example:team/project.git', 'git@second.example:team/project.git'])
+  })
+
+  it('treats absent credentials as inconclusive for a public repository', () => {
+    const row: RemoteAuthCheck = { remote: 'origin', url: 'https://example.org/project.git', source: 'none' }
+    expect(remoteAuthStatus(row)).toBe('warn')
+    expect(remoteAuthFindings(row)[0].key).toBe('remoteAuth.noCred')
   })
 })

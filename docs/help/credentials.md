@@ -88,6 +88,10 @@ The next push asks you once, and the helper stores the new answer.
 
 ## Which account a push uses
 
+Each push URL is checked separately. A write scope is only a token capability. Repository membership, branch rules, and permission to update a particular file are not tested. Public reads can succeed without a credential.
+
+![Remote sign-in check](../screenshots/remote-sign-in.webp)
+
 A push can sign in in several ways: a profile's token, a GitHub CLI login linked
 to a profile, git's own helper, a password left in the remote URL, or an SSH
 key. When it is refused, you first need to know which of these it used. Right-click
@@ -100,7 +104,7 @@ does, then asks the host about it:
 | The source, and the [profile](profiles.md) behind it | The same precedence a push applies — the repository's bound profile, else the active one, else git's helper |
 | The account | The host's own answer (`/user`), not what was typed into Settings |
 | The scopes | GitHub's `X-OAuth-Scopes` header; GitLab's description of its own token |
-| What they allow | Push at all (`repo` on GitHub, `write_repository` on GitLab), and on GitHub whether `.github/workflows` can change |
+| What they allow | Write-related token scopes (`repo` on GitHub, `write_repository` on GitLab), and on GitHub whether `.github/workflows` can change |
 
 It also flags a credential the host refuses (expired or revoked), a linked
 account that is no longer signed in, and a password stored in plain text in the

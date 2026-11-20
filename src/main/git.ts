@@ -166,11 +166,10 @@ import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
 import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
-import { activeProfileAuth, boundProfileAuth, profileForgejoInstance, profileGitlabInstance, readSettings } from './settings'
+import { profileForgejoInstance, profileGitlabInstance, readSettings } from './settings'
 import { remoteIsOnForgejo, remoteIsOnGitlab } from '../shared/gitlabInstance'
-import { apiToken, providerOfHost } from './credentials'
-import { pickHostAuth } from '../shared/hostToken'
-import { checkRemoteAuth } from './remoteAuthCheck'
+import { providerOfHost } from './credentials'
+import { checkRemoteAuth, profileCredentialForUrl } from './remoteAuthCheck'
 import { gitCredentialEnv, gitSupportsCredentialEnv, MIN_GIT_FOR_CREDENTIAL_ENV, type BasicCredential } from './gitCredentialEnv'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { indexCodegraphAsync } from './codegraph'
@@ -1741,18 +1740,9 @@ const remoteAuthEnv = new AsyncLocalStorage<NodeJS.ProcessEnv>()
  * none. The profile is the one the repository is bound to, else the active one.
  */
 async function remoteCredential(repoPath: string, url: string): Promise<BasicCredential | null> {
-  if (!/^https:\/\//i.test(url)) return null
-  const host = hostFromUrl(url)
-  if (!host) return null
-  const auth = await pickHostAuth({
-    bound: await boundProfileAuth(host, repoPath, url),
-    active: () => activeProfileAuth(host, url)
-  })
-  if (auth.token) return basicAuthFor(host, auth.token, url)
-  if (!auth.link) return null
-  const linked = await apiToken(url, { link: auth.link })
-  if (!linked) return null
-  return linked.cred ? { username: linked.cred.username, password: linked.cred.password } : basicAuthFor(host, linked.token, url)
+  const { credential } = await profileCredentialForUrl(repoPath, url)
+  if (!credential) return null
+  return credential.cred ?? basicAuthFor(hostFromUrl(url), credential.token, url)
 }
 
 /**
@@ -1764,10 +1754,20 @@ async function remoteCredential(repoPath: string, url: string): Promise<BasicCre
  * an unknown host, nothing configured) the op runs as-is — git's own helper may
  * still answer — and `GIT_TERMINAL_PROMPT=0` makes a miss fail fast.
  */
-async function withRemoteAuth<T>(repoPath: string, remote: string, op: () => Promise<T>): Promise<T> {
-  const url = await getRemoteUrl(repoPath, remote)
-  const cred = url ? await remoteCredential(repoPath, url).catch(() => null) : null
-  const env = url && cred ? gitCredentialEnv(url, cred) : null
+async function pushUrls(repoPath: string, remote: string): Promise<string[]> {
+  const { stdout } = await pexecFile('git', ['-C', repoPath, 'remote', 'get-url', '--push', '--all', '--', remote])
+  return [...new Set(stdout.trimEnd().split('\n').filter(Boolean))]
+}
+
+async function withRemoteAuth<T>(repoPath: string, remote: string, direction: 'fetch' | 'push', op: () => Promise<T>): Promise<T> {
+  const urls = direction === 'push' ? await pushUrls(repoPath, remote) : [await getRemoteUrl(repoPath, remote)]
+  let env: NodeJS.ProcessEnv | undefined
+  for (const url of urls) {
+    const cred = await remoteCredential(repoPath, url).catch(() => null)
+    if (!cred) continue
+    const extra = gitCredentialEnv(url, cred, { ...process.env, ...env }, 'repository')
+    if (extra) env = { ...env, ...extra }
+  }
   if (!env) return op()
   // Older git ignores GIT_CONFIG_COUNT and would run without the credential, so
   // fail with the reason instead of "could not read Username".
@@ -2757,9 +2757,12 @@ export const gitService = {
 
   /** Per remote: which credential a push would use, whose account it is, and what it may do. */
   async remoteAuthChecks(repoPath: string): Promise<RemoteAuthCheck[]> {
-    const rs = await gitFor(repoPath).getRemotes(true)
-    // The push URL is what a push authenticates against; it differs only when set-url --push was used.
-    return Promise.all(rs.map((r) => checkRemoteAuth(repoPath, r.name, r.refs.push || r.refs.fetch)))
+    const remotes = await gitFor(repoPath).getRemotes()
+    const groups = await Promise.all(remotes.map(async ({ name }) => {
+      const urls = await pushUrls(repoPath, name)
+      return Promise.all(urls.map((url) => checkRemoteAuth(repoPath, name, url)))
+    }))
+    return groups.flat()
   },
 
   async addRemote(repoPath: string, name: string, url: string, pushUrl?: string): Promise<void> {
@@ -2790,7 +2793,7 @@ export const gitService = {
   },
 
   async fetchRemote(repoPath: string, name: string): Promise<void> {
-    await withRemoteAuth(repoPath, name, () => runGit(repoPath, ['fetch', name, '--prune']))
+    await withRemoteAuth(repoPath, name, 'fetch', () => runGit(repoPath, ['fetch', name, '--prune']))
   },
 
   // ─── Previewing someone else's work ────────────────────────────────────────
@@ -2813,7 +2816,7 @@ export const gitService = {
    */
   async resolvePrRef(repoPath: string, remote: string, number: number): Promise<PrRefProbe | null> {
     const candidates = prRefCandidates(number, await getRemoteUrl(repoPath, remote))
-    const out = await withRemoteAuth(repoPath, remote, () =>
+    const out = await withRemoteAuth(repoPath, remote, 'fetch', () =>
       runGit(repoPath, ['ls-remote', remote, ...candidates.map((c) => c.ref)])
     )
     const found = new Map<string, string>()
@@ -2849,7 +2852,7 @@ export const gitService = {
     mode: PrPreviewMode,
     localBranch?: string
   ): Promise<PrPreviewResult> {
-    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['fetch', '--no-tags', remote, ref]))
+    await withRemoteAuth(repoPath, remote, 'fetch', () => runGit(repoPath, ['fetch', '--no-tags', remote, ref]))
     const sha = (await runGit(repoPath, ['rev-parse', 'FETCH_HEAD'])).trim()
 
     if (mode === 'checkout') {
@@ -2897,7 +2900,7 @@ export const gitService = {
       // exclusive lock, so nothing else runs alongside to collide on
       // `.git/index.lock`. Best-effort: offline/auth hiccups shouldn't block
       // checking out the locally-known ref.
-      await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['fetch', remote, localName])).catch(() => {})
+      await withRemoteAuth(repoPath, remote, 'fetch', () => runGit(repoPath, ['fetch', remote, localName])).catch(() => {})
     }
     // If a local branch with that name already exists, just switch to it
     // instead of trying to recreate a tracking branch (which would fail with
@@ -2983,7 +2986,7 @@ export const gitService = {
 
   async deleteRemoteBranch(repoPath: string, remote: string, name: string): Promise<void> {
     try {
-      await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, '--delete', name]))
+      await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', remote, '--delete', name]))
     } catch (err) {
       // The branch may already be gone on the remote (e.g. Dependabot deleted it
       // after merging its PR) while our local remote-tracking ref lingers because
@@ -3143,7 +3146,7 @@ export const gitService = {
    */
   async remoteHasBranches(repoPath: string, remote: string, branches: string[]): Promise<string[]> {
     if (!branches.length) return []
-    const out = await withRemoteAuth(repoPath, remote, () =>
+    const out = await withRemoteAuth(repoPath, remote, 'fetch', () =>
       runGit(repoPath, ['ls-remote', '--heads', remote, ...branches.map((b) => `refs/heads/${b}`)])
     ).catch(() => '')
     const present = new Set<string>()
@@ -3335,7 +3338,7 @@ export const gitService = {
    */
   async renameBranchRemote(repoPath: string, oldName: string, newName: string, remote: string): Promise<void> {
     await gitFor(repoPath).branch(['-m', oldName, newName])
-    await withRemoteAuth(repoPath, remote, async () => {
+    await withRemoteAuth(repoPath, remote, 'push', async () => {
       await runGit(repoPath, ['push', remote, '--delete', oldName]).catch(() => undefined)
       await runGit(repoPath, ['push', '-u', remote, newName])
     })
@@ -3455,14 +3458,14 @@ export const gitService = {
     // `--all` spans every remote; authenticate the common case (origin). Other
     // private https remotes without a matching PAT fail fast rather than hang.
     try {
-      const out = await withRemoteAuth(repoPath, 'origin', () =>
+      const out = await withRemoteAuth(repoPath, 'origin', 'fetch', () =>
         runGit(repoPath, ['fetch', '--all', '--prune', '--porcelain'])
       )
       return parseForcedUpdates(out)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       if (!/unknown option|porcelain/i.test(message)) throw err
-      await withRemoteAuth(repoPath, 'origin', () => runGit(repoPath, ['fetch', '--all', '--prune']))
+      await withRemoteAuth(repoPath, 'origin', 'fetch', () => runGit(repoPath, ['fetch', '--all', '--prune']))
       return []
     }
   },
@@ -3488,7 +3491,7 @@ export const gitService = {
     if (mode === 'ff-only') args.push('--ff-only')
     if (mode === 'rebase') args.push('--rebase')
     await withRerereCapture(repoPath, () =>
-      withAutoStash(repoPath, 'pull', () => withRemoteAuth(repoPath, remote, () => runGit(repoPath, args)))
+      withAutoStash(repoPath, 'pull', () => withRemoteAuth(repoPath, remote, 'fetch', () => runGit(repoPath, args)))
     )
   },
 
@@ -3619,7 +3622,7 @@ export const gitService = {
     const args = ['push']
     if (opts.force) args.push('--force-with-lease')
     args.push('--set-upstream', remote, branch)
-    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, args))
+    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, args))
   },
 
   /**
@@ -3631,7 +3634,7 @@ export const gitService = {
    */
   async pushRef(repoPath: string, local: string, remote: string, remoteBranch: string): Promise<void> {
     if (![local, remote, remoteBranch].every(isPlainRef)) throw new Error(`Not a branch name: ${local}`)
-    await withRemoteAuth(repoPath, remote, () =>
+    await withRemoteAuth(repoPath, remote, 'push', () =>
       runGit(repoPath, ['push', remote, `refs/heads/${local}:refs/heads/${remoteBranch}`])
     )
   },
@@ -3658,7 +3661,7 @@ export const gitService = {
     const remote = upstream.slice(0, slash)
     const remoteBranch = upstream.slice(slash + 1)
     try {
-      await withRemoteAuth(repoPath, remote, () =>
+      await withRemoteAuth(repoPath, remote, 'fetch', () =>
         runGit(repoPath, ['fetch', remote, `${remoteBranch}:${branch}`])
       )
     } catch (err) {
@@ -3744,7 +3747,7 @@ export const gitService = {
       if (opts.tags) args.push('--follow-tags')
       args.push(remote, branch)
       try {
-        await withRemoteAuth(repoPath, remote, () => runGit(repoPath, args))
+        await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, args))
         results.push({ remote, ok: true, error: '' })
       } catch (err) {
         results.push({ remote, ok: false, error: err instanceof Error ? err.message : String(err) })
@@ -3755,7 +3758,7 @@ export const gitService = {
 
   /** Publish every local tag to a remote. Annotated and lightweight alike. */
   async pushAllTags(repoPath: string, remote = 'origin'): Promise<void> {
-    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, '--tags']))
+    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', remote, '--tags']))
   },
 
   // ─── Stash operations ──────────────────────────────────────────────────────
@@ -5246,13 +5249,13 @@ export const gitService = {
    * refs/notes/gitcito-ci verdicts, which are promised to stay local.
    */
   async fetchNotes(repoPath: string, remote = 'origin'): Promise<void> {
-    await withRemoteAuth(repoPath, remote, () =>
+    await withRemoteAuth(repoPath, remote, 'fetch', () =>
       runGit(repoPath, ['fetch', remote, '+refs/notes/commits:refs/notes/commits'])
     )
   },
 
   async pushNotes(repoPath: string, remote = 'origin'): Promise<void> {
-    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, 'refs/notes/commits']))
+    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', remote, 'refs/notes/commits']))
   },
 
   // ─── Removing a path from history ────────────────────────────────────────
@@ -6301,11 +6304,11 @@ export const gitService = {
   },
 
   async pushTag(repoPath: string, name: string, remote = 'origin'): Promise<void> {
-    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, `refs/tags/${name}`]))
+    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', remote, `refs/tags/${name}`]))
   },
 
   async deleteRemoteTag(repoPath: string, name: string, remote = 'origin'): Promise<void> {
-    await withRemoteAuth(repoPath, remote, () => runGit(repoPath, ['push', remote, '--delete', `refs/tags/${name}`]))
+    await withRemoteAuth(repoPath, remote, 'push', () => runGit(repoPath, ['push', remote, '--delete', `refs/tags/${name}`]))
   },
 
   async getRemoteTags(repoPath: string, remote = 'origin'): Promise<string[]> {
@@ -6314,7 +6317,7 @@ export const gitService = {
       // GIT_TERMINAL_PROMPT=0). A READ method under the shared lock: fine now
       // that withRemoteAuth writes nothing to disk — and the token stays out of
       // the argument list, where it used to go and where `ps` could read it.
-      const out = await withRemoteAuth(repoPath, remote, () =>
+      const out = await withRemoteAuth(repoPath, remote, 'fetch', () =>
         runGit(repoPath, ['ls-remote', '--tags', '--refs', remote])
       )
       return out.split('\n').filter(Boolean).map((line) => {

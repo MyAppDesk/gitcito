@@ -395,6 +395,7 @@ redaction logic in production code.
 | `.claude/hooks/` | The i18n guard (per edit) and the verify gate (per turn) |
 | `docs/help/` | The in-app handbook — one Markdown file per page |
 | `scripts/docs-check.mjs` | The docs guard (`npm run lint:docs`) |
+| `scripts/check-native.mjs` | The packaging guard (`npm run check:native`, run by `dist:*` and `release`): refuses to package when node-pty does not load in Electron, since the terminal would silently fall back to basic shell mode. `GITCITO_ALLOW_BASIC_TERMINAL=1` overrides |
 | `scripts/docs-map.json` | Which page documents which modal / page tab / command |
 | `scripts/build-site.mjs` | The GitHub Pages site (`npm run site`) |
 | `examples/screenshots/` | Playwright screenshot + clip automation (`npm run screenshots`) |

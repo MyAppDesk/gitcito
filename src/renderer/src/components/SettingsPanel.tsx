@@ -111,6 +111,7 @@ import {
 } from '../theme/themes'
 import { ansiToSpans } from '../lib/ansi'
 import { EnvironmentPage } from './EnvironmentSettings'
+import { readableError } from '../lib/gitErrorHint'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { resolveAI } from '../../../shared/aiAccounts'
 import { AIAccountsEditor } from './AIAccounts'
@@ -576,7 +577,9 @@ export function IntegrationsPage({
 
       <div className="connected-account">
         {loadingAccount && <span className="settings-hint">{t('settings.loadingAccount')}</span>}
-        {!loadingAccount && accountError && <span className="connected-account-error">{accountError}</span>}
+        {!loadingAccount && accountError && (
+          <span className="connected-account-error">{readableError(accountError, t, interp)}</span>
+        )}
         {/* A link whose account is gone (gh logged out, the helper lost it, an
             imported profile): still shown, with its way out — otherwise the only
             fix would be editing the settings file. */}

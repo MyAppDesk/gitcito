@@ -149,6 +149,10 @@ Limits:
 
 ## Forgejo
 
+Set the instance address before entering its token. Changing the address clears the previous sign-in.
+
+![Forgejo integration settings](../screenshots/forgejo-integration.webp)
+
 Forgejo, and Gitea, which shares its API, always runs at an address its owner
 chose: your own server, or a public one such as codeberg.org. Give a profile
 that address in **Settings → Integrations → Forgejo**, together with an access

@@ -1857,7 +1857,7 @@ describe('profile secrets — keeping credentials out of settings.json', () => {
   }
   const loaded = withProfiles(
     profile('p1', { githubToken: 'ghp_secret', ai: withKey }),
-    profile('p2', { gitlabToken: 'glpat_secret' })
+    profile('p2', { gitlabToken: 'glpat_secret', gitlabTokenIssuer: 'https://gitlab.com' })
   )
 
   it('detects credentials sitting in a settings object', () => {
@@ -1878,7 +1878,7 @@ describe('profile secrets — keeping credentials out of settings.json', () => {
   it('extracts only non-empty credentials, keyed by profile', () => {
     expect(extractSecrets(loaded)).toEqual({
       p1: { githubToken: 'ghp_secret', aiKeys: { default: 'sk-secret' } },
-      p2: { gitlabToken: 'glpat_secret' }
+      p2: { gitlabToken: 'glpat_secret', gitlabTokenIssuer: 'https://gitlab.com' }
     })
     expect(extractSecrets(stripSettingsSecrets(loaded))).toEqual({})
   })

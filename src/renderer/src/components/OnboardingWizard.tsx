@@ -37,6 +37,8 @@ interface WizardData {
   themeMode: ThemeMode
   githubToken: string
   gitlabToken: string
+  gitlabTokenIssuer?: string
+  forgejoTokenIssuer?: string
   azureToken: string
   bitbucketToken: string
   gitlabUrl?: string
@@ -66,11 +68,13 @@ function buildProfile(data: WizardData): Profile {
     gitEmail: data.gitEmail,
     githubToken: data.githubToken,
     gitlabToken: data.gitlabToken,
+    gitlabTokenIssuer: data.gitlabTokenIssuer,
     azureToken: data.azureToken,
     bitbucketToken: data.bitbucketToken,
     gitlabUrl: data.gitlabUrl,
     forgejoUrl: data.forgejoUrl,
     forgejoToken: data.forgejoToken,
+    forgejoTokenIssuer: data.forgejoTokenIssuer,
     ai: data.ai
   }
 }
@@ -309,12 +313,14 @@ function IntegrationsStep({
             patch({
               ...(p.githubToken !== undefined && { githubToken: p.githubToken }),
               ...(p.azureToken !== undefined && { azureToken: p.azureToken }),
+              ...('gitlabTokenIssuer' in p && { gitlabTokenIssuer: p.gitlabTokenIssuer }),
               ...(p.gitlabToken !== undefined && { gitlabToken: p.gitlabToken }),
               ...(p.bitbucketToken !== undefined && { bitbucketToken: p.bitbucketToken }),
               // Fields the page grew after the wizard was written: dropping them made
               // the inputs look dead and left a self-managed token pointed at gitlab.com.
               ...(p.gitlabUrl !== undefined && { gitlabUrl: p.gitlabUrl }),
               ...(p.forgejoUrl !== undefined && { forgejoUrl: p.forgejoUrl }),
+              ...('forgejoTokenIssuer' in p && { forgejoTokenIssuer: p.forgejoTokenIssuer }),
               ...(p.forgejoToken !== undefined && { forgejoToken: p.forgejoToken })
             })
           }}
@@ -371,11 +377,13 @@ export function OnboardingWizard(): React.JSX.Element {
     themeMode: settings.themeMode,
     githubToken: profile.githubToken,
     gitlabToken: profile.gitlabToken,
+    gitlabTokenIssuer: profile.gitlabTokenIssuer,
     azureToken: profile.azureToken,
     bitbucketToken: profile.bitbucketToken,
     gitlabUrl: profile.gitlabUrl,
     forgejoUrl: profile.forgejoUrl,
     forgejoToken: profile.forgejoToken,
+    forgejoTokenIssuer: profile.forgejoTokenIssuer,
     defaultOpenApp: settings.defaultOpenApp,
     importData: null,
     importHasSecrets: false,
@@ -439,11 +447,13 @@ export function OnboardingWizard(): React.JSX.Element {
               gitEmail: data.gitEmail,
               githubToken: data.githubToken,
               gitlabToken: data.gitlabToken,
+              gitlabTokenIssuer: data.gitlabTokenIssuer,
               azureToken: data.azureToken,
               bitbucketToken: data.bitbucketToken,
               gitlabUrl: data.gitlabUrl,
               forgejoUrl: data.forgejoUrl,
               forgejoToken: data.forgejoToken,
+              forgejoTokenIssuer: data.forgejoTokenIssuer,
               ai: { ...p.ai, ...data.ai }
             }
           : p

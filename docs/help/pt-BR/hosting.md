@@ -134,6 +134,10 @@ Limites:
 
 ## Forgejo
 
+Defina o endereço da instância antes de inserir o token. Alterar o endereço remove a credencial anterior.
+
+![Configurações de integração do Forgejo](../../screenshots/forgejo-integration.webp)
+
 O Forgejo, e o Gitea, que usa a mesma API, sempre roda num endereço escolhido
 pelo dono: o seu próprio servidor ou um público, como o codeberg.org. Informe
 esse endereço a um perfil em **Configurações → Integrações → Forgejo**, junto

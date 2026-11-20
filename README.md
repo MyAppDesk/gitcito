@@ -75,6 +75,7 @@ git actually is.
 | **[Edit any commit](docs/help/commit-edit.md)** | Rewrite a past commit's files or message in place — cascade previewed before anything moves, merges replayed with their recorded resolutions. |
 | **[Interactive rebase](docs/help/rebase.md)** | Drag to reorder, squash, fixup, reword, edit or drop. |
 | **[Drop a branch on another](docs/help/merging.md#drag-one-ref-onto-another)** | Fast-forward, merge, rebase, interactive rebase, push to its remote branch, reset, open a pull request (pushing first if needed) or compare — in the sidebar, on the graph's badges, or from one to the other. Only what git would accept is offered. |
+| **[Drop a commit on a branch](docs/help/merging.md#drag-a-commit-onto-a-branch)** | Drag a commit from the graph onto a branch: cherry-pick it there, or move the branch to it — confirmed first, and undoable. |
 | **[Stacked branches](docs/help/stacks.md)** | Graphite-style chains, edited as a route: a start branch and one stop per level, added, swapped, reordered or removed from typeaheads — then one click pushes every level and opens/retargets the chained PRs, registering them as a **native GitHub stack** where that exists and carrying stack navigation in every body where it does not. |
 | **[Git flow](docs/help/gitflow.md)** | Start and finish features, releases and hotfixes — merges, tag and cleanup in one step, undoable. |
 | **[Merge options](docs/help/merge-options.md)** | `-X ours`, whitespace-blind merges, squash, `-s subtree` — and the commits behind a conflict. |
@@ -147,7 +148,8 @@ blob drawn offline where it does not, and a title-bar face that reacts to
 conflicts, half-finished rebases, a detached HEAD and piles left to grow — or
 [your own picture](docs/help/avatars.md#your-profiles-picture): your account's, an
 icon, or an image ·
-[integrated terminal](docs/help/terminal.md) with splits ·
+[integrated terminal](docs/help/terminal.md) with splits, and
+[`npm run` suggestions](docs/help/terminal.md#script-suggestions) from the nearest `package.json` ·
 [**A real CLI**](docs/help/cli.md) — `gitcito .` opens a repo, `gitcito blame
 src/api.ts -l 84` opens it *there*, `gitcito doctor` answers in the terminal with
 an exit code your CI can use, and `gitcito editor install` makes Gitcito the

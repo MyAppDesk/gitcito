@@ -1443,7 +1443,7 @@ export const he: Dict = {
   'settings.noAppSet': 'לא נבחרה אפליקציה',
   'settings.desktopNotifications': 'התראות שולחן עבודה',
   'settings.desktopNotificationsHint':
-    'הצגת התראת מערכת כשמתבקשת ביקורת או כש־CI רץ בתיבת ה־GitHub שלכם.',
+    'הצגת התראת מערכת כשמתבקשת ביקורת או כש־CI רץ בתיבת ה־GitHub שלכם. וגם כשבקשת משיכה ב־GitLab או ב־Forgejo מתחילה לחכות לסקירה שלכם.',
   'settings.mergeCommit': 'תמיד ליצור קומיט מיזוג',
   'settings.mergeCommitHint':
     'כפיית קומיט מיזוג גם כשאפשר fast-forward, כך שמיזוגים מציגים קומיט ״Merge branch …״.',

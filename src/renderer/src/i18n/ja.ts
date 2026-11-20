@@ -1428,7 +1428,7 @@ export const ja: Dict = {
   'settings.noAppSet': 'アプリは選ばれていません',
   'settings.desktopNotifications': 'デスクトップ通知',
   'settings.desktopNotificationsHint':
-    'GitHub の受信箱にレビュー依頼が届いたときや CI が動いたときに、OS の通知を出します。',
+    'GitHub の受信箱にレビュー依頼が届いたときや CI が動いたときに、OS の通知を出します。GitLab や Forgejo のプルリクエストがあなたのレビュー待ちになったときにも通知します。',
   'settings.mergeCommit': '常にマージコミットを作る',
   'settings.mergeCommitHint':
     'fast-forward できる場合でもマージコミットを強制するので、マージが「Merge branch …」というコミットとして残ります。',

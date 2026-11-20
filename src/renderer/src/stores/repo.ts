@@ -47,6 +47,7 @@ import { isProtectedBranch } from '../lib/repoConfig'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
 import { forkUpstream, prsFromFork } from '../lib/hosting'
+import { newlyAwaitingReview, notifiesReviewRequests } from '../lib/reviewNotify'
 import { parseRouteConflict } from '../lib/stackOrder'
 import { timeAgo } from '../lib/timeAgo'
 import { splitCommitMessage } from '../lib/commitMenuCapabilities'
@@ -603,6 +604,33 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
   }
 }
 
+/** Per repository, the PRs that were waiting for your review at the last look. */
+const awaitingSeen = new Map<string, Set<number>>()
+
+/**
+ * A desktop notification for each PR that just started waiting for your review
+ * (GitLab and Forgejo; GitHub's come from its inbox). Clicking one opens the PR
+ * page. Off unless desktop notifications are on in Settings.
+ */
+function announceReviewRequests(path: string, remoteUrl: string, provider: HostingProvider, prs: PullRequest[]): void {
+  const { fresh, seen } = newlyAwaitingReview(awaitingSeen.get(path), prs)
+  awaitingSeen.set(path, seen)
+  const settings = useSettingsStore.getState()
+  if (!fresh.length || !notifiesReviewRequests(provider) || !settings.settings.desktopNotifications) return
+  const repoName = path.split(/[\\/]/).pop() ?? path
+  for (const pr of fresh) {
+    try {
+      const note = new Notification(`${t('notif.reviewRequested')} · ${repoName}`, { body: `#${pr.id} ${pr.title}` })
+      note.onclick = () => {
+        window.focus()
+        settings.openPageTab({ type: 'pr', repoPath: path, remoteUrl, number: pr.id, title: pr.title })
+      }
+    } catch {
+      // OS notifications unavailable or denied: the 👁 in the sidebar still shows it.
+    }
+  }
+}
+
 export const useRepoStore = create<RepoStoreState>((set, get) => ({
   repos: {},
   drafts: {},
@@ -767,6 +795,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         path
       )
       get().patch(path, { prs, prProvider: provider })
+      announceReviewRequests(path, origin.url, provider, prs)
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
     }

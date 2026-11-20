@@ -1443,7 +1443,7 @@ export const zhCN: Dict = {
   'settings.noAppSet': '未选择应用',
   'settings.desktopNotifications': '桌面通知',
   'settings.desktopNotificationsHint':
-    '当你的 GitHub 收件箱收到评审请求或 CI 运行结果时，弹出一条系统通知。',
+    '当你的 GitHub 收件箱收到评审请求或 CI 运行结果时，弹出一条系统通知。GitLab 或 Forgejo 的拉取请求开始等待你的评审时，也会通知。',
   'settings.mergeCommit': '始终创建合并提交',
   'settings.mergeCommitHint':
     '即使可以快进也强制生成合并提交，让每次合并都留下一个「Merge branch …」提交。',

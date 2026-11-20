@@ -1437,7 +1437,7 @@ export const en = {
   'settings.noAppSet': 'No app selected',
   'settings.desktopNotifications': 'Desktop notifications',
   'settings.desktopNotificationsHint':
-    'Raise an OS notification when a review is requested or CI runs on your GitHub inbox.',
+    'Raise an OS notification when a review is requested or CI runs on your GitHub inbox. Also when a GitLab or Forgejo pull request starts waiting for your review.',
   'settings.mergeCommit': 'Always create a merge commit',
   'settings.mergeCommitHint':
     'Force a merge commit even when a fast-forward is possible, so merges show a "Merge branch …" commit.',

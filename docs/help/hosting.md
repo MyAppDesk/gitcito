@@ -198,6 +198,12 @@ reviewer who has not answered yet — on GitHub, GitLab and Forgejo alike. Who
 ten minutes. A token that cannot read its own user (no `read:user` on Forgejo,
 for example) marks nothing.
 
+With **Settings → Desktop notifications** on, a GitLab or Forgejo pull request
+that *starts* waiting for you raises one; clicking it opens the PR page. The
+first look at a repository only takes note of what is already waiting, so
+opening the app does not replay a backlog. GitHub's review requests are left to
+its notifications inbox, below, which already announces them.
+
 ## Notifications — GitHub
 
 Your whole inbox — review requests, mentions, CI activity — across every

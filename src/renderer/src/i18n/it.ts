@@ -1429,7 +1429,7 @@ export const it: Dict = {
   'settings.noAppSet': 'Nessuna app selezionata',
   'settings.desktopNotifications': 'Notifiche di sistema',
   'settings.desktopNotificationsHint':
-    'Mostra una notifica di sistema quando ti viene chiesta una revisione o la CI gira, in base alla tua posta in arrivo di GitHub.',
+    'Mostra una notifica di sistema quando ti viene chiesta una revisione o la CI gira, in base alla tua posta in arrivo di GitHub. Anche quando una pull request di GitLab o Forgejo inizia ad attendere la tua revisione.',
   'settings.mergeCommit': 'Crea sempre un commit di merge',
   'settings.mergeCommitHint':
     'Forza un commit di merge anche quando sarebbe possibile un fast-forward, così i merge mostrano un commit “Merge branch …”.',

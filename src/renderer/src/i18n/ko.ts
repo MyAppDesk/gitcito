@@ -1443,7 +1443,7 @@ export const ko: Dict = {
   'settings.noAppSet': '선택된 앱 없음',
   'settings.desktopNotifications': '데스크톱 알림',
   'settings.desktopNotificationsHint':
-    'GitHub 받은편지함에 리뷰 요청이 오거나 CI가 돌면 OS 알림을 띄웁니다.',
+    'GitHub 받은편지함에 리뷰 요청이 오거나 CI가 돌면 OS 알림을 띄웁니다. GitLab이나 Forgejo의 풀 리퀘스트가 내 리뷰를 기다리기 시작할 때도 알립니다.',
   'settings.mergeCommit': '항상 머지 커밋 만들기',
   'settings.mergeCommitHint':
     'fast-forward가 가능해도 머지 커밋을 강제해서 머지가 “Merge branch …” 커밋으로 남게 합니다.',

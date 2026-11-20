@@ -1444,7 +1444,7 @@ export const ptBR: Dict = {
   'settings.noAppSet': 'Nenhum app selecionado',
   'settings.desktopNotifications': 'Notificações do sistema',
   'settings.desktopNotificationsHint':
-    'Dispara uma notificação do sistema quando pedem um review ou a CI roda na sua caixa de entrada do GitHub.',
+    'Dispara uma notificação do sistema quando pedem um review ou a CI roda na sua caixa de entrada do GitHub. Também quando um pull request do GitLab ou do Forgejo passa a esperar o seu review.',
   'settings.mergeCommit': 'Sempre criar um commit de merge',
   'settings.mergeCommitHint':
     'Força um commit de merge mesmo quando o fast-forward seria possível, para que os merges apareçam como um commit “Merge branch …”.',

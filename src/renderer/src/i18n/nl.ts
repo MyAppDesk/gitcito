@@ -1444,7 +1444,7 @@ export const nl: Dict = {
   'settings.noAppSet': 'Geen app geselecteerd',
   'settings.desktopNotifications': 'Bureaubladmeldingen',
   'settings.desktopNotificationsHint':
-    'Toon een systeemmelding zodra er een review gevraagd wordt of CI draait in je GitHub-inbox.',
+    'Toon een systeemmelding zodra er een review gevraagd wordt of CI draait in je GitHub-inbox. Ook wanneer een pull request op GitLab of Forgejo op jouw review gaat wachten.',
   'settings.mergeCommit': 'Altijd een merge-commit maken',
   'settings.mergeCommitHint':
     'Dwing een merge-commit af, ook als een fast-forward mogelijk is, zodat merges een “Merge branch …”-commit laten zien.',

@@ -183,6 +183,12 @@ revisor e ainda não respondeu — no GitHub, no GitLab e no Forgejo. Quem é
 minutos. Um token que não consegue ler o próprio usuário (sem `read:user` no
 Forgejo, por exemplo) não marca nada.
 
+Com **Configurações → Notificações do sistema** ligado, um pull request do GitLab
+ou do Forgejo que *passa* a esperar por você dispara uma; clicar nela abre a
+página do PR. A primeira olhada num repositório só registra o que já está
+esperando, então abrir o app não repete o acúmulo. Os pedidos de review do GitHub
+ficam com a caixa de notificações dele, mais abaixo, que já avisa.
+
 ## Notificações — GitHub
 
 Sua caixa de entrada inteira — pedidos de revisão, menções, atividade de CI — em

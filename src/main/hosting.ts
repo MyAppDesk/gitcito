@@ -612,24 +612,27 @@ async function listPullRequests(
   // Azure DevOps
   if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
   const base = `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}`
-  const data = await withAzureRetry(remoteUrl, auth, (token) =>
-    adoJson<{
-      value: Array<{
-        pullRequestId: number
-        title: string
-        isDraft: boolean
-        createdBy: { displayName: string }
-        sourceRefName: string
-        targetRefName: string
-      }>
-    }>(
-      `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests?searchCriteria.status=active&api-version=7.1`,
-      token
+  type AzPull = {
+    pullRequestId: number
+    title: string
+    isDraft: boolean
+    createdBy: { displayName: string }
+    sourceRefName: string
+    targetRefName: string
+  }
+  // Unpaged, the API stops at about a hundred; $top/$skip walk the rest.
+  const prs = await withAzureRetry(remoteUrl, auth, (token) =>
+    allPages((page) =>
+      adoJson<{ value: AzPull[] }>(
+        `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests` +
+          `?searchCriteria.status=active&$top=100&$skip=${(page - 1) * 100}&api-version=7.1`,
+        token
+      ).then((d) => d.value)
     )
   )
   return {
     provider: 'azure',
-    prs: data.value.map((p) => ({
+    prs: prs.map((p) => ({
       id: p.pullRequestId,
       title: p.title,
       author: p.createdBy.displayName,

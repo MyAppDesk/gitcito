@@ -74,6 +74,23 @@ gestos funcionan en ramas remotas, etiquetas y stashes.
 
 ![Nombres de rama separados por barras plegados en un árbol](../../screenshots/branch-grouping.webp)
 
+## Una rama a partir de un work item de Azure Boards
+
+En un repositorio cuyo remoto está en Azure DevOps, la paleta de comandos ofrece
+**Create branch from Azure work item…**. Escribe el número del work item (o
+`AB#1234`) y muestra su tipo, título y estado; **Crear rama** abre el diálogo de
+siempre con el nombre ya puesto — `bugfix/1234-titulo` para un bug,
+`feature/1234-titulo` para lo demás — y `AB#1234 titulo` como tarea, por si
+prefieres que la IA sugiera un nombre.
+
+Las menciones de work items se enlazan en mensajes de commit y textos de pull
+request: `AB#1234` dondequiera que se conozca la organización de Azure, y en un
+repositorio de Azure también un simple `#1234`, ya que Azure numera work items,
+no issues. En un repositorio de GitHub vinculado a Azure Boards la organización
+no se conoce; una entrada `links.tickets` en el [`.gitcito.json`](repo-config.md)
+del repositorio lo cubre — patrón `AB#(\d+)`, URL
+`https://dev.azure.com/<org>/_workitems/edit/$1`.
+
 ## Renombrar una rama
 
 Una rama que llamaste `fix` hace tres días es una rama que hoy nadie sabe

@@ -66,6 +66,21 @@ keywords: ブランチ branch branches 作成 create チェックアウト check
 
 ![スラッシュ区切りのブランチ名がツリーにまとまったところ](../../screenshots/branch-grouping.webp)
 
+## Azure Boards の作業項目からブランチを作る
+
+リモートが Azure DevOps にあるリポジトリでは、コマンドパレットに
+**Create branch from Azure work item…** があります。作業項目の番号(または `AB#1234`)を
+入力すると、種類・タイトル・状態が表示されます。**ブランチを作成** はいつものダイアログを
+名前入りで開きます — バグなら `bugfix/1234-title`、それ以外は `feature/1234-title` — また
+AI に名前を提案させたい場合のために、`AB#1234 タイトル` がタスクとして入ります。
+
+作業項目への言及は、コミットメッセージとプルリクエストの本文でリンクになります。Azure の
+組織がわかる場所ではどこでも `AB#1234` が、Azure のリポジトリでは素の `#1234` も
+リンクになります。Azure が番号を振るのは issue ではなく作業項目だからです。Azure Boards と
+連携した GitHub リポジトリでは組織がわかりません。リポジトリの
+[`.gitcito.json`](repo-config.md) の `links.tickets` エントリで対応できます — パターン
+`AB#(\d+)`、URL `https://dev.azure.com/<org>/_workitems/edit/$1`。
+
 ## ブランチの名前を変更する
 
 3 日前に `fix` と名付けたブランチは、今日は誰にも位置づけられないブランチです。

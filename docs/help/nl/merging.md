@@ -50,6 +50,21 @@ Pushen vraagt ook: iedereen die het doel pullt krijgt de commits, en een push
 kun je vanuit Gitcito niet ongedaan maken. Mergen vraagt niets — het voegt alleen
 toe. Mergen en rebasen draai je terug met één keer **Ongedaan maken**.
 
+## Een commit op een branch slepen
+
+Sleep een commitregel uit de grafiek naar het label van een **lokale branch**:
+
+| Losgelaten op | Biedt |
+|---------------|-------|
+| De uitgecheckte branch | **Cherry-pick** van de commit hierheen; **Reset** van de branch ernaar (het reset-venster, dat zegt wat elke modus behoudt) |
+| Een andere lokale branch | **Uitchecken en cherry-picken**; **De branch verplaatsen** naar de commit (`git branch -f`) |
+
+Een branch verplaatsen vraagt eerst om bevestiging: commits die alleen die branch
+bereikte, staan daarna op geen enkele branch meer. Ongedaan maken zet de branch
+terug. Remote-trackingbranches en tags accepteren geen commit, omdat git ze zo
+niet verplaatst, en een branch die al naar de commit wijst biedt niets. Dezelfde
+sleepbeweging naar de AI-chat voegt de commit nog steeds als context toe.
+
 ## Mergen
 
 Fast-forward waar mogelijk, of een merge-commit afdwingen wanneer je de topologie

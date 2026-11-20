@@ -28,6 +28,21 @@ prompt, seus aliases.
 
 ![Dois painéis divididos lado a lado num mesmo grupo de terminal](../../screenshots/terminal-split.webp)
 
+## Teclas
+
+| Teclas | Faz |
+|---|---|
+| <kbd>⌃`</kbd> | Mostra ou esconde o terminal — a tecla Control física, em todas as plataformas |
+| <kbd>⌘T</kbd> / <kbd>Ctrl+T</kbd> | Novo terminal, enquanto o terminal tem o foco |
+| <kbd>⌘W</kbd> / <kbd>Ctrl+W</kbd> | Fecha o terminal em foco; fechar o último esconde o painel |
+| <kbd>Ctrl+Shift+C</kbd> | Copia a seleção; um <kbd>Ctrl+C</kbd> sozinho também copia enquanto há seleção, e continua sendo SIGINT quando não há |
+| <kbd>Ctrl+V</kbd> / <kbd>Ctrl+Shift+V</kbd> / <kbd>Shift+Ins</kbd> | Cola da área de transferência |
+| Clique direito | Copia a seleção, ou cola quando nada está selecionado |
+
+As duas primeiras valem só no terminal, de propósito: fora dele, continuam
+abrindo e fechando [abas de workspace](workspaces.md). No macOS, Copiar/Colar do
+menu Editar funcionam do mesmo jeito.
+
 ## Sugestão de scripts
 
 Digite `npm run ` (ou `pnpm`, `yarn`, `bun run`) e uma lista com os scripts do
@@ -78,5 +93,29 @@ interativo.
 Qualquer coisa que você rode aqui é invisível para o travamento interno do Gitcito,
 então um `git rebase` longo digitado à mão e um clique na interface ainda podem
 colidir — o app se atualiza a partir do disco quando o terminal muda alguma coisa.
+
+## Shell, tema e Oh My Posh
+
+No Windows, Configurações → Layout escolhe o shell que cada terminal novo abre —
+PowerShell, PowerShell Core (`pwsh`), `cmd`, Git Bash, WSL ou um executável
+próprio. O visual do terminal (tema, tamanho e família da fonte) fica em
+Configurações → Temas → Tema do terminal e vale na hora para todas as sessões.
+
+Se o [Oh My Posh](https://ohmyposh.dev) estiver instalado, a seção de tema do
+terminal também lista todo `*.omp.json` em `%POSH_THEMES_PATH%`, com prévia ao
+vivo — escolher um o injeta como `POSH_THEME` nos terminais novos, então um
+simples `oh-my-posh init pwsh` no seu profile já o usa. Um caminho próprio de
+`.omp.json` também funciona; deixar o campo em Padrão mantém o que o seu
+shell/profile ou o `POSH_THEME` global já definem. Sessões abertas mantêm o tema
+com que foram criadas — feche e reabra um terminal para aplicar o novo. Os
+glifos do prompt precisam de uma Nerd Font na família de fonte do terminal (por
+exemplo `CaskaydiaMono Nerd Font`), senão os ícones aparecem como quadradinhos.
+
+Sobre velocidade: o Oh My Posh roda o binário dele uma vez por prompt — por
+volta de 100–200 ms no Windows, mais em temas com segmento de git num repositório
+grande — e isso aparece como uma pausa curta antes de cada prompt, não como
+lentidão do Gitcito. Temas sem segmento de git são os mais rápidos. O estilo de
+previsão do PowerShell também pesa: `-PredictionViewStyle InlineView` repinta uma
+área pequena a cada tecla, enquanto `ListView` redesenha um bloco inteiro.
 
 **Veja também:** [Rodar e depurar](launch.md) · [Hooks](hooks.md)

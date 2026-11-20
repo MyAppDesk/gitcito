@@ -76,6 +76,23 @@ działają na zdalnych gałęziach, tagach i stashach.
 
 ![Nazwy gałęzi rozdzielone ukośnikiem zwinięte w drzewo](../../screenshots/branch-grouping.webp)
 
+## Gałąź z work itemu Azure Boards
+
+W repozytorium ze zdalnym w Azure DevOps paleta poleceń ma
+**Create branch from Azure work item…**. Wpisz numer work itemu (albo `AB#1234`),
+a zobaczysz jego typ, tytuł i stan; **Utwórz gałąź** otwiera zwykłe okno z
+wypełnioną nazwą — `bugfix/1234-tytul` dla błędu, `feature/1234-tytul` dla
+wszystkiego innego — i `AB#1234 tytuł` jako zadaniem, jeśli wolisz, żeby nazwę
+zaproponowała AI.
+
+Wzmianki o work itemach stają się linkami w wiadomościach commitów i tekstach
+pull requestów: `AB#1234` wszędzie, gdzie znana jest organizacja Azure, a w
+repozytorium Azure także zwykłe `#1234`, bo Azure numeruje work itemy, nie
+issues. W repozytorium GitHub połączonym z Azure Boards organizacja nie jest
+znana; wpis `links.tickets` w [`.gitcito.json`](repo-config.md) repozytorium to
+załatwia — wzorzec `AB#(\d+)`, URL
+`https://dev.azure.com/<org>/_workitems/edit/$1`.
+
 ## Zmiana nazwy gałęzi
 
 Gałąź nazwana trzy dni temu `fix` to dziś gałąź, której nikt nie potrafi

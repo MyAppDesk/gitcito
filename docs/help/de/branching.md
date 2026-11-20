@@ -78,6 +78,23 @@ Dieselben Gesten funktionieren auf Remote-Branches, Tags und Stashes.
 
 ![Branch-Namen mit Schrägstrich, zu einem Baum gefaltet](../../screenshots/branch-grouping.webp)
 
+## Ein Branch aus einem Azure-Boards-Work-Item
+
+In einem Repository mit Remote auf Azure DevOps bietet die Befehlspalette
+**Create branch from Azure work item…**. Gib die Nummer des Work Items ein (oder
+`AB#1234`), und es zeigt Typ, Titel und Status; **Branch erstellen** öffnet den
+üblichen Dialog mit vorausgefülltem Namen — `bugfix/1234-titel` für einen Bug,
+`feature/1234-titel` für alles andere — und `AB#1234 titel` als Aufgabe, falls
+du lieber die KI einen Namen vorschlagen lässt.
+
+Work-Item-Erwähnungen werden in Commit-Nachrichten und Pull-Request-Texten
+verlinkt: `AB#1234` überall, wo die Azure-Organisation bekannt ist, und in einem
+Azure-Repository auch ein schlichtes `#1234`, da Azure Work Items nummeriert,
+keine Issues. In einem mit Azure Boards verknüpften GitHub-Repository ist die
+Organisation nicht bekannt; ein Eintrag `links.tickets` in der
+[`.gitcito.json`](repo-config.md) des Repositorys deckt das ab — Muster
+`AB#(\d+)`, URL `https://dev.azure.com/<org>/_workitems/edit/$1`.
+
 ## Einen Branch umbenennen
 
 Ein Branch, der vor drei Tagen `fix` hieß, ist heute ein Branch, den niemand

@@ -23,7 +23,7 @@ import gitcitoLaunch from '../assets/gitcito-launch.png'
 
 function detectSecrets(s: AppSettings): boolean {
   return (s.profiles ?? []).some(
-    (p) => !!p.githubToken || !!p.azureToken || !!p.gitlabToken || !!p.bitbucketToken || !!p.ai?.apiKey
+    (p) => !!p.githubToken || !!p.azureToken || !!p.gitlabToken || !!p.bitbucketToken || !!p.forgejoToken || !!p.ai?.apiKey
   )
 }
 

@@ -10,6 +10,7 @@ export interface ProfileSecrets {
   azureToken?: string
   gitlabToken?: string
   bitbucketToken?: string
+  forgejoToken?: string
   /** Legacy single AI key, written before accounts existed. Still read. */
   aiApiKey?: string
   /** One API key per AI account id. */
@@ -20,7 +21,7 @@ export interface ProfileSecrets {
 export type SecretStore = Record<string, ProfileSecrets>
 
 /** Profile fields holding a host access token. */
-export const TOKEN_FIELDS = ['githubToken', 'azureToken', 'gitlabToken', 'bitbucketToken'] as const
+export const TOKEN_FIELDS = ['githubToken', 'azureToken', 'gitlabToken', 'bitbucketToken', 'forgejoToken'] as const
 
 export function hasSettingsSecrets(settings: AppSettings | null | undefined): boolean {
   return (settings?.profiles ?? []).some(
@@ -41,6 +42,8 @@ export function stripSettingsSecrets(settings: AppSettings): AppSettings {
       azureToken: '',
       gitlabToken: '',
       bitbucketToken: '',
+      // Optional field: blank it where it exists, never add it to an older profile.
+      ...(p.forgejoToken !== undefined ? { forgejoToken: '' } : {}),
       ai: p.ai
         ? {
             ...p.ai,

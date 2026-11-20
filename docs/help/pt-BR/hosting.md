@@ -102,6 +102,35 @@ Limites:
   self-managed recebe o ícone simples, para que nomes de grupos nunca sejam
   enviados a um host público.
 
+## Forgejo
+
+O Forgejo, e o Gitea, que usa a mesma API, sempre roda num endereço escolhido
+pelo dono: o seu próprio servidor ou um público, como o codeberg.org. Informe
+esse endereço a um perfil em **Configurações → Integrações → Forgejo**, junto
+com um token de acesso. **Criar token** abre a página de tokens desse servidor.
+Dê ao token permissão de leitura e escrita em *repository*, e de leitura em
+*user* e *organization*.
+
+A partir daí, os remotes nesse servidor são Forgejo:
+
+| Funciona | Como |
+|----------|------|
+| Push e fetch | Login com o token do perfil |
+| Pull requests abertos | Listados na sidebar, como em qualquer host |
+| Criar pull request | Pelo app; um rascunho leva o prefixo `WIP:` que o Forgejo usa |
+| Navegador de clone, criar repositório | Nesse servidor, na sua conta ou numa organização |
+
+Como no GitLab, **um token do Forgejo só vai para o servidor que o emitiu**. Um
+perfil sem endereço do Forgejo não tem credencial do Forgejo, e não existe
+servidor padrão para onde cair.
+
+Limites:
+
+- Revisar, comentar e fazer merge de um pull request ainda abre no navegador.
+  Por enquanto, essa tela de revisão é só do GitHub e do GitLab.
+- Só https, um servidor Forgejo por perfil.
+- As listas mostram os primeiros 50 pull requests e repositórios.
+
 ## Issues, milestones, releases — GitHub
 
 Navegue pelas issues e abra uma aba de issue completa: corpo, comentários, labels,

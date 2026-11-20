@@ -9,9 +9,27 @@ import {
   type GitCredential,
   type GitHubCliAuthStatus
 } from './credentials'
-import { activeProfileAuth, allProfileAuth, boundProfileAuth, profileGitlabInstance } from './settings'
-import { knownGitlabInstances } from './gitlabInstances'
-import { GITLAB_COM, gitlabInstanceOf, normalizeGitlabUrl, profileGitlabBase, remoteIsOnGitlab } from '../shared/gitlabInstance'
+import { activeProfileAuth, allProfileAuth, boundProfileAuth, profileForgejoInstance, profileGitlabInstance } from './settings'
+import {
+  createForgejoPull,
+  createForgejoRepo,
+  describeForgejoAccount,
+  forgejoCompareUrl,
+  listForgejoOwners,
+  listForgejoPulls,
+  listForgejoRepos
+} from './forgejo'
+import { knownForgejoInstances, knownGitlabInstances } from './gitlabInstances'
+import {
+  GITLAB_COM,
+  forgejoInstanceOf,
+  gitlabInstanceOf,
+  normalizeGitlabUrl,
+  profileForgejoBase,
+  profileGitlabBase,
+  remoteIsOnForgejo,
+  remoteIsOnGitlab
+} from '../shared/gitlabInstance'
 import { linkHoldsAccount, pickHostAuth, validAccountLink, type HostAuthInput } from '../shared/hostToken'
 import { noreplyEmail } from '../shared/profileAvatar'
 import { mergeStackSection } from '../shared/stackPr'
@@ -87,6 +105,13 @@ export function parseRemoteUrl(url: string): ParsedRemote | null {
   if (gl) {
     const i = gl.path.lastIndexOf('/')
     return { provider: 'gitlab', owner: gl.path.slice(0, i), project: '', repo: gl.path.slice(i + 1), base: gl.base }
+  }
+
+  // A Forgejo/Gitea instance a profile points at — always self-chosen, never guessed.
+  const fj = forgejoInstanceOf(url, knownForgejoInstances())
+  if (fj) {
+    const [owner, repo] = fj.path.split('/')
+    return { provider: 'forgejo', owner, project: '', repo, base: fj.base }
   }
 
   m = /(?:^|[/@.])bitbucket\.org[/:]([^/]+)\/(.+?)(?:\.git)?$/.exec(url)
@@ -187,7 +212,7 @@ function isAuthFailure(err: unknown): boolean {
 }
 
 /** The four provider token slots the renderer passes down. */
-export type HostTokens = { github?: string; azure?: string; gitlab?: string; bitbucket?: string }
+export type HostTokens = { github?: string; azure?: string; gitlab?: string; bitbucket?: string; forgejo?: string }
 
 /**
  * The profile credentials for a hosting call — precedence in `pickHostAuth`.
@@ -204,7 +229,12 @@ async function profileAuth(
   // The renderer's token is the active profile's: for GitLab it is only good on
   // that profile's instance.
   const sentFits =
-    provider !== 'gitlab' || !remoteUrl || remoteIsOnGitlab(remoteUrl, await profileGitlabInstance())
+    !remoteUrl ||
+    (provider === 'gitlab'
+      ? remoteIsOnGitlab(remoteUrl, await profileGitlabInstance())
+      : provider === 'forgejo'
+        ? remoteIsOnForgejo(remoteUrl, await profileForgejoInstance())
+        : true)
   return pickHostAuth({
     sent: sentFits ? sent : undefined,
     bound: repoPath ? await boundProfileAuth(provider, repoPath, remoteUrl) : undefined,
@@ -279,7 +309,20 @@ export function providerBaseUrl(provider: RepoHost, org?: string): string {
       return 'https://bitbucket.org'
     case 'azure':
       return `https://dev.azure.com/${encodeURIComponent(org?.trim() ?? '')}`
+    case 'forgejo':
+      return forgejoBaseFromOrg(org)
   }
+}
+
+/**
+ * Forgejo's `org` is the instance URL of the profile in use. Like GitLab's, it
+ * is honoured only when a profile is configured for it — and there is no public
+ * default to fall back to.
+ */
+function forgejoBaseFromOrg(org: string | undefined): string {
+  const base = normalizeGitlabUrl(org)
+  if (base && knownForgejoInstances().includes(base)) return base
+  throw new Error('No Forgejo address is saved in this profile (it must be https). Add it in Settings → Integrations → Forgejo.')
 }
 
 /**
@@ -311,7 +354,13 @@ function gitlabBaseFromOrg(org: string | undefined): string {
 
 /** `providerBaseUrl`, with GitLab resolved to the active profile's instance. */
 async function providerBase(provider: RepoHost, org?: string): Promise<string> {
-  return provider === 'gitlab' && !org ? profileGitlabInstance() : providerBaseUrl(provider, org)
+  if (provider === 'gitlab' && !org) return profileGitlabInstance()
+  if (provider === 'forgejo' && !org) {
+    const base = await profileForgejoInstance()
+    if (!base) return forgejoBaseFromOrg(undefined) // throws: nothing configured
+    return base
+  }
+  return providerBaseUrl(provider, org)
 }
 
 /** The GitLab REST root of an instance. */
@@ -436,6 +485,11 @@ async function listPullRequests(
         isDraft: !!(p.draft || p.work_in_progress)
       }))
     }
+  }
+
+  if (parsed.provider === 'forgejo') {
+    if (!auth || !parsed.base) return { provider: 'forgejo', prs: [] }
+    return { provider: 'forgejo', prs: await listForgejoPulls(parsed.base, parsed.owner, parsed.repo, auth.token) }
   }
 
   // Bitbucket pull requests
@@ -630,6 +684,9 @@ function createPullRequestUrl(remoteUrl: string, source: string, target: string)
   if (parsed.provider === 'github') {
     return `https://github.com/${parsed.owner}/${parsed.repo}/compare/${target}...${source}?expand=1`
   }
+  if (parsed.provider === 'forgejo' && parsed.base) {
+    return forgejoCompareUrl(parsed.base, parsed.owner, parsed.repo, target, source)
+  }
   if (parsed.provider === 'gitlab') {
     return `${parsed.base ?? GITLAB_COM}/${parsed.owner}/${parsed.repo}/-/merge_requests/new?merge_request%5Bsource_branch%5D=${encodeURIComponent(source)}&merge_request%5Btarget_branch%5D=${encodeURIComponent(target)}`
   }
@@ -684,8 +741,13 @@ async function createPullRequest(
   opts: CreatePrOpts
 ): Promise<CreatePrResult> {
   const parsed = parseRemoteUrl(remoteUrl)
-  if (!parsed) throw new Error('Unrecognized remote — PR creation supports GitHub, GitLab, Bitbucket and Azure DevOps.')
+  if (!parsed) throw new Error('Unrecognized remote — PR creation supports GitHub, GitLab, Forgejo, Bitbucket and Azure DevOps.')
   const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens)
+
+  if (parsed.provider === 'forgejo') {
+    if (!auth || !parsed.base) throw await noCredential('Forgejo', remoteUrl)
+    return createForgejoPull(parsed.base, parsed.owner, parsed.repo, auth.token, opts)
+  }
 
   // GitLab merge request
   if (parsed.provider === 'gitlab') {
@@ -1680,6 +1742,8 @@ async function listRepositories(provider: RepoHost, token: string, org?: string)
     }))
   }
 
+  if (provider === 'forgejo') return listForgejoRepos(await providerBase(provider, org), auth.token)
+
   if (provider === 'bitbucket') {
     const res = await fetch('https://api.bitbucket.org/2.0/repositories?role=member&pagelen=100&sort=-updated_on', {
       headers: { Authorization: bitbucketAuthFor(auth) }
@@ -1779,6 +1843,8 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
     ]
   }
 
+  if (provider === 'forgejo') return listForgejoOwners(await providerBase(provider, org), auth.token)
+
   if (provider === 'bitbucket') {
     const wsRes = await fetch('https://api.bitbucket.org/2.0/workspaces?pagelen=100', {
       headers: { Authorization: bitbucketAuthFor(auth) }
@@ -1834,7 +1900,7 @@ async function fetchConnectedAccount(
   const base = await providerBase(provider, org)
   const auth = await apiToken(base, { token, link }, { interactive })
   if (!auth) throw await noCredential(provider, base)
-  const account = await describeAccount(provider, auth, provider === 'gitlab' ? base : org)
+  const account = await describeAccount(provider, auth, provider === 'gitlab' || provider === 'forgejo' ? base : org)
   if (link || auth.source === 'token') return account
   // A sign-in found a machine login: hand back the link for the profile to keep.
   // gh is asked by account name, which is the GitHub login; git by the username
@@ -1860,16 +1926,31 @@ async function accountOwner(
 ): Promise<string | null> {
   // GitLab accounts are per instance: the same username on gitlab.com and on a
   // self-managed GitLab are two different people.
-  const instance = provider === 'gitlab' ? await profileGitlabInstance(exceptProfileId) : undefined
+  const instance =
+    provider === 'gitlab'
+      ? await profileGitlabInstance(exceptProfileId)
+      : provider === 'forgejo'
+        ? await profileForgejoInstance(exceptProfileId)
+        : undefined
+  const instanceOfProfile = (p: { gitlabUrl?: string; forgejoUrl?: string }): string | null =>
+    provider === 'gitlab' ? profileGitlabBase(p.gitlabUrl) : profileForgejoBase(p.forgejoUrl)
   const others = (await allProfileAuth(provider)).filter(
-    (p) => p.id !== exceptProfileId && (!instance || profileGitlabBase(p.gitlabUrl) === instance)
+    (p) => p.id !== exceptProfileId && (instance === undefined || instanceOfProfile(p) === instance)
   )
   const linked = others.find((p) => linkHoldsAccount(p.link, login, found))
   if (linked) return linked.name
   for (const p of others) {
     if (!p.token) continue
     // GitLab: that profile's own instance, explicitly — empty means gitlab.com, not "the active one".
-    const org = provider === 'azure' ? p.azureOrg : provider === 'gitlab' ? profileGitlabBase(p.gitlabUrl) : undefined
+    const org =
+      provider === 'azure'
+        ? p.azureOrg
+        : provider === 'gitlab'
+          ? profileGitlabBase(p.gitlabUrl)
+          : provider === 'forgejo'
+            ? (profileForgejoBase(p.forgejoUrl) ?? undefined)
+            : undefined
+    if (provider === 'forgejo' && !org) continue
     if (provider === 'azure' && !org) continue
     const account = await describeAccount(provider, { token: p.token, source: 'token' }, org).catch(() => null)
     if (account && account.login.toLowerCase() === login.toLowerCase()) return p.name
@@ -1925,6 +2006,10 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
       profileUrl: user.web_url,
       orgs: groups.map((g) => ({ login: g.full_path, avatarUrl: g.avatar_url ?? undefined, url: g.web_url }))
     }
+  }
+
+  if (provider === 'forgejo') {
+    return { source: auth.source, ...(await describeForgejoAccount(await providerBase(provider, org), auth.token)) }
   }
 
   if (provider === 'bitbucket') {
@@ -2043,6 +2128,8 @@ async function createRepository(
     const repo = (await res.json()) as { path_with_namespace: string; http_url_to_repo: string; visibility: string }
     return { name: repo.path_with_namespace, url: repo.http_url_to_repo, private: repo.visibility !== 'public' }
   }
+
+  if (provider === 'forgejo') return createForgejoRepo(await providerBase(provider, org), auth.token, opts)
 
   if (provider === 'bitbucket') {
     const slug = opts.name.trim().toLowerCase().replace(/\s+/g, '-')

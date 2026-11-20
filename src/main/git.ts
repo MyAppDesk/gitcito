@@ -911,6 +911,8 @@ export function basicAuthFor(
   switch (host) {
     case 'github':
     case 'gitlab':
+    // Forgejo/Gitea read an access token from the password field whatever the username.
+    case 'forgejo':
       return { username: 'oauth2', password: t }
     case 'bitbucket': {
       if (!t.includes(':')) return { username: 'x-token-auth', password: t }

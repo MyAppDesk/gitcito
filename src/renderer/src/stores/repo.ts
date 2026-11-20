@@ -761,7 +761,8 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
           github: profile.githubToken || undefined,
           azure: profile.azureToken || undefined,
           gitlab: profile.gitlabToken || undefined,
-          bitbucket: profile.bitbucketToken || undefined
+          bitbucket: profile.bitbucketToken || undefined,
+          forgejo: profile.forgejoToken || undefined
         },
         path
       )

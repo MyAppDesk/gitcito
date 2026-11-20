@@ -23,3 +23,19 @@ export function isKnownGitlabHost(hostname: string): boolean {
   const h = hostname.toLowerCase()
   return known.some((base) => new URL(base).hostname === h)
 }
+
+// Forgejo, the same way: recognised by host, authorised per profile.
+let knownForgejo: string[] = []
+
+export function setKnownForgejoInstances(urls: Array<string | undefined>): void {
+  knownForgejo = [...new Set(urls.map((u) => normalizeGitlabUrl(u)).filter((u): u is string => !!u))]
+}
+
+export function knownForgejoInstances(): readonly string[] {
+  return knownForgejo
+}
+
+export function isKnownForgejoHost(hostname: string): boolean {
+  const h = hostname.toLowerCase()
+  return knownForgejo.some((base) => new URL(base).hostname === h)
+}

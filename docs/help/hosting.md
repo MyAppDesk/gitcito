@@ -118,6 +118,35 @@ Limits:
   remote gets the plain icon, so its group names are never sent to a public
   host.
 
+## Forgejo
+
+Forgejo, and Gitea, which shares its API, always runs at an address its owner
+chose: your own server, or a public one such as codeberg.org. Give a profile
+that address in **Settings → Integrations → Forgejo**, together with an access
+token. **Create token** opens the token page on that server. Give the token
+read and write permission on *repository*, and read permission on *user* and
+*organization*.
+
+From then on, remotes on that server are Forgejo:
+
+| Works | How |
+|-------|-----|
+| Push and fetch | Signed in with the profile's token |
+| Open pull requests | Listed in the sidebar, like any other host |
+| Create a pull request | From the app; a draft is marked with the `WIP:` prefix Forgejo uses |
+| Clone browser, create repository | Against that server, under your account or an organization |
+
+Just like GitLab tokens, **a Forgejo token only goes to the server that issued
+it**. A profile without a Forgejo address has no Forgejo credential at all.
+There is no default server to fall back to.
+
+Limits:
+
+- Reviewing, commenting on and merging a pull request still opens in the
+  browser. That review surface is GitHub and GitLab only for now.
+- https only, one Forgejo server per profile.
+- Lists show the first 50 pull requests and repositories.
+
 ## Issues, milestones, releases — GitHub
 
 Browse issues and open a full issue tab: body, comments, labels, assignees,

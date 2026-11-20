@@ -607,7 +607,7 @@ export interface PullRequest {
   headRepo?: string
 }
 
-export type HostingProvider = 'github' | 'azure' | 'gitlab' | 'bitbucket' | null
+export type HostingProvider = 'github' | 'azure' | 'gitlab' | 'bitbucket' | 'forgejo' | null
 
 /** The ref-naming convention a forge uses to publish pull request heads. */
 export type PrRefFlavor = 'github' | 'gitlab' | 'bitbucket' | 'azure'
@@ -779,7 +779,7 @@ export interface ReleaseInfo {
   draft: boolean
 }
 
-export type RepoHost = 'github' | 'gitlab' | 'bitbucket' | 'azure'
+export type RepoHost = 'github' | 'gitlab' | 'bitbucket' | 'azure' | 'forgejo'
 
 export interface RemoteRepo {
   name: string // display name, e.g. owner/repo
@@ -2656,6 +2656,12 @@ export interface Profile {
    *  Empty means gitlab.com. The token is only ever sent to this instance. */
   gitlabUrl?: string
   bitbucketToken: string
+  /** Forgejo (or Gitea) access token, for the instance at `forgejoUrl`. Optional:
+   *  settings written before Forgejo support have no such field. */
+  forgejoToken?: string
+  /** The Forgejo instance this profile's token belongs to (`https://git.example.org`,
+   *  or codeberg.org). There is no default: empty means no Forgejo. */
+  forgejoUrl?: string
   /** Accounts this profile signed in with from a login already on the machine —
    *  git's credential helper or the GitHub CLI — one per provider. Without one
    *  (and without a token) the profile is not connected: a machine-wide login is
@@ -3435,6 +3441,7 @@ export function defaultProfile(): Profile {
     azureOrg: '',
     gitlabToken: '',
     bitbucketToken: '',
+    forgejoToken: '',
     ai: defaultAIConfig()
   }
 }

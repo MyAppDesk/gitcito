@@ -99,6 +99,7 @@ git actually is.
 | **[Untracked-branch repair](docs/help/syncing.md)** | A pull that stops on "no tracking information" offers the fix as a button — link the branch to its remote, or push it if the remote has never seen it. |
 | **[Pull requests](docs/help/hosting.md)** | Create on GitHub, GitLab, Bitbucket and Azure DevOps. Review, comment, approve and merge on GitHub. Each profile [links its own account](docs/help/hosting.md#tokens) — a token, or a login git's credential helper or the GitHub CLI already holds. |
 | **[Self-managed GitLab](docs/help/hosting.md#self-managed-gitlab)** | Point a profile at your company's GitLab: merge requests, the clone browser and push sign-in work there, and its token is only ever sent to that instance. |
+| **[Forgejo](docs/help/hosting.md#forgejo)** | Your own Forgejo or Gitea server, or Codeberg: push sign-in, open and create pull requests, clone and create repositories — the token only ever goes to that server. |
 | **[Plumbing, with a UI](docs/help/lfs-sparse.md)** | Stashes, tags, [worktrees](docs/help/worktrees.md#looking-after-worktrees) (with what each one holds, lock, move and repair), submodules, LFS, sparse-checkout, patches, hooks. |
 | **[Subtrees](docs/help/subtree.md)** | Vendor another repo into a directory — and remember where it came from, which git does not. |
 | **[Bundles & archives](docs/help/export.md)** | The repository as one file git can clone from — or a tree as a zip, honouring `export-ignore`. |

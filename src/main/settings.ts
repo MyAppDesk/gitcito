@@ -4,8 +4,8 @@ import { existsSync } from 'fs'
 import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
 import { defaultSettings, type AccountLink, type AppSettings, type RepoHost } from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
-import { profileGitlabBase, remoteIsOnGitlab } from '../shared/gitlabInstance'
-import { setKnownGitlabInstances } from './gitlabInstances'
+import { profileForgejoBase, profileGitlabBase, remoteIsOnForgejo, remoteIsOnGitlab } from '../shared/gitlabInstance'
+import { setKnownForgejoInstances, setKnownGitlabInstances } from './gitlabInstances'
 import {
   applySecrets,
   extractSecrets,
@@ -114,6 +114,7 @@ export async function readSettings(): Promise<AppSettings> {
   }
   const out = withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
   setKnownGitlabInstances(out.profiles.map((p) => p.gitlabUrl))
+  setKnownForgejoInstances(out.profiles.map((p) => p.forgejoUrl))
   return out
 }
 
@@ -164,10 +165,11 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
   return withMigratedAI(applySecrets(settings, { ...stored, ...sessionSecrets }))
 }
 
-const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken'> = {
+const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken' | 'forgejoToken'> = {
   github: 'githubToken',
   gitlab: 'gitlabToken',
   bitbucket: 'bitbucketToken',
+  forgejo: 'forgejoToken',
   azure: 'azureToken'
 }
 
@@ -213,6 +215,12 @@ async function profileAuth(
   // for a self-managed profile, or the reverse — gets nothing from this profile,
   // and the keychain is not even opened.
   if (host === 'gitlab' && remoteUrl && !remoteIsOnGitlab(remoteUrl, profileGitlabBase(profile.gitlabUrl))) return {}
+  // Forgejo has no default instance: a profile without an address has no Forgejo
+  // credential at all, and one with an address only for remotes on it.
+  if (host === 'forgejo') {
+    const base = profileForgejoBase(profile.forgejoUrl)
+    if (!base || (remoteUrl && !remoteIsOnForgejo(remoteUrl, base))) return {}
+  }
   // Links are plain settings and arrive with imports too: a malformed one is no link.
   const link = validAccountLink(profile.links?.[host])
   const settings = await readSettingsWithSecrets('tokens')
@@ -223,6 +231,16 @@ async function profileAuth(
 /** The active profile's PAT and link for a host. */
 export function activeProfileAuth(host: RepoHost, remoteUrl?: string): Promise<{ token?: string; link?: AccountLink }> {
   return profileAuth(host, undefined, remoteUrl)
+}
+
+/** The Forgejo instance a profile (the active one by default) points at, or null. */
+export async function profileForgejoInstance(profileId?: string): Promise<string | null> {
+  const plain = await readSettings()
+  const profile =
+    (profileId ? plain.profiles.find((p) => p.id === profileId) : undefined) ??
+    plain.profiles.find((p) => p.id === plain.activeProfileId) ??
+    plain.profiles[0]
+  return profileForgejoBase(profile?.forgejoUrl)
 }
 
 /** The GitLab instance a profile (the active one by default) is connected to. */
@@ -242,7 +260,7 @@ export async function profileGitlabInstance(profileId?: string): Promise<string>
  */
 export async function allProfileAuth(
   host: RepoHost
-): Promise<Array<{ id: string; name: string; token?: string; link?: AccountLink; azureOrg?: string; gitlabUrl?: string }>> {
+): Promise<Array<{ id: string; name: string; token?: string; link?: AccountLink; azureOrg?: string; gitlabUrl?: string; forgejoUrl?: string }>> {
   const settings = await readSettingsWithSecrets('tokens')
   return settings.profiles.map((p) => ({
     id: p.id,
@@ -250,7 +268,8 @@ export async function allProfileAuth(
     token: p[TOKEN_FIELD[host]]?.trim() || undefined,
     link: validAccountLink(p.links?.[host]),
     azureOrg: p.azureOrg?.trim() || undefined,
-    gitlabUrl: p.gitlabUrl?.trim() || undefined
+    gitlabUrl: p.gitlabUrl?.trim() || undefined,
+    forgejoUrl: p.forgejoUrl?.trim() || undefined
   }))
 }
 
@@ -325,6 +344,7 @@ onSessionOnlyProbe(hasSessionOnlySecrets)
 async function writeSettings(settings: AppSettings): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
   setKnownGitlabInstances(settings.profiles.map((p) => p.gitlabUrl))
+  setKnownForgejoInstances(settings.profiles.map((p) => p.forgejoUrl))
   const secrets = extractSecrets(settings)
   const hasSecrets = Object.keys(secrets).length > 0
   const stripped = JSON.stringify(stripSettingsSecrets(settings), null, 2)

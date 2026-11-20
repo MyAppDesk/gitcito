@@ -106,3 +106,30 @@ export function remoteIsOnGitlab(remoteUrl: string, base: string): boolean {
 export function gitlabTokenUrl(gitlabUrl: string | undefined): string {
   return `${profileGitlabBase(gitlabUrl)}/-/user_settings/personal_access_tokens?name=Gitcito&scopes=api,write_repository`
 }
+
+// ─── Forgejo / Gitea ────────────────────────────────────────────────────────
+// Always at an address of its owner's choosing (codeberg.org is just a public
+// one), so unlike GitLab there is no default instance.
+
+/** The Forgejo instance a profile's token belongs to, or null when it names none. */
+export function profileForgejoBase(forgejoUrl: string | undefined): string | null {
+  return normalizeInstanceUrl(forgejoUrl)
+}
+
+/** Which configured Forgejo a remote is on, and its `owner/repo`. */
+export function forgejoInstanceOf(remoteUrl: string, instances: readonly string[]): { base: string; path: string } | null {
+  const hit = instanceOf(remoteUrl, instances)
+  // Forgejo repositories are exactly owner/repo — no subgroups.
+  return hit && hit.path.split('/').length === 2 ? hit : null
+}
+
+/** Whether a remote sits on the given Forgejo — the check before its token is sent. */
+export function remoteIsOnForgejo(remoteUrl: string, base: string | null): boolean {
+  return !!base && forgejoInstanceOf(remoteUrl, [base])?.base === base
+}
+
+/** Where to create a token on a Forgejo instance. */
+export function forgejoTokenUrl(forgejoUrl: string | undefined): string | null {
+  const base = profileForgejoBase(forgejoUrl)
+  return base ? `${base}/user/settings/applications` : null
+}

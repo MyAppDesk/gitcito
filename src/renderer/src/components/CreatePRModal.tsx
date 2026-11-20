@@ -89,7 +89,8 @@ export function CreatePRModal({ spec }: { spec: Extract<ModalSpec, { kind: 'crea
     github: profile.githubToken || undefined,
     azure: profile.azureToken || undefined,
     gitlab: profile.gitlabToken || undefined,
-    bitbucket: profile.bitbucketToken || undefined
+    bitbucket: profile.bitbucketToken || undefined,
+    forgejo: profile.forgejoToken || undefined
   }
   const valid = !!remoteUrl && !!source && !!target && source !== target && !!title.trim() && !busy
   const isGitHub = /github\.com/i.test(remoteUrl ?? '')

@@ -956,7 +956,7 @@ export const hostingApi = {
   // `repoPath` lets main use the profile the repository is bound to (see shared/hostToken.ts).
   listPRs: (
     remoteUrl: string,
-    tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string },
+    tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string; forgejo?: string },
     repoPath?: string
   ) =>
     window.api.hosting.listPRs(remoteUrl, tokens, repoPath) as Promise<{ provider: HostingProvider; prs: PullRequest[] }>,
@@ -966,7 +966,7 @@ export const hostingApi = {
     window.api.hosting.ciStatuses(remoteUrl, shas, token) as Promise<Record<string, CiStatus>>,
   openCreatePR: (remoteUrl: string, source: string, target: string) =>
     window.api.hosting.openCreatePR(remoteUrl, source, target),
-  createPR: (remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string }, opts: CreatePrOpts) =>
+  createPR: (remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string; forgejo?: string }, opts: CreatePrOpts) =>
     window.api.hosting.createPR(remoteUrl, tokens, opts) as Promise<CreatePrResult>,
   prDetail: (remoteUrl: string, tokens: { github?: string; gitlab?: string }, number: number) =>
     window.api.hosting.prDetail(remoteUrl, tokens, number) as Promise<PrDetail>,

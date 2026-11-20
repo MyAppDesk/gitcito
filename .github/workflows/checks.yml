@@ -11,10 +11,12 @@ on:
 permissions:
   contents: read
 
-# A newer push to the same PR makes the older run moot.
+# A newer push to the same PR makes the older run moot. Pushes to main are
+# not cancelled: each merge keeps its own verdict, so a break is pinned on
+# the merge that caused it.
 concurrency:
-  group: checks-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: checks-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   gate:

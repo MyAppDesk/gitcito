@@ -2908,7 +2908,7 @@ export const tr: Dict = {
   'gitError.fileTooLargeAny': "GitHub 100 MB'tan büyük dosyaları reddeder ve push böyle bir dosya içeriyor. Gönderilen commit'lerden çıkarın ya da Git LFS ile izleyin.",
   'gitError.protectedBranch': "Sunucu bu dalı koruyor ve push'u reddetti. Yeni bir dala gönderin ve bir pull request açın.",
   'gitError.noCredential': "git'in {host} için kimlik bilgisi yok. Ayarlar → Entegrasyonlar'da bir hesap bağlayın ya da git'in credential helper'ında oturum açın, sonra yeniden deneyin.",
-  'gitError.permissionDenied': 'Kullanılan hesap bu depoya yazamıyor. Doğru profilin etkin olduğunu ve hesabının yazma izni olduğunu kontrol edin.',
+  'gitError.permissionDenied': 'Sunucu yazma erişimini reddetti: kullanılan hesap buraya yazamıyor ya da belirtecinin süresi doldu. Etkin profili, hesabın erişimini ve belirteci kontrol edin.',
   'gitError.repoNotFound': "Sunucu deponun olmadığını söylüyor — ya da kullanılan hesap onu göremiyor. Uzak deponun URL'sini ve etkin profili kontrol edin.",
   'gitError.sshKey': "Sunucu SSH anahtarınızı reddetti. Ayarlar → Güvenlik'te ajanın hangi anahtarı tuttuğunu ve hesabınıza ekli olup olmadığını kontrol edin.",
   'toast.showMore': 'Daha fazla göster',

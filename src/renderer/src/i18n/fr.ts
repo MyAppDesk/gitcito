@@ -2912,7 +2912,7 @@ export const fr: Dict = {
   'gitError.fileTooLargeAny': 'GitHub refuse les fichiers de plus de 100 Mo, et le push en contient un. Retirez-le des commits poussés ou suivez-le avec Git LFS.',
   'gitError.protectedBranch': 'Le serveur protège cette branche et a refusé le push. Poussez vers une nouvelle branche et ouvrez une pull request.',
   'gitError.noCredential': "Git n'a aucun identifiant pour {host}. Connectez un compte dans Réglages → Intégrations, ou connectez-vous au credential helper de git, puis réessayez.",
-  'gitError.permissionDenied': "Le compte utilisé ne peut pas écrire dans ce dépôt. Vérifiez que le bon profil est actif et que son compte a l'accès en écriture.",
+  'gitError.permissionDenied': "L'hôte a refusé l'écriture : le compte utilisé ne peut pas écrire ici, ou son jeton a expiré. Vérifiez le profil actif, l'accès du compte et le jeton.",
   'gitError.repoNotFound': "Le serveur indique que le dépôt n'existe pas — ou que le compte utilisé ne peut pas le voir. Vérifiez l'URL du dépôt distant et le profil actif.",
   'gitError.sshKey': "Le serveur a refusé votre clé SSH. Vérifiez quelle clé l'agent détient dans Réglages → Sécurité et qu'elle est ajoutée à votre compte.",
   'toast.showMore': 'Afficher plus',

@@ -2964,7 +2964,7 @@ export const en = {
   'gitError.fileTooLargeAny': 'GitHub rejects files over 100 MB, and the push includes one. Remove it from the commits being pushed, or track it with Git LFS.',
   'gitError.protectedBranch': 'The server protects this branch and rejected the push. Push to a new branch and open a pull request instead.',
   'gitError.noCredential': "Git has no credential for {host}. Connect an account in Settings → Integrations, or sign in to git's credential helper, then try again.",
-  'gitError.permissionDenied': 'The account in use cannot write to this repository. Check that the right profile is active and that its account has write access.',
+  'gitError.permissionDenied': "The host refused write access: the account in use cannot write here, or its token has expired. Check the active profile, its account's access, and the token.",
   'gitError.repoNotFound': 'The server says the repository does not exist — or the account in use cannot see it. Check the remote URL and the active profile.',
   'gitError.sshKey': 'The server refused your SSH key. Check which key the agent holds in Settings → Security, and that it is added to your account.',
   'toast.showMore': 'Show more',

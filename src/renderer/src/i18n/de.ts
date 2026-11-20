@@ -2972,7 +2972,7 @@ export const de: Dict = {
   'gitError.fileTooLargeAny': 'GitHub lehnt Dateien über 100 MB ab, und der Push enthält eine. Entferne sie aus den gepushten Commits oder verwalte sie mit Git LFS.',
   'gitError.protectedBranch': 'Der Server schützt diesen Branch und hat den Push abgelehnt. Pushe auf einen neuen Branch und öffne einen Pull Request.',
   'gitError.noCredential': 'Git hat keine Zugangsdaten für {host}. Verbinde ein Konto unter Einstellungen → Integrationen oder melde dich beim Credential Helper von git an und versuche es erneut.',
-  'gitError.permissionDenied': 'Das verwendete Konto darf in dieses Repository nicht schreiben. Prüfe, ob das richtige Profil aktiv ist und sein Konto Schreibrechte hat.',
+  'gitError.permissionDenied': 'Der Host hat den Schreibzugriff abgelehnt: Das verwendete Konto darf hier nicht schreiben, oder sein Token ist abgelaufen. Prüfe das aktive Profil, den Zugriff des Kontos und das Token.',
   'gitError.repoNotFound': 'Der Server sagt, das Repository existiert nicht — oder das verwendete Konto kann es nicht sehen. Prüfe die Remote-URL und das aktive Profil.',
   'gitError.sshKey': 'Der Server hat deinen SSH-Schlüssel abgelehnt. Prüfe unter Einstellungen → Sicherheit, welchen Schlüssel der Agent hält, und ob er deinem Konto hinzugefügt ist.',
   'toast.showMore': 'Mehr anzeigen',

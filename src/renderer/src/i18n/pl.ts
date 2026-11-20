@@ -2965,7 +2965,7 @@ export const pl: Dict = {
   'gitError.fileTooLargeAny': 'GitHub odrzuca pliki powyżej 100 MB, a push zawiera taki plik. Usuń go z wypychanych commitów albo obsłuż przez Git LFS.',
   'gitError.protectedBranch': 'Serwer chroni tę gałąź i odrzucił push. Wypchnij do nowej gałęzi i otwórz pull request.',
   'gitError.noCredential': 'Git nie ma danych logowania do {host}. Połącz konto w Ustawienia → Integracje albo zaloguj się w credential helperze gita i spróbuj ponownie.',
-  'gitError.permissionDenied': 'Używane konto nie może zapisywać w tym repozytorium. Sprawdź, czy aktywny jest właściwy profil i czy jego konto ma prawo zapisu.',
+  'gitError.permissionDenied': 'Host odmówił zapisu: używane konto nie może tu zapisywać albo jego token wygasł. Sprawdź aktywny profil, dostęp konta i token.',
   'gitError.repoNotFound': 'Serwer twierdzi, że repozytorium nie istnieje — albo używane konto go nie widzi. Sprawdź adres URL zdalnego repozytorium i aktywny profil.',
   'gitError.sshKey': 'Serwer odrzucił twój klucz SSH. Sprawdź w Ustawienia → Bezpieczeństwo, który klucz ma agent, i czy jest dodany do twojego konta.',
   'toast.showMore': 'Pokaż więcej',

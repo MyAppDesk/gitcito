@@ -2973,7 +2973,7 @@ export const nl: Dict = {
   'gitError.fileTooLargeAny': 'GitHub weigert bestanden boven 100 MB, en de push bevat er een. Haal het uit de commits die je pusht of beheer het met Git LFS.',
   'gitError.protectedBranch': 'De server beschermt deze branch en weigerde de push. Push naar een nieuwe branch en open een pull request.',
   'gitError.noCredential': 'Git heeft geen inloggegevens voor {host}. Koppel een account in Instellingen → Integraties, of meld je aan bij de credential helper van git, en probeer opnieuw.',
-  'gitError.permissionDenied': 'Het gebruikte account mag niet schrijven naar deze repository. Controleer of het juiste profiel actief is en of het account schrijfrechten heeft.',
+  'gitError.permissionDenied': 'De host weigerde schrijftoegang: het gebruikte account mag hier niet schrijven, of het token is verlopen. Controleer het actieve profiel, de toegang van het account en het token.',
   'gitError.repoNotFound': 'De server zegt dat de repository niet bestaat — of het gebruikte account kan hem niet zien. Controleer de remote-URL en het actieve profiel.',
   'gitError.sshKey': 'De server weigerde je SSH-sleutel. Controleer in Instellingen → Beveiliging welke sleutel de agent heeft, en of die aan je account is toegevoegd.',
   'toast.showMore': 'Meer tonen',

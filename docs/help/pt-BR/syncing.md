@@ -56,7 +56,7 @@ reportar e corrigir com IA continuam usando o texto original.
 | Arquivo acima do limite de 100 MB do GitHub | Qual é o arquivo, e que é preciso tirá-lo dos commits ou usar o Git LFS. |
 | Branch protegida | Enviar para uma branch nova e abrir um pull request. |
 | Sem credencial para o host | Qual é o host, e onde conectar uma conta. |
-| 403 / permissão negada | A conta do perfil ativo não pode escrever aqui. |
+| 403 / permissão negada | A conta do perfil ativo não pode escrever aqui, ou o token dela expirou. |
 | Repositório não encontrado | A URL está errada, ou a conta não vê o repositório. |
 | Chave SSH recusada | Conferir a chave do agente e a sua conta. |
 

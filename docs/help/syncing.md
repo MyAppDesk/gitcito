@@ -56,7 +56,7 @@ copy, report and AI-fix still use the original text.
 | File over GitHub's 100 MB limit | Which file it is, and to remove it from the commits or use Git LFS. |
 | Protected branch | Push to a new branch and open a pull request. |
 | No credential for the host | Which host it is, and where to connect an account. |
-| 403 / permission denied | The active profile's account cannot write here. |
+| 403 / permission denied | The active profile's account cannot write here, or its token has expired. |
 | Repository not found | The URL is wrong, or the account cannot see the repository. |
 | SSH key refused | Check the agent's key and your account. |
 

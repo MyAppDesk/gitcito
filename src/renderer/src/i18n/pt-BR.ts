@@ -2973,7 +2973,7 @@ export const ptBR: Dict = {
   'gitError.fileTooLargeAny': 'O GitHub recusa arquivos acima de 100 MB, e o push inclui um. Tire-o dos commits que estão sendo enviados ou use o Git LFS para ele.',
   'gitError.protectedBranch': 'O servidor protege esta branch e recusou o push. Envie para uma branch nova e abra um pull request.',
   'gitError.noCredential': 'O git não tem credencial para {host}. Conecte uma conta em Configurações → Integrações, ou entre no credential helper do git, e tente de novo.',
-  'gitError.permissionDenied': 'A conta em uso não tem permissão de escrita neste repositório. Confira se o perfil certo está ativo e se a conta dele pode escrever aqui.',
+  'gitError.permissionDenied': 'O host recusou a escrita: a conta em uso não pode escrever aqui, ou o token dela expirou. Confira o perfil ativo, o acesso da conta e o token.',
   'gitError.repoNotFound': 'O servidor diz que o repositório não existe — ou a conta em uso não consegue vê-lo. Confira a URL do remote e o perfil ativo.',
   'gitError.sshKey': 'O servidor recusou sua chave SSH. Veja qual chave o agente tem em Configurações → Segurança e se ela está cadastrada na sua conta.',
   'toast.showMore': 'Mostrar mais',

@@ -1010,7 +1010,17 @@ export function logSignaturesDisabled(repoPath: string): boolean {
 // "could not read Password … Device not configured". With this set, a missing
 // credential surfaces immediately as a clear "could not read Username/Password"
 // (terminal prompts disabled) error instead of hanging on /dev/tty.
-const noPromptEnv = (): NodeJS.ProcessEnv => ({ ...process.env, GIT_TERMINAL_PROMPT: '0' })
+/**
+ * The environment for git commands the app runs and reads back.
+ *
+ * `LANGUAGE=en` keeps git's own messages in English whatever the system locale:
+ * the app recognises them by text (the error-toast hints, the non-fast-forward
+ * and stale-lock dialogs), and a translated "could not read Username" matched
+ * none of that. gettext gives LANGUAGE priority over LC_ALL/LANG for messages
+ * only, so character encoding and dates stay as the user has them. The UI is
+ * translated by the app; git's raw text is what "details" and bug reports show.
+ */
+export const noPromptEnv = (): NodeJS.ProcessEnv => ({ ...process.env, GIT_TERMINAL_PROMPT: '0', LANGUAGE: 'en' })
 
 /**
  * Strip `user:secret@` out of every URL in a message.

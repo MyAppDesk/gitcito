@@ -58,7 +58,9 @@ abre como aba separada. Se o repositório não estiver aberto em nenhuma aba, o 
 abre numa aba própria.
 
 O trabalho fica na coluna principal, e a barra lateral diz o que o PR *é*, sem
-precisar rolar a tela.
+precisar rolar a tela. Com a IA ligada, o botão ✨ do cabeçalho revisa o diff do
+PR como o host o informa, então funciona mesmo para uma branch que você nunca
+baixou (um fork, de outra pessoa).
 
 A coluna principal tem três seções:
 

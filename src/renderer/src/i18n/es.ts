@@ -3407,6 +3407,7 @@ export const es: Dict = {
   'sidebar.openTagOnRemote': 'Abrir {name} en el remoto',
   'sidebar.openRemoteOnWeb': 'Abrir {name} en la web',
   'sidebar.aiPrReview': 'Revisión de PR con IA',
+  'aiReview.noDiff': 'No hay diferencias entre estas ramas: nada que revisar.',
   'sidebar.newIssue': 'Nueva issue',
   'common.expand': 'Expandir',
   'common.collapse': 'Contraer',

@@ -3404,6 +3404,7 @@ export const ko: Dict = {
   'sidebar.openTagOnRemote': '원격에서 {name} 열기',
   'sidebar.openRemoteOnWeb': '웹에서 {name} 열기',
   'sidebar.aiPrReview': 'AI PR 리뷰',
+  'aiReview.noDiff': '이 브랜치들 사이에 차이가 없습니다. 리뷰할 내용이 없습니다.',
   'sidebar.newIssue': '새 이슈',
   'common.expand': '펼치기',
   'common.collapse': '접기',

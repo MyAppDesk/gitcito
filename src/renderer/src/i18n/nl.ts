@@ -3412,6 +3412,7 @@ export const nl: Dict = {
   'sidebar.openTagOnRemote': '{name} openen op de remote',
   'sidebar.openRemoteOnWeb': '{name} openen op het web',
   'sidebar.aiPrReview': 'AI-PR-review',
+  'aiReview.noDiff': 'Geen verschillen tussen deze branches — niets te reviewen.',
   'sidebar.newIssue': 'Nieuwe issue',
   'common.expand': 'Uitklappen',
   'common.collapse': 'Inklappen',

@@ -3404,6 +3404,7 @@ export const zhCN: Dict = {
   'sidebar.openTagOnRemote': '在远程上打开 {name}',
   'sidebar.openRemoteOnWeb': '在网页中打开 {name}',
   'sidebar.aiPrReview': 'AI 拉取请求评审',
+  'aiReview.noDiff': '这些分支之间没有差异——无需评审。',
   'sidebar.newIssue': '新建议题',
   'common.expand': '展开',
   'common.collapse': '折叠',

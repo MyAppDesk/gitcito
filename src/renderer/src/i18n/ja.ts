@@ -3344,6 +3344,7 @@ export const ja: Dict = {
   'sidebar.openTagOnRemote': '{name} をリモートで開く',
   'sidebar.openRemoteOnWeb': '{name} を Web で開く',
   'sidebar.aiPrReview': 'AI による PR レビュー',
+  'aiReview.noDiff': 'これらのブランチ間に差分はありません。レビューするものはありません。',
   'sidebar.newIssue': '新しいイシュー',
   'common.expand': '展開',
   'common.collapse': '折りたたむ',

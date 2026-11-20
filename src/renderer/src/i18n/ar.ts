@@ -3407,6 +3407,7 @@ export const ar: Dict = {
   'sidebar.openTagOnRemote': 'فتح {name} على المستودع البعيد',
   'sidebar.openRemoteOnWeb': 'فتح {name} على الويب',
   'sidebar.aiPrReview': 'مراجعة طلب السحب بالذكاء الاصطناعي',
+  'aiReview.noDiff': 'لا توجد فروق بين هذه الفروع — لا شيء للمراجعة.',
   'sidebar.newIssue': 'مشكلة جديدة',
   'common.expand': 'توسيع',
   'common.collapse': 'طي',

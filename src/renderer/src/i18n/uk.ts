@@ -3404,6 +3404,7 @@ export const uk: Dict = {
   'sidebar.openTagOnRemote': 'Відкрити {name} у віддаленому репозиторії',
   'sidebar.openRemoteOnWeb': 'Відкрити {name} у вебі',
   'sidebar.aiPrReview': 'Рецензія PR від ШІ',
+  'aiReview.noDiff': 'Між цими гілками немає відмінностей — нема чого перевіряти.',
   'sidebar.newIssue': 'Нова задача',
   'common.expand': 'Розгорнути',
   'common.collapse': 'Згорнути',

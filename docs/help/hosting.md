@@ -157,8 +157,10 @@ Forgejo, and Gitea, which shares its API, always runs at an address its owner
 chose: your own server, or a public one such as codeberg.org. Give a profile
 that address in **Settings → Integrations → Forgejo**, together with an access
 token. **Create token** opens the token page on that server. Give the token
-read and write permission on *repository*, and read permission on *user* and
-*organization*.
+read and write permission on *repository*, *issue* and *notification*, and
+read permission on *user* and *organization*. A token's permissions cannot be
+changed later: one made without *issue* or *notification* lists no issues or
+notifications, and a new token is the fix.
 
 From then on, remotes on that server are Forgejo:
 
@@ -181,19 +183,29 @@ Limits:
 - Lists stop after twenty requests: 1,000 pull requests or repositories at the
   server's default page size.
 
-## Issues, milestones, releases — GitHub
+## Issues, milestones, releases — GitHub and Forgejo
 
 Browse issues and open a full issue tab: body, comments, labels, assignees,
 milestone, Projects v2 fields, close/reopen, and **create a branch for this
 issue** (with AI naming). Milestones show progress and their issues. Releases
 are browsable with a changelog page.
 
-## Notifications — GitHub
+On a [Forgejo](#forgejo) server the same lists and pages work, with the
+profile's Forgejo token. Two things are GitHub's alone and stay empty there:
+Projects v2 fields, and the pull requests linked to an issue. Releases list the
+most recent ones, not the whole history.
+
+## Notifications — GitHub and Forgejo
 
 Your whole inbox — review requests, mentions, CI activity — across every
 repository, with unread/all filters and mark-as-read. The toolbar bell carries
 an unread badge, and optional desktop notifications fire when a review is
 requested or CI finishes.
+
+If the active profile has a Forgejo server, its notifications join the same
+list, newest first, and are marked read on that server. Forgejo does not say
+*why* you were notified, so those rows carry no reason, and they never raise a
+desktop notification — that is decided by the reason.
 
 ## Tokens
 

@@ -17,7 +17,18 @@ import {
   forgejoCompareUrl,
   listForgejoOwners,
   listForgejoPulls,
-  listForgejoRepos
+  listForgejoRepos,
+  listForgejoIssues,
+  forgejoIssueDetail,
+  setForgejoIssueState,
+  createForgejoIssue,
+  listForgejoMilestones,
+  forgejoMilestoneIssues,
+  listForgejoReleases,
+  listForgejoNotifications,
+  markForgejoNotificationRead,
+  markAllForgejoNotificationsRead,
+  FORGEJO_NOTIFICATION
 } from './forgejo'
 import { knownForgejoInstances, knownGitlabInstances } from './gitlabInstances'
 import {
@@ -644,13 +655,41 @@ async function listPullRequests(
   }
 }
 
+/**
+ * A Forgejo remote's instance, owner/repo and token — through remoteApiToken,
+ * so only the profile owning that instance's token is used. Null when the
+ * remote is not on a Forgejo server or no credential reaches it.
+ */
+async function forgejoRemote(
+  remoteUrl: string,
+  repoPath?: string
+): Promise<{ base: string; owner: string; repo: string; token: string } | null> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'forgejo' || !parsed.base) return null
+  const auth = await remoteApiToken(remoteUrl, 'forgejo', undefined, repoPath)
+  return auth ? { base: parsed.base, owner: parsed.owner, repo: parsed.repo, token: auth.token } : null
+}
+
+/** forgejoRemote for an action the user asked for: no credential is an error, not an empty list. */
+async function forgejoRemoteOrThrow(remoteUrl: string): Promise<{ base: string; owner: string; repo: string; token: string }> {
+  const f = await forgejoRemote(remoteUrl)
+  if (!f) throw await noCredential('Forgejo', remoteUrl)
+  return f
+}
+
+const isForgejo = (remoteUrl: string): boolean => parseRemoteUrl(remoteUrl)?.provider === 'forgejo'
+
 async function listReleases(
   remoteUrl: string,
   tokens: { github?: string },
   repoPath?: string
 ): Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
-  // Releases are a GitHub concept; Azure DevOps "releases" are pipelines, not this.
+  if (parsed?.provider === 'forgejo') {
+    const f = await forgejoRemote(remoteUrl, repoPath)
+    return { provider: 'forgejo', releases: f ? await listForgejoReleases(f.base, f.owner, f.repo, f.token) : [] }
+  }
+  // Azure DevOps "releases" are pipelines, and GitLab's are not wired: GitHub and Forgejo only.
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, releases: [] }
 
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
@@ -1448,6 +1487,10 @@ async function listIssues(
   repoPath?: string
 ): Promise<{ provider: HostingProvider; issues: IssueInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
+  if (parsed?.provider === 'forgejo') {
+    const f = await forgejoRemote(remoteUrl, repoPath)
+    return { provider: 'forgejo', issues: f ? await listForgejoIssues(f.base, f.owner, f.repo, f.token) : [] }
+  }
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, issues: [] }
   const auth = await remoteApiToken(remoteUrl, 'github', tokens.github, repoPath)
   if (!auth) return { provider: 'github', issues: [] }
@@ -1484,6 +1527,10 @@ async function listMilestones(
   repoPath?: string
 ): Promise<{ provider: HostingProvider; milestones: MilestoneInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
+  if (parsed?.provider === 'forgejo') {
+    const f = await forgejoRemote(remoteUrl, repoPath)
+    return { provider: 'forgejo', milestones: f ? await listForgejoMilestones(f.base, f.owner, f.repo, f.token) : [] }
+  }
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, milestones: [] }
   const auth = await remoteApiToken(remoteUrl, 'github', tokens.github, repoPath)
   if (!auth) return { provider: 'github', milestones: [] }
@@ -1593,6 +1640,10 @@ async function issueDetail(
   tokens: { github?: string },
   number: number
 ): Promise<IssueDetail> {
+  if (isForgejo(remoteUrl)) {
+    const f = await forgejoRemoteOrThrow(remoteUrl)
+    return forgejoIssueDetail(f.base, f.owner, f.repo, f.token, number)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const [issue, comments, timeline, projectFields] = await Promise.all([
@@ -1646,12 +1697,16 @@ async function issueDetail(
   }
 }
 
-/** Issues belonging to a milestone (open + closed). GitHub only. */
+/** Issues belonging to a milestone (open + closed). GitHub and Forgejo. */
 async function milestoneIssues(
   remoteUrl: string,
   tokens: { github?: string },
   number: number
 ): Promise<IssueInfo[]> {
+  if (isForgejo(remoteUrl)) {
+    const f = await forgejoRemoteOrThrow(remoteUrl)
+    return forgejoMilestoneIssues(f.base, f.owner, f.repo, f.token, number)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const data = await ghJson<
     Array<{
@@ -1682,6 +1737,10 @@ async function setIssueState(
   number: number,
   state: 'open' | 'closed'
 ): Promise<void> {
+  if (isForgejo(remoteUrl)) {
+    const f = await forgejoRemoteOrThrow(remoteUrl)
+    return setForgejoIssueState(f.base, f.owner, f.repo, f.token, number, state)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}`, token, {
     method: 'PATCH',
@@ -1689,12 +1748,16 @@ async function setIssueState(
   })
 }
 
-/** Create a new issue. GitHub only. Returns its number + web URL. */
+/** Create a new issue on GitHub or Forgejo. Returns its number + web URL. */
 async function createIssue(
   remoteUrl: string,
   tokens: { github?: string },
   opts: { title: string; body?: string }
 ): Promise<{ number: number; url: string }> {
+  if (isForgejo(remoteUrl)) {
+    const f = await forgejoRemoteOrThrow(remoteUrl)
+    return createForgejoIssue(f.base, f.owner, f.repo, f.token, opts)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const d = await ghJson<{ number: number; html_url: string }>(
     `https://api.github.com/repos/${owner}/${repo}/issues`,
@@ -2483,7 +2546,24 @@ export async function fetchCiStatuses(
  * GitHub notifications for the authenticated user, across every repo the token
  * can see. Token-level (no remote needed). `all=false` ⇒ unread only.
  */
+/** The active profile's Forgejo server and its token, or null when it has none. Silent: this backs a poll. */
+async function forgejoInbox(): Promise<{ base: string; token: string } | null> {
+  const auth = await tokenForProvider('forgejo', '').catch(() => null)
+  return auth ? { base: auth.base, token: auth.token } : null
+}
+
+/** GitHub's inbox and the active profile's Forgejo server's, newest first. */
 async function listNotifications(token: string, all = false): Promise<GitHubNotification[]> {
+  const [gh, fj] = await Promise.all([
+    listGithubNotifications(token, all),
+    forgejoInbox().then((f) => (f ? listForgejoNotifications(f.base, f.token, all) : []))
+      // One host failing must not empty the other's list.
+      .catch(() => [] as GitHubNotification[])
+  ])
+  return fj.length ? [...gh, ...fj].sort((a, b) => b.updatedAt - a.updatedAt) : gh
+}
+
+async function listGithubNotifications(token: string, all: boolean): Promise<GitHubNotification[]> {
   // Same precedence as every other call: a typed token, else the credential
   // git's helper already holds for github.com. Silent (this backs a poll).
   const auth = await tokenForProvider('github', token)
@@ -2528,6 +2608,11 @@ async function listNotifications(token: string, all = false): Promise<GitHubNoti
 }
 
 async function markNotificationRead(token: string, id: string): Promise<void> {
+  if (id.startsWith(FORGEJO_NOTIFICATION)) {
+    const f = await forgejoInbox()
+    if (f) await markForgejoNotificationRead(f.base, f.token, id).catch(() => {})
+    return
+  }
   const auth = await tokenForProvider('github', token)
   if (!auth) return
   await ghJson<unknown>(`https://api.github.com/notifications/threads/${id}`, auth.token, { method: 'PATCH' }).catch(() => {
@@ -2536,6 +2621,8 @@ async function markNotificationRead(token: string, id: string): Promise<void> {
 }
 
 async function markAllNotificationsRead(token: string): Promise<void> {
+  const f = await forgejoInbox()
+  if (f) await markAllForgejoNotificationsRead(f.base, f.token).catch(() => {})
   const auth = await tokenForProvider('github', token)
   if (!auth) return
   token = auth.token

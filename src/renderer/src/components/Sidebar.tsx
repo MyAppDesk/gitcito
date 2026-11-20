@@ -57,7 +57,7 @@ import { gitApi, shellApi } from '../infrastructure/api'
 import { groupPrStacks, stackRowStates, type StackRowState } from '../lib/prStacks'
 import { ciIcon, CI_STATE_KEY } from './CiIcon'
 import { useT, interp, type TranslationKey } from '../i18n'
-import { forkUpstream, repoIsGitHub, repoSupportsPrReview } from '../lib/hosting'
+import { forkUpstream, repoHasIssueTracker, repoSupportsPrReview } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
@@ -286,6 +286,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const sidebarOrder = useMemo(() => repoLayout?.sidebarOrder ?? baseSidebarOrder, [repoLayout, baseSidebarOrder])
   const sidebarHidden = useMemo(() => repoLayout?.sidebarHidden ?? baseSidebarHidden, [repoLayout, baseSidebarHidden])
   const groupBranches = useSettingsStore((s) => s.settings.groupBranches)
+  const profiles = useSettingsStore((s) => s.settings.profiles)
   const updateRepoLayout = useSettingsStore((s) => s.updateRepoLayout)
   const openPageTab = useSettingsStore((s) => s.openPageTab)
   const openRepoTab = useSettingsStore((s) => s.openRepoTab)
@@ -2854,8 +2855,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     )
   }
 
-  // Issues, Milestones & Releases are GitHub-only features; hide them for other hosts.
-  if (!repoIsGitHub(repo.remotes)) {
+  // Issues, Milestones & Releases are listed for GitHub and Forgejo; hide them for other hosts.
+  if (!repoHasIssueTracker(repo.remotes, profiles.map((p) => p.forgejoUrl))) {
     delete sections.issues
     delete sections.milestones
     delete sections.releases

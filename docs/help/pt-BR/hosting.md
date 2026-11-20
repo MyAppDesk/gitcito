@@ -142,8 +142,10 @@ O Forgejo, e o Gitea, que usa a mesma API, sempre roda num endereço escolhido
 pelo dono: o seu próprio servidor ou um público, como o codeberg.org. Informe
 esse endereço a um perfil em **Configurações → Integrações → Forgejo**, junto
 com um token de acesso. **Criar token** abre a página de tokens desse servidor.
-Dê ao token permissão de leitura e escrita em *repository*, e de leitura em
-*user* e *organization*.
+Dê ao token permissão de leitura e escrita em *repository*, *issue* e
+*notification*, e de leitura em *user* e *organization*. As permissões de um
+token não mudam depois: um token criado sem *issue* ou *notification* não lista
+issues nem notificações, e a solução é criar um novo.
 
 A partir daí, os remotes nesse servidor são Forgejo:
 
@@ -166,19 +168,29 @@ Limites:
 - As listas param depois de vinte requisições: 1.000 pull requests ou
   repositórios no tamanho de página padrão do servidor.
 
-## Issues, milestones, releases — GitHub
+## Issues, milestones, releases — GitHub e Forgejo
 
 Navegue pelas issues e abra uma aba de issue completa: corpo, comentários, labels,
 responsáveis, milestone, campos do Projects v2, fechar/reabrir, e **criar uma
 branch para esta issue** (com nomeação por IA). Milestones mostram progresso e as
 issues delas. Releases são navegáveis com uma página de changelog.
 
-## Notificações — GitHub
+Num servidor [Forgejo](#forgejo), as mesmas listas e páginas funcionam, com o
+token Forgejo do perfil. Duas coisas são só do GitHub e ficam vazias lá: os
+campos do Projects v2 e os pull requests vinculados a uma issue. Releases
+listam as mais recentes, não o histórico inteiro.
+
+## Notificações — GitHub e Forgejo
 
 Sua caixa de entrada inteira — pedidos de revisão, menções, atividade de CI — em
 todos os repositórios, com filtros de não lidas/todas e marcar como lida. O sino da
 barra de ferramentas carrega um selo de não lidas, e notificações de desktop
 opcionais disparam quando uma revisão é pedida ou o CI termina.
+
+Se o perfil ativo tem um servidor Forgejo, as notificações dele entram na mesma
+lista, das mais novas para as mais antigas, e são marcadas como lidas naquele
+servidor. O Forgejo não diz *por que* você foi notificado, então essas linhas não
+têm motivo, e nunca disparam notificação de desktop — isso é decidido pelo motivo.
 
 ## Tokens
 

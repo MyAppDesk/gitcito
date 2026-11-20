@@ -176,7 +176,8 @@
       "ws-secure-import": "secure-share",
       "licenses": "licenses",
       "teammate-radar": "teammate-radar",
-      "local-ci": "local-ci"
+      "local-ci": "local-ci",
+      "run-tests": "problems"
     },
     "exempt": {
       "help": "Opens this handbook."

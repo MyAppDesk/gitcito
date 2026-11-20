@@ -278,6 +278,14 @@ export function CommandPalette(): React.JSX.Element {
       ...(aiEnabled ? [{ id: 'ai-assistant', title: t('aiWizard.configTitle'), group: 'Actions', keywords: 'ai config wizard generate claude cursor copilot instructions', icon: <Sparkles size={15} />, run: act(() => ui.openModal({ kind: 'ai-config-wizard', repoPath: path, repoName: repo.name })) } as Command] : []),
       { id: 'terminal', title: t('cmd.terminal'), group: 'Actions', keywords: 'shell console pty', icon: <TerminalSquare size={15} />, run: act(() => { if (repoPath) ui.toggleTerminal(repoPath) }) },
       ...(analyzerMode === 'off' ? [] : [{ id: 'problems', title: t('cmd.problems'), group: 'Actions', keywords: 'analyzer analyzers diagnostics errors warnings lint tsc eslint dart clippy vet ruff', icon: <TriangleAlert size={15} />, run: act(() => { if (repoPath) ui.toggleProblems(repoPath) }) } as Command]),
+      ...(repoPath
+        ? [{ id: 'run-tests', title: t('cmd.runTests'), group: 'Actions', keywords: 'tests test suite vitest jest run unit spec failing', icon: <FlaskConical size={15} />, run: act(() => {
+            const problems = useProblemsStore.getState()
+            problems.setMode('tests')
+            ui.setProblemsOpen(repoPath, true)
+            void problems.runTests(repoPath)
+          }) } as Command]
+        : []),
       { id: 'code-todos', title: t('cmd.codeTodos'), group: 'Actions', keywords: 'todo todos fixme hack xxx note marker markers comment comments backlog owner tag', icon: <ListTodo size={15} />, run: act(() => { if (repoPath) { useProblemsStore.getState().setMode('todos'); ui.setProblemsOpen(repoPath, true) } }) },
       ...(editor?.command ? [{ id: 'open-in-editor', title: interp(t('cmd.openInEditor'), { app: editor.name }), group: 'Actions', keywords: 'editor vscode code cursor zed sublime jetbrains open folder workspace', icon: <SquarePen size={15} />, run: act(() => void openInEditor(editor, { path, isDir: true, repo: path })) } as Command] : []),
       { id: 'reflog', title: t('cmd.reflog'), group: 'Actions', keywords: 'recovery undo history head', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'reflog', repoPath: path })) },

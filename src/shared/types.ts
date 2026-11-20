@@ -1802,6 +1802,41 @@ export interface AnalyzeResult {
   ms: number
 }
 
+/** A test runner the panel knows how to drive and read. */
+export type TestRunner = 'vitest' | 'jest'
+
+export type TestStatus = 'passed' | 'failed' | 'skipped'
+
+/** One test, as the runner's JSON report describes it. */
+export interface TestCase {
+  /** Describe blocks and the test title, joined: `parser › handles empty input`. */
+  name: string
+  status: TestStatus
+  ms: number
+  /** The first failure message, colour codes stripped and capped. */
+  message?: string
+  /** Where it failed in the test file (1-based), when the stack says so. */
+  line?: number
+}
+
+export interface TestFile {
+  /** Repository-relative path, forward slashes. */
+  file: string
+  status: TestStatus
+  tests: TestCase[]
+}
+
+export interface TestRunResult {
+  runner: TestRunner
+  files: TestFile[]
+  passed: number
+  failed: number
+  skipped: number
+  ms: number
+  /** Set when the runner produced no report — what it printed instead. */
+  error?: string
+}
+
 /**
  * One TODO-style marker found in the repository's own source, the way an editor's
  * todo tree shows them — the tag, who it was addressed to, and where it lives.

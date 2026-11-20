@@ -1318,6 +1318,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         label: interp(t('sidebar.pushTagsToRemote'), { remote: remoteName }),
         onClick: () => void repoActions.pushAllTags(path, remoteName)
       },
+      { label: t('remoteAuth.menu'), onClick: () => openModal({ kind: 'remoteAuth', path, remote: remoteName }) },
       {
         label: interp(t('sidebar.editRemote'), { remote: remoteName }),
         onClick: () =>

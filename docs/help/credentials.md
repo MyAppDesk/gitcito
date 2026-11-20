@@ -86,6 +86,32 @@ command that would print a live password to standard output.
 
 The next push asks you once, and the helper stores the new answer.
 
+## Which account a push uses
+
+A push can sign in in several ways: a profile's token, a GitHub CLI login linked
+to a profile, git's own helper, a password left in the remote URL, or an SSH
+key. When it is refused, you first need to know which of these it used. Right-click
+a remote in the sidebar and choose **Check sign-in…** (or *Check remote sign-in*
+in the command palette). The check resolves the credential the same way a push
+does, then asks the host about it:
+
+| It shows | Where it comes from |
+|----------|--------------------|
+| The source, and the [profile](profiles.md) behind it | The same precedence a push applies — the repository's bound profile, else the active one, else git's helper |
+| The account | The host's own answer (`/user`), not what was typed into Settings |
+| The scopes | GitHub's `X-OAuth-Scopes` header; GitLab's description of its own token |
+| What they allow | Push at all (`repo` on GitHub, `write_repository` on GitLab), and on GitHub whether `.github/workflows` can change |
+
+It also flags a credential the host refuses (expired or revoked), a linked
+account that is no longer signed in, and a password stored in plain text in the
+remote URL.
+
+**Limits.** A fine-grained GitHub token does not list its permissions, so
+whether it can push shows as unknown until a push tries. Azure DevOps and
+Bitbucket are shown by source and profile only. SSH remotes are not tested, but
+[SSH keys](ssh-keys.md) lists what the agent holds. The check asks git's helper
+silently: a helper that needs a login window counts as having nothing.
+
 ## Limits worth knowing
 
 - **This is git's store, not Gitcito's.** Changing it changes what your terminal

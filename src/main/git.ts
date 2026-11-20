@@ -43,6 +43,7 @@ import type {
   GraphCommit,
   RemoteBranchInfo,
   RemoteInfo,
+  RemoteAuthCheck,
   RepoStatus,
   RepoSummary,
   RebaseStep,
@@ -169,6 +170,7 @@ import { activeProfileAuth, boundProfileAuth, profileForgejoInstance, profileGit
 import { remoteIsOnForgejo, remoteIsOnGitlab } from '../shared/gitlabInstance'
 import { apiToken, providerOfHost } from './credentials'
 import { pickHostAuth } from '../shared/hostToken'
+import { checkRemoteAuth } from './remoteAuthCheck'
 import { gitCredentialEnv, gitSupportsCredentialEnv, MIN_GIT_FOR_CREDENTIAL_ENV, type BasicCredential } from './gitCredentialEnv'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { indexCodegraphAsync } from './codegraph'
@@ -2741,6 +2743,13 @@ export const gitService = {
     const git = gitFor(repoPath)
     const rs = await git.getRemotes(true)
     return rs.map((r) => ({ name: r.name, url: r.refs.fetch || r.refs.push }))
+  },
+
+  /** Per remote: which credential a push would use, whose account it is, and what it may do. */
+  async remoteAuthChecks(repoPath: string): Promise<RemoteAuthCheck[]> {
+    const rs = await gitFor(repoPath).getRemotes(true)
+    // The push URL is what a push authenticates against; it differs only when set-url --push was used.
+    return Promise.all(rs.map((r) => checkRemoteAuth(repoPath, r.name, r.refs.push || r.refs.fetch)))
   },
 
   async addRemote(repoPath: string, name: string, url: string, pushUrl?: string): Promise<void> {
@@ -8221,6 +8230,7 @@ const READ_METHODS = new Set<string>([
   'status',
   'stashes',
   'remotes',
+  'remoteAuthChecks',
   'stackInfo',
   'stackLeaves',
   'listDir',

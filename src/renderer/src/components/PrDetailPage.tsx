@@ -21,7 +21,8 @@ import {
   Milestone,
   FileDiff,
   CircleDot,
-  CalendarDays
+  CalendarDays,
+  ClipboardList
 } from 'lucide-react'
 import type { PageContent, PrCheck, PrDetail, PrFile, PrMergeMethod, PrReviewEvent } from '../../../shared/types'
 import { hostingApi, shellApi } from '../infrastructure/api'
@@ -499,6 +500,24 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               </div>
               {pr.sourceRepo && <div className="prp-side-note">{interp(t('prPage.fromFork'), { repo: pr.sourceRepo })}</div>}
             </Field>
+
+            {pr.workItems && pr.workItems.length > 0 && (
+              <Field icon={<ClipboardList size={12} />} label={t('prPage.workItems')}>
+                <ul className="prp-work-items">
+                  {pr.workItems.map((w) => (
+                    <li key={w.id}>
+                      <button className="prp-link prp-work-item" title={w.url} onClick={() => void shellApi.openExternal(w.url)}>
+                        <span className="prp-work-item-id">{`AB#${w.id}` /* i18n-ignore work item reference */}</span>
+                        <span className="prp-work-item-title">{w.title}</span>
+                      </button>
+                      {(w.type || w.state) && (
+                        <div className="prp-side-note">{[w.type, w.state].filter(Boolean).join(' · ')}</div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </Field>
+            )}
 
             <Field icon={<FileDiff size={12} />} label={t('prPage.changes')}>
               <ChangeSummary pr={pr} files={files} />

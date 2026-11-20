@@ -734,6 +734,19 @@ export interface PrDetail {
   sourceRepo?: string | null
   /** Avatar URL per login, for everyone the host named in this PR. */
   avatars?: Record<string, string>
+  /** Work items linked to the PR (Azure Boards). */
+  workItems?: PrWorkItem[]
+}
+
+/** A work item a pull request is linked to. */
+export interface PrWorkItem {
+  id: number
+  title: string
+  /** Bug, User Story, Task… */
+  type?: string
+  /** New, Active, Resolved… */
+  state?: string
+  url: string
 }
 
 /** Someone named on a pull request — an assignee or a requested reviewer. */

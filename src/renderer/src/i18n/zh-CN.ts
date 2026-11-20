@@ -2792,6 +2792,7 @@ export const zhCN: Dict = {
   'prPage.assignees': '负责人',
   'prPage.author': '作者',
   'prPage.branches': '分支',
+  'prPage.workItems': '工作项',
   'prPage.changes': '变更',
   'prPage.checksSummary': '{pass} 通过 · {fail} 失败 · {pending} 运行中',
   'prPage.closedOn': '关闭于 {date}',

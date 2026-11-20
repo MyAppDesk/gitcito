@@ -2793,6 +2793,7 @@ export const es: Dict = {
   'prPage.assignees': 'Responsables',
   'prPage.author': 'Autor',
   'prPage.branches': 'Ramas',
+  'prPage.workItems': 'Elementos de trabajo',
   'prPage.changes': 'Cambios',
   'prPage.checksSummary': '{pass} correctos · {fail} con fallos · {pending} en curso',
   'prPage.closedOn': 'Cerrado el {date}',

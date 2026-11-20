@@ -2800,6 +2800,7 @@ export const nl: Dict = {
   'prPage.assignees': 'Toegewezen',
   'prPage.author': 'Auteur',
   'prPage.branches': 'Branches',
+  'prPage.workItems': 'Werkitems',
   'prPage.changes': 'Wijzigingen',
   'prPage.checksSummary': '{pass} geslaagd · {fail} mislukt · {pending} bezig',
   'prPage.closedOn': 'Gesloten op {date}',

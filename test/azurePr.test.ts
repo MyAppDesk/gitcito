@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { azureChangeStatus, azureVoteState, mapAzurePr } from '../src/main/azurePr'
+import { azureChangeStatus, azureVoteState, mapAzurePr, mapAzureWorkItems, azurePrWorkItems, type Ado } from '../src/main/azurePr'
 import { isReviewableRemote } from '../src/renderer/src/lib/hosting'
 
 const R = { org: 'example-org', project: 'My Project', repo: 'app' }
@@ -77,5 +77,45 @@ describe('Azure DevOps PR mapping', () => {
     expect(isReviewableRemote('git@ssh.dev.azure.com:v3/org/proj/repo')).toBe(true)
     expect(isReviewableRemote('https://org.visualstudio.com/proj/_git/repo')).toBe(true)
     expect(isReviewableRemote('https://notdev.azure.com/x')).toBe(false)
+  })
+})
+
+describe('work items linked to a pull request', () => {
+  const R = { org: 'example-org', project: 'Web App', repo: 'site' }
+
+  it('maps the batch read, in link order, with the browser URL', () => {
+    const got = mapAzureWorkItems('example-org', [12, 7], [
+      { id: 7, fields: { 'System.Title': 'Login fails', 'System.WorkItemType': 'Bug', 'System.State': 'Active' } },
+      { id: 12, fields: { 'System.Title': 'Dark mode' } }
+    ])
+    expect(got).toEqual([
+      { id: 12, title: 'Dark mode', url: 'https://dev.azure.com/example-org/_workitems/edit/12' },
+      { id: 7, title: 'Login fails', type: 'Bug', state: 'Active', url: 'https://dev.azure.com/example-org/_workitems/edit/7' }
+    ])
+  })
+
+  it('reads ids, then one batch — skipping what the token cannot see', async () => {
+    const calls: string[] = []
+    const ado = (async (url: string) => {
+      calls.push(url)
+      if (url.includes('/pullrequests/5/workitems')) return { value: [{ id: '7' }, { id: '9' }, { id: '7' }] }
+      if (url.includes('/_apis/wit/workitems?ids=')) return { value: [{ id: 7, fields: { 'System.Title': 'Seen' } }, null] }
+      throw new Error(`unexpected ${url}`)
+    }) as Ado
+    const items = await azurePrWorkItems(ado, R, 5)
+    expect(items.map((w) => [w.id, w.title])).toEqual([[7, 'Seen'], [9, '']])
+    expect(calls).toHaveLength(2)
+    expect(calls[1]).toContain('ids=7,9&')
+    expect(calls[1]).toContain('errorPolicy=omit')
+  })
+
+  it('makes no batch call when nothing is linked', async () => {
+    const calls: string[] = []
+    const ado = (async (url: string) => {
+      calls.push(url)
+      return { value: [] }
+    }) as Ado
+    expect(await azurePrWorkItems(ado, R, 5)).toEqual([])
+    expect(calls).toHaveLength(1)
   })
 })

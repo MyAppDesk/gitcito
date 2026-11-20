@@ -1,4 +1,13 @@
-import type { PrCheck, PrDetail, PrFile, PrMergeMethod, PrReview, PrReviewEvent, PrReviewThread } from '../shared/types'
+import type {
+  PrCheck,
+  PrDetail,
+  PrFile,
+  PrMergeMethod,
+  PrReview,
+  PrReviewEvent,
+  PrReviewThread,
+  PrWorkItem
+} from '../shared/types'
 import { unifiedDiff } from '../shared/lineDiff'
 
 /**
@@ -140,11 +149,54 @@ export function mapAzurePr(r: AzureRepo, pr: AzPr, threads: AzThread[]): PrDetai
 
 export async function azurePrDetail(ado: Ado, r: AzureRepo, id: number): Promise<PrDetail> {
   const base = `${repoApi(r)}/pullrequests/${id}`
-  const [pr, threads] = await Promise.all([
+  const [pr, threads, workItems] = await Promise.all([
     ado<AzPr>(`${base}?${V}`),
-    ado<{ value?: AzThread[] }>(`${base}/threads?${V}`).catch(() => ({ value: [] as AzThread[] }))
+    ado<{ value?: AzThread[] }>(`${base}/threads?${V}`).catch(() => ({ value: [] as AzThread[] })),
+    // A token without Work Items (Read) cannot list them: the row is left out, the PR still opens.
+    azurePrWorkItems(ado, r, id).catch(() => undefined)
   ])
-  return mapAzurePr(r, pr, threads.value ?? [])
+  return { ...mapAzurePr(r, pr, threads.value ?? []), ...(workItems ? { workItems } : {}) }
+}
+
+interface AzWorkItem {
+  id: number
+  fields?: Record<string, unknown>
+}
+
+/** Where a work item opens in the browser. */
+export const azureWorkItemUrl = (org: string, id: number): string =>
+  `https://dev.azure.com/${encodeURIComponent(org)}/_workitems/edit/${id}`
+
+/** Work items as the batch endpoint returns them, in the order the PR links them. */
+export function mapAzureWorkItems(org: string, ids: readonly number[], items: readonly AzWorkItem[]): PrWorkItem[] {
+  const byId = new Map(items.map((w) => [w.id, w]))
+  return ids.map((id) => {
+    const f = byId.get(id)?.fields ?? {}
+    const str = (k: string): string | undefined => (typeof f[k] === 'string' ? (f[k] as string) : undefined)
+    const type = str('System.WorkItemType')
+    const state = str('System.State')
+    return {
+      id,
+      title: str('System.Title') ?? '',
+      ...(type ? { type } : {}),
+      ...(state ? { state } : {}),
+      url: azureWorkItemUrl(org, id)
+    }
+  })
+}
+
+/** The PR's linked work items: their ids, then title, type and state in one batch read. */
+export async function azurePrWorkItems(ado: Ado, r: AzureRepo, id: number): Promise<PrWorkItem[]> {
+  const refs = await ado<{ value?: Array<{ id: string | number }> }>(`${repoApi(r)}/pullrequests/${id}/workitems?${V}`)
+  // The batch endpoint takes at most 200 ids; a PR linking more is not a real case.
+  const ids = [...new Set((refs.value ?? []).map((w) => Number(w.id)).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 200)
+  if (!ids.length) return []
+  const items = await ado<{ value?: AzWorkItem[] }>(
+    `https://dev.azure.com/${encodeURIComponent(r.org)}/_apis/wit/workitems?ids=${ids.join(',')}` +
+      `&fields=System.Title,System.WorkItemType,System.State&errorPolicy=omit&${V}`
+  )
+  // errorPolicy=omit puts null in the place of an item this token cannot see.
+  return mapAzureWorkItems(r.org, ids, (items.value ?? []).filter((w): w is AzWorkItem => !!w))
 }
 
 /** PR statuses (build validation and external CI report there). */

@@ -2800,6 +2800,7 @@ export const ptBR: Dict = {
   'prPage.assignees': 'Responsáveis',
   'prPage.author': 'Autor',
   'prPage.branches': 'Branches',
+  'prPage.workItems': 'Work items',
   'prPage.changes': 'Alterações',
   'prPage.checksSummary': '{pass} passaram · {fail} falhando · {pending} rodando',
   'prPage.closedOn': 'Fechado em {date}',

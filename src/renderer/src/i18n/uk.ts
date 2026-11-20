@@ -220,6 +220,7 @@ export const uk: Dict = {
   'sidebar.addRemote': 'Додати віддалений репозиторій…',
   'sidebar.createTag': 'Створити тег…',
   'sidebar.removeRemote': 'Видалити віддалений репозиторій',
+  'sidebar.removeRemoteMsg': 'Видалити віддалений репозиторій «{remote}»? Його гілки відстеження буде видалено локально.',
   'sidebar.noRemotes': 'Немає віддалених репозиторіїв',
   'sidebar.noBranches': 'Немає віддалених гілок',
   'sidebar.remoteUrl': 'URL віддаленого репозиторію',

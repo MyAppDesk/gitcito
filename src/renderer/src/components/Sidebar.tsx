@@ -1340,7 +1340,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           openModal({
             kind: 'confirm',
             title: t('sidebar.removeRemote'),
-            message: `Remove remote "${remoteName}"? Its remote-tracking branches will be deleted locally.`,
+            message: interp(t('sidebar.removeRemoteMsg'), { remote: remoteName }),
             danger: true,
             confirmLabel: t('sidebar.removeRemote'),
             onConfirm: () => void repoActions.removeRemote(path, remoteName)

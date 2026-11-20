@@ -220,6 +220,7 @@ export const pl: Dict = {
   'sidebar.addRemote': 'Dodaj remote…',
   'sidebar.createTag': 'Utwórz tag…',
   'sidebar.removeRemote': 'Usuń remote',
+  'sidebar.removeRemoteMsg': 'Usunąć zdalne repozytorium „{remote}”? Jego gałęzie śledzące zostaną usunięte lokalnie.',
   'sidebar.noRemotes': 'Brak zdalnych repozytoriów',
   'sidebar.noBranches': 'Brak zdalnych branchy',
   'sidebar.remoteUrl': 'Adres URL remote’a',

@@ -220,6 +220,7 @@ export const ptBR: Dict = {
   'sidebar.addRemote': 'Adicionar remoto…',
   'sidebar.createTag': 'Criar tag…',
   'sidebar.removeRemote': 'Remover remoto',
+  'sidebar.removeRemoteMsg': 'Remover o remote "{remote}"? As branches remotas rastreadas dele serão apagadas localmente.',
   'sidebar.noRemotes': 'Nenhum remoto',
   'sidebar.noBranches': 'Nenhuma branch remota',
   'sidebar.remoteUrl': 'URL do remoto',

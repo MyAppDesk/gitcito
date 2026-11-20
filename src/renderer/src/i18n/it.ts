@@ -219,6 +219,7 @@ export const it: Dict = {
   'sidebar.addRemote': 'Aggiungi remoto…',
   'sidebar.createTag': 'Crea tag…',
   'sidebar.removeRemote': 'Rimuovi remoto',
+  'sidebar.removeRemoteMsg': 'Rimuovere il remoto "{remote}"? I suoi branch di tracciamento remoto verranno eliminati in locale.',
   'sidebar.noRemotes': 'Nessun remoto',
   'sidebar.noBranches': 'Nessun branch remoto',
   'sidebar.remoteUrl': 'URL del remoto',

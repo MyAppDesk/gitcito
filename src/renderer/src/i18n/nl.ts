@@ -220,6 +220,7 @@ export const nl: Dict = {
   'sidebar.addRemote': 'Remote toevoegen…',
   'sidebar.createTag': 'Tag aanmaken…',
   'sidebar.removeRemote': 'Remote verwijderen',
+  'sidebar.removeRemoteMsg': 'Remote "{remote}" verwijderen? De remote-tracking branches ervan worden lokaal verwijderd.',
   'sidebar.noRemotes': 'Geen remotes',
   'sidebar.noBranches': 'Geen remote branches',
   'sidebar.remoteUrl': 'Remote-URL',

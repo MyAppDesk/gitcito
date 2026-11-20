@@ -219,6 +219,7 @@ export const fr: Dict = {
   'sidebar.addRemote': 'Ajouter un distant…',
   'sidebar.createTag': 'Créer une étiquette…',
   'sidebar.removeRemote': 'Supprimer le distant',
+  'sidebar.removeRemoteMsg': 'Supprimer le dépôt distant « {remote} » ? Ses branches de suivi distantes seront supprimées localement.',
   'sidebar.noRemotes': 'Aucun distant',
   'sidebar.noBranches': 'Aucune branche distante',
   'sidebar.remoteUrl': 'URL du distant',

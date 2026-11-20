@@ -219,6 +219,7 @@ export const tr: Dict = {
   'sidebar.addRemote': 'Uzak sunucu ekle…',
   'sidebar.createTag': 'Etiket oluştur…',
   'sidebar.removeRemote': 'Uzak sunucuyu kaldır',
+  'sidebar.removeRemoteMsg': '"{remote}" uzak deposu kaldırılsın mı? Uzak izleme dalları yerel olarak silinecek.',
   'sidebar.noRemotes': 'Uzak sunucu yok',
   'sidebar.noBranches': 'Uzak dal yok',
   'sidebar.remoteUrl': 'Uzak sunucu URL’si',

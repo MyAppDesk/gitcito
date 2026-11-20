@@ -219,6 +219,7 @@ export const ja: Dict = {
   'sidebar.addRemote': 'リモートを追加…',
   'sidebar.createTag': 'タグを作成…',
   'sidebar.removeRemote': 'リモートを削除',
+  'sidebar.removeRemoteMsg': 'リモート「{remote}」を削除しますか？そのリモート追跡ブランチはローカルで削除されます。',
   'sidebar.noRemotes': 'リモートはありません',
   'sidebar.noBranches': 'リモートブランチはありません',
   'sidebar.remoteUrl': 'リモート URL',

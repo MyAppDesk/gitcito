@@ -220,6 +220,7 @@ export const zhCN: Dict = {
   'sidebar.addRemote': '添加远程…',
   'sidebar.createTag': '创建标签…',
   'sidebar.removeRemote': '移除远程',
+  'sidebar.removeRemoteMsg': '移除远程“{remote}”？其远程跟踪分支将在本地删除。',
   'sidebar.noRemotes': '没有远程',
   'sidebar.noBranches': '没有远程分支',
   'sidebar.remoteUrl': '远程 URL',

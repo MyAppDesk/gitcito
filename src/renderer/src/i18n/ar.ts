@@ -220,6 +220,7 @@ export const ar: Dict = {
   'sidebar.addRemote': 'إضافة مستودع بعيد…',
   'sidebar.createTag': 'إنشاء وسم…',
   'sidebar.removeRemote': 'إزالة المستودع البعيد',
+  'sidebar.removeRemoteMsg': 'إزالة المستودع البعيد "{remote}"؟ ستُحذف فروع التتبع البعيدة الخاصة به محليًا.',
   'sidebar.noRemotes': 'لا توجد مستودعات بعيدة',
   'sidebar.noBranches': 'لا توجد فروع بعيدة',
   'sidebar.remoteUrl': 'عنوان المستودع البعيد',

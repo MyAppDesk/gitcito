@@ -220,6 +220,7 @@ export const ko: Dict = {
   'sidebar.addRemote': '원격 추가…',
   'sidebar.createTag': '태그 만들기…',
   'sidebar.removeRemote': '원격 제거',
+  'sidebar.removeRemoteMsg': '원격 "{remote}"을(를) 제거할까요? 원격 추적 브랜치가 로컬에서 삭제됩니다.',
   'sidebar.noRemotes': '원격 없음',
   'sidebar.noBranches': '원격 브랜치 없음',
   'sidebar.remoteUrl': '원격 URL',

@@ -220,6 +220,7 @@ export const he: Dict = {
   'sidebar.addRemote': 'הוספת רימוט…',
   'sidebar.createTag': 'יצירת תגית…',
   'sidebar.removeRemote': 'הסרת הרימוט',
+  'sidebar.removeRemoteMsg': 'להסיר את המאגר המרוחק "{remote}"? ענפי המעקב המרוחקים שלו יימחקו מקומית.',
   'sidebar.noRemotes': 'אין רימוטים',
   'sidebar.noBranches': 'אין ענפים מרוחקים',
   'sidebar.remoteUrl': 'כתובת הרימוט',

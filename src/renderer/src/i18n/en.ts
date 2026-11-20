@@ -221,6 +221,7 @@ export const en = {
   'sidebar.addRemote': 'Add remote…',
   'sidebar.createTag': 'Create tag…',
   'sidebar.removeRemote': 'Remove remote',
+  'sidebar.removeRemoteMsg': 'Remove remote "{remote}"? Its remote-tracking branches will be deleted locally.',
   'sidebar.noRemotes': 'No remotes',
   'sidebar.noBranches': 'No remote branches',
   'sidebar.remoteUrl': 'Remote URL',

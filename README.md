@@ -147,7 +147,8 @@ blob drawn offline where it does not, and a title-bar face that reacts to
 conflicts, half-finished rebases, a detached HEAD and piles left to grow — or
 [your own picture](docs/help/avatars.md#your-profiles-picture): your account's, an
 icon, or an image ·
-[integrated terminal](docs/help/terminal.md) with splits ·
+[integrated terminal](docs/help/terminal.md) with splits, and
+[`npm run` suggestions](docs/help/terminal.md#script-suggestions) from the nearest `package.json` ·
 [**A real CLI**](docs/help/cli.md) — `gitcito .` opens a repo, `gitcito blame
 src/api.ts -l 84` opens it *there*, `gitcito doctor` answers in the terminal with
 an exit code your CI can use, and `gitcito editor install` makes Gitcito the

@@ -2820,6 +2820,7 @@ export const en = {
   'prPage.assignees': 'Assignees',
   'prPage.author': 'Author',
   'prPage.branches': 'Branches',
+  'prPage.workItems': 'Work items',
   'prPage.changes': 'Changes',
   'prPage.checksSummary': '{pass} passed · {fail} failing · {pending} running',
   'prPage.closedOn': 'Closed on {date}',

@@ -2824,6 +2824,7 @@ export const he: Dict = {
   'prPage.assignees': 'אחראים',
   'prPage.author': 'מחבר',
   'prPage.branches': 'ענפים',
+  'prPage.workItems': 'פריטי עבודה',
   'prPage.changes': 'שינויים',
   'prPage.checksSummary': '{pass} עברו · {fail} נכשלו · {pending} רצים',
   'prPage.closedOn': 'נסגר ב-{date}',

@@ -2821,6 +2821,7 @@ export const ru: Dict = {
   'prPage.assignees': 'Исполнители',
   'prPage.author': 'Автор',
   'prPage.branches': 'Ветки',
+  'prPage.workItems': 'Рабочие элементы',
   'prPage.changes': 'Изменения',
   'prPage.checksSummary': '{pass} пройдено · {fail} с ошибкой · {pending} выполняется',
   'prPage.closedOn': 'Закрыт {date}',

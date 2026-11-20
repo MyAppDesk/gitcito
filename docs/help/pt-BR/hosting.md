@@ -109,6 +109,11 @@ arquivos; um arquivo binário, ou uma mudança grande demais para calcular aqui,
 tem link para o host. As pessoas aparecem com as iniciais, porque as fotos de
 perfil do Azure exigem um navegador com login.
 
+A barra lateral também lista os **work items vinculados ao PR** — número,
+título, tipo e estado — cada um abrindo no navegador. Ler esses itens exige um
+token com leitura de work items (*Work Items: Read*); sem isso a linha
+simplesmente não aparece.
+
 ## GitLab self-managed
 
 O GitLab de uma empresa fica num endereço próprio. Informe esse endereço a um

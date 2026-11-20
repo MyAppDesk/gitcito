@@ -2764,6 +2764,7 @@ export const ja: Dict = {
   'prPage.assignees': '担当者',
   'prPage.author': '作成者',
   'prPage.branches': 'ブランチ',
+  'prPage.workItems': '作業項目',
   'prPage.changes': '変更',
   'prPage.checksSummary': '成功 {pass} · 失敗 {fail} · 実行中 {pending}',
   'prPage.closedOn': '{date} にクローズ',

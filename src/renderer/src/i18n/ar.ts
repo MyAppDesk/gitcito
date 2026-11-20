@@ -2824,6 +2824,7 @@ export const ar: Dict = {
   'prPage.assignees': 'المكلَّفون',
   'prPage.author': 'المؤلف',
   'prPage.branches': 'الفروع',
+  'prPage.workItems': 'عناصر العمل',
   'prPage.changes': 'التغييرات',
   'prPage.checksSummary': '{pass} ناجح · {fail} فاشل · {pending} قيد التشغيل',
   'prPage.closedOn': 'أُغلق في {date}',

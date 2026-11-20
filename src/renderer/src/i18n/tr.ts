@@ -2767,6 +2767,7 @@ export const tr: Dict = {
   'prPage.assignees': 'Atananlar',
   'prPage.author': 'Yazar',
   'prPage.branches': 'Dallar',
+  'prPage.workItems': 'İş öğeleri',
   'prPage.changes': 'Değişiklikler',
   'prPage.checksSummary': '{pass} başarılı · {fail} başarısız · {pending} çalışıyor',
   'prPage.closedOn': '{date} tarihinde kapatıldı',

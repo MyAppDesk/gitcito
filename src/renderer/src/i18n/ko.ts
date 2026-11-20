@@ -2821,6 +2821,7 @@ export const ko: Dict = {
   'prPage.assignees': '담당자',
   'prPage.author': '작성자',
   'prPage.branches': '브랜치',
+  'prPage.workItems': '작업 항목',
   'prPage.changes': '변경 사항',
   'prPage.checksSummary': '성공 {pass} · 실패 {fail} · 실행 중 {pending}',
   'prPage.closedOn': '{date}에 닫힘',

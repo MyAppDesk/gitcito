@@ -17894,6 +17894,10 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-bar-del { background: var(--red, #e5484d); }
 .prp-link { background: none; border: none; padding: 0; color: var(--accent); font-size: 12.5px; cursor: pointer; text-align: start; }
 .prp-link:hover { text-decoration: underline; }
+.prp-work-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.prp-work-item { display: flex; gap: 6px; align-items: baseline; min-width: 0; max-width: 100%; }
+.prp-work-item-id { flex: none; font-variant-numeric: tabular-nums; }
+.prp-work-item-title { color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
 /* Narrow windows: the sidebar moves under the conversation instead of squeezing it. */
 @media (max-width: 860px) {

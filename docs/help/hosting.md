@@ -124,6 +124,10 @@ both versions of each file and diffs them itself — for the first 200 files; a
 binary file, or a change too large to diff here, links to the host. People show
 as initials, because Azure's profile pictures need a signed-in browser.
 
+The sidebar also lists the **work items linked to the PR** — number, title,
+type and state — each opening in the browser. Reading them takes a token that
+can read work items (*Work Items: Read*); without it the row is simply left out.
+
 ## Self-managed GitLab
 
 A company GitLab lives at its own address. Give a profile that address in

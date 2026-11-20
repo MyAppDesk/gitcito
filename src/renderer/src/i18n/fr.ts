@@ -2771,6 +2771,7 @@ export const fr: Dict = {
   'prPage.assignees': 'Assignés',
   'prPage.author': 'Auteur',
   'prPage.branches': 'Branches',
+  'prPage.workItems': 'Éléments de travail',
   'prPage.changes': 'Modifications',
   'prPage.checksSummary': '{pass} réussis · {fail} en échec · {pending} en cours',
   'prPage.closedOn': 'Fermée le {date}',

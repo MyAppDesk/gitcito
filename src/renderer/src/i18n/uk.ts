@@ -2821,6 +2821,7 @@ export const uk: Dict = {
   'prPage.assignees': 'Виконавці',
   'prPage.author': 'Автор',
   'prPage.branches': 'Гілки',
+  'prPage.workItems': 'Робочі елементи',
   'prPage.changes': 'Зміни',
   'prPage.checksSummary': '{pass} пройдено · {fail} з помилкою · {pending} виконується',
   'prPage.closedOn': 'Закрито {date}',

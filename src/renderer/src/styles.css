@@ -17717,6 +17717,21 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 }
 .prp-merge-text { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-1); }
 .prp-files, .prp-checks { max-height: none; }
+/* Files: the list to pick from beside the selected file's diff. */
+.prp-files-split { display: flex; gap: 14px; min-height: 0; height: 100%; }
+.prp-file-list { flex: 0 0 300px; min-width: 0; overflow-y: auto; }
+.prp-file-row { cursor: pointer; border-radius: 5px; }
+.prp-file-row.selected { background: var(--accent-soft); }
+.prp-file-diff { flex: 1; min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.prp-file-diff-head {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border); background: var(--bg-1); font-size: 12px;
+}
+.prp-file-diff-head code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); }
+.prp-file-diff-head .prp-side-note { margin: 0; }
+.prp-viewed-toggle { display: inline-flex; align-items: center; gap: 5px; color: var(--text-2); cursor: pointer; flex: none; }
+.prp-file-diff > :last-child { flex: 1; min-height: 0; overflow: auto; }
+.prp-no-patch { padding: 16px; color: var(--text-2); font-size: 13px; }
 
 .prp-side {
   flex: 0 0 270px; display: flex; flex-direction: column; gap: 0; overflow-y: auto;
@@ -17759,4 +17774,6 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   .prp-main { overflow: visible; }
   .prp-body { overflow: visible; }
   .prp-side { flex: none; border-inline-start: none; padding-inline-start: 0; border-top: 1px solid var(--border); }
+  .prp-files-split { flex-direction: column; height: auto; }
+  .prp-file-list { flex: none; max-height: 240px; }
 }

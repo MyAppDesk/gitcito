@@ -1000,7 +1000,10 @@ async function glMergeRequestFiles(remoteUrl: string, token: string | undefined,
   return diffs.map((d) => ({
     filename: d.new_path || d.old_path,
     status: d.new_file ? 'added' : d.deleted_file ? 'removed' : d.renamed_file ? 'renamed' : 'modified',
-    ...diffLineCounts(d.diff || '')
+    ...diffLineCounts(d.diff || ''),
+    // GitLab sends an empty diff for binaries and for files over its size limit.
+    ...(d.diff ? { patch: d.diff } : {}),
+    ...(d.renamed_file && d.old_path !== d.new_path ? { previousFilename: d.old_path } : {})
   }))
 }
 
@@ -1225,11 +1228,25 @@ async function pullRequestFiles(
 ): Promise<PrFile[]> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestFiles(remoteUrl, tokens.gitlab, number)
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const data = await ghJson<Array<{ filename: string; status: string; additions: number; deletions: number }>>(
-    `https://api.github.com/repos/${owner}/${repo}/pulls/${number}/files?per_page=300`,
-    token
-  ).catch(() => [])
-  return data.map((f) => ({ filename: f.filename, status: f.status, additions: f.additions, deletions: f.deletions }))
+  const data = await ghJson<
+    Array<{
+      filename: string
+      status: string
+      additions: number
+      deletions: number
+      /** Omitted by GitHub for binaries and for very large diffs. */
+      patch?: string
+      previous_filename?: string
+    }>
+  >(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/files?per_page=300`, token).catch(() => [])
+  return data.map((f) => ({
+    filename: f.filename,
+    status: f.status,
+    additions: f.additions,
+    deletions: f.deletions,
+    ...(f.patch ? { patch: f.patch } : {}),
+    ...(f.previous_filename ? { previousFilename: f.previous_filename } : {})
+  }))
 }
 
 /** Reply to an inline review thread (POST a comment in reply to `inReplyTo`). */

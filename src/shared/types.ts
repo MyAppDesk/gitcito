@@ -688,6 +688,11 @@ export interface PrFile {
   status: string
   additions: number
   deletions: number
+  /** The file's unified diff hunks. Absent when the host sends none — a binary
+   *  file, or one too large for the API to include. */
+  patch?: string
+  /** The path before a rename. */
+  previousFilename?: string
 }
 
 /** Full detail for one pull request (conversation + review state). */

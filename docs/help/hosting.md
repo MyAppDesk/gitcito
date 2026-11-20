@@ -81,7 +81,7 @@ The main column has three sections:
 | Section | What it holds |
 |---|---|
 | **Conversation** | The description, comments and inline review threads (`file:line`, with replies). Then the comment box with comment / approve / request changes, and the merge box (merge, squash or rebase) |
-| **Files** | Every changed file with +/− lines and a ✓ "viewed" checklist that remembers your progress |
+| **Files** | Every changed file, and the selected one's diff beside the list, with syntax highlighting and word-level changes (secret-looking files masked when that setting is on). A ✓ "viewed" checklist remembers your progress. A file the host sends no diff for (a binary, or one too large) links to it on the host |
 | **Checks** | CI check-runs (GitHub) or pipeline jobs (GitLab), with pass/fail/pending and links to the logs |
 
 The sidebar shows:

@@ -39,6 +39,9 @@ import {
   reviewerStates,
   type ReviewerState
 } from '../lib/prSummary'
+import { DiffViewer } from './DiffViewer'
+import { guessLanguage } from '../lib/highlight'
+import { isSecretFile } from '../lib/secrets'
 import { useT, interp, type TranslationKey } from '../i18n'
 
 type PrPage = Extract<PageContent, { type: 'pr' }>
@@ -353,27 +356,13 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
             ) : files.length === 0 ? (
               <p className="prp-muted prp-pad">{t('prPage.noFiles')}</p>
             ) : (
-              <>
-                <div className="prd-section-title">
-                  {interp(t('prDetail.filesViewed'), { n: `${viewed.size}/${files.length}` })}
-                </div>
-                <div className="prd-files prp-files">
-                  {files.map((f) => (
-                    <label key={f.filename} className={`prd-file ${viewed.has(f.filename) ? 'viewed' : ''}`}>
-                      <input type="checkbox" checked={viewed.has(f.filename)} onChange={() => toggleViewed(f.filename)} />
-                      <span className={`prd-file-status st-${f.status}`} title={f.status}>
-                        {f.status === 'added' ? 'A' : f.status === 'removed' ? 'D' : f.status === 'renamed' ? 'R' : 'M'}
-                      </span>
-                      <span className="prd-file-name" title={f.filename}>
-                        {f.filename}
-                      </span>
-                      <span className="prd-file-stat">
-                        <span className="ins-add">+{f.additions}</span> <span className="ins-del">−{f.deletions}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </>
+              <FilesSection
+                files={files}
+                viewed={viewed}
+                onToggleViewed={toggleViewed}
+                repoPath={repoPath}
+                prUrl={pr.url}
+              />
             )
           ) : checks === null ? (
             <div className="prd-empty">
@@ -641,6 +630,111 @@ function ChangeSummary({ pr, files }: { pr: PrDetail; files: PrFile[] | null }):
           )}
         </>
       )}
+    </div>
+  )
+}
+
+/**
+ * The changed files with their diffs: a list to pick from and tick off as
+ * viewed, and the selected file's changes beside it, drawn by the same viewer
+ * as the rest of the app (read-only — no hunk actions on someone else's PR).
+ */
+function FilesSection({
+  files,
+  viewed,
+  onToggleViewed,
+  repoPath,
+  prUrl
+}: {
+  files: PrFile[]
+  viewed: Set<string>
+  onToggleViewed: (f: string) => void
+  repoPath: string
+  prUrl: string
+}): React.JSX.Element {
+  const t = useT()
+  const maskSecrets = useSettingsStore((s) => s.settings.maskSecrets)
+  const [selected, setSelected] = useState<string>(files[0]?.filename ?? '')
+  const file = files.find((f) => f.filename === selected) ?? files[0]
+
+  return (
+    <div className="prp-files-split">
+      <div className="prp-file-list">
+        <div className="prd-section-title">
+          {interp(t('prDetail.filesViewed'), { n: `${viewed.size}/${files.length}` })}
+        </div>
+        {files.map((f) => (
+          <div
+            key={f.filename}
+            className={`prd-file prp-file-row ${f.filename === file?.filename ? 'selected' : ''} ${viewed.has(f.filename) ? 'viewed' : ''}`}
+            role="button"
+            tabIndex={0}
+            onClick={() => setSelected(f.filename)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                setSelected(f.filename)
+              }
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={viewed.has(f.filename)}
+              title={t('prPage.markViewed')}
+              aria-label={t('prPage.markViewed')}
+              onClick={(e) => e.stopPropagation()}
+              onChange={() => onToggleViewed(f.filename)}
+            />
+            <span className={`prd-file-status st-${f.status}`} title={f.status}>
+              {f.status === 'added' ? 'A' : f.status === 'removed' ? 'D' : f.status === 'renamed' ? 'R' : 'M'}
+            </span>
+            <span className="prd-file-name" title={f.filename}>
+              {f.filename}
+            </span>
+            <span className="prd-file-stat">
+              <span className="ins-add">+{f.additions}</span> <span className="ins-del">−{f.deletions}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="prp-file-diff">
+        {file && (
+          <>
+            <div className="prp-file-diff-head">
+              <code title={file.filename}>{file.filename}</code>
+              {file.previousFilename && (
+                <span className="prp-side-note">{interp(t('prPage.renamedFrom'), { path: file.previousFilename })}</span>
+              )}
+              <label className="prp-viewed-toggle">
+                <input type="checkbox" checked={viewed.has(file.filename)} onChange={() => onToggleViewed(file.filename)} />
+                {t('prPage.markViewed')}
+              </label>
+            </div>
+            {file.patch ? (
+              <DiffViewer
+                // A fresh viewer per file: its scroll and selection belong to one diff.
+                key={file.filename}
+                diff={file.patch}
+                file={file.filename}
+                lang={guessLanguage(file.filename)}
+                // Same rule as every other diff in the app: secret-looking files
+                // show KEY=•••• while the setting is on.
+                maskValues={maskSecrets && isSecretFile(file.filename)}
+                repoPath={repoPath}
+              />
+            ) : (
+              <div className="prp-no-patch">
+                <p>{t('prPage.noPatch')}</p>
+                <button className="btn ghost small" // GitHub lists a PR's files at /files, GitLab an MR's at /diffs.
+                  onClick={() => void window.api.openExternal(`${prUrl}${prUrl.includes('/-/merge_requests/') ? '/diffs' : '/files'}`)}>
+                  <ExternalLink size={13} /> {t('common.openInBrowser')}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

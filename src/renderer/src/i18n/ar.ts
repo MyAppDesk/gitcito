@@ -1457,6 +1457,10 @@ export const ar: Dict = {
   'settings.azureOrgRequired': 'أدخل مؤسسة Azure DevOps قبل تسجيل الدخول.',
   'settings.azureOrgHint':
     'مطلوبة لحسابات Entra والضيوف. استخدم الجزء الأول بعد dev.azure.com/ — أي المؤسسة لا المشروع (مثلًا contoso في dev.azure.com/contoso/my-project).',
+  'settings.gitlabUrl': 'عنوان GitLab',
+  'settings.gitlabUrlPlaceholder': 'gitlab.com — أو عنوانك، مثل git.example.org',
+  'settings.gitlabUrlHint': 'اتركه فارغًا لـgitlab.com. لـGitLab مستضاف ذاتيًا، أدخل عنوانه https. لا يُرسل رمز GitLab لهذا الملف الشخصي إلا إلى هناك.',
+  'settings.gitlabUrlInvalid': 'ليس عنوان https. لا تُرسل الرموز أبدًا عبر http غير المشفّر.',
   'settings.connected': 'متصل',
   'settings.notConnected': 'غير متصل',
   'settings.integrationsForProfile': 'اتصالات {name}',

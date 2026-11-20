@@ -4,6 +4,8 @@ import { existsSync } from 'fs'
 import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
 import { defaultSettings, type AccountLink, type AppSettings, type RepoHost } from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
+import { profileGitlabBase, remoteIsOnGitlab } from '../shared/gitlabInstance'
+import { setKnownGitlabInstances } from './gitlabInstances'
 import {
   applySecrets,
   extractSecrets,
@@ -110,7 +112,9 @@ export async function readSettings(): Promise<AppSettings> {
   } catch {
     return defaultSettings()
   }
-  return withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
+  const out = withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
+  setKnownGitlabInstances(out.profiles.map((p) => p.gitlabUrl))
+  return out
 }
 
 /**
@@ -194,13 +198,21 @@ export async function activeProfileToken(host: RepoHost, repoPath?: string): Pro
  * consent gate as `activeProfileToken`, which skips the keychain entirely when
  * no secrets file exists.
  */
-async function profileAuth(host: RepoHost, profileId: string | undefined): Promise<{ token?: string; link?: AccountLink }> {
+async function profileAuth(
+  host: RepoHost,
+  profileId: string | undefined,
+  remoteUrl?: string
+): Promise<{ token?: string; link?: AccountLink }> {
   const plain = await readSettings()
   const profile =
     (profileId ? plain.profiles.find((p) => p.id === profileId) : undefined) ??
     plain.profiles.find((p) => p.id === plain.activeProfileId) ??
     plain.profiles[0]
   if (!profile) return {}
+  // A GitLab token is issued by one instance. A remote on any other — gitlab.com
+  // for a self-managed profile, or the reverse — gets nothing from this profile,
+  // and the keychain is not even opened.
+  if (host === 'gitlab' && remoteUrl && !remoteIsOnGitlab(remoteUrl, profileGitlabBase(profile.gitlabUrl))) return {}
   // Links are plain settings and arrive with imports too: a malformed one is no link.
   const link = validAccountLink(profile.links?.[host])
   const settings = await readSettingsWithSecrets('tokens')
@@ -209,8 +221,18 @@ async function profileAuth(host: RepoHost, profileId: string | undefined): Promi
 }
 
 /** The active profile's PAT and link for a host. */
-export function activeProfileAuth(host: RepoHost): Promise<{ token?: string; link?: AccountLink }> {
-  return profileAuth(host, undefined)
+export function activeProfileAuth(host: RepoHost, remoteUrl?: string): Promise<{ token?: string; link?: AccountLink }> {
+  return profileAuth(host, undefined, remoteUrl)
+}
+
+/** The GitLab instance a profile (the active one by default) is connected to. */
+export async function profileGitlabInstance(profileId?: string): Promise<string> {
+  const plain = await readSettings()
+  const profile =
+    (profileId ? plain.profiles.find((p) => p.id === profileId) : undefined) ??
+    plain.profiles.find((p) => p.id === plain.activeProfileId) ??
+    plain.profiles[0]
+  return profileGitlabBase(profile?.gitlabUrl)
 }
 
 /**
@@ -220,14 +242,15 @@ export function activeProfileAuth(host: RepoHost): Promise<{ token?: string; lin
  */
 export async function allProfileAuth(
   host: RepoHost
-): Promise<Array<{ id: string; name: string; token?: string; link?: AccountLink; azureOrg?: string }>> {
+): Promise<Array<{ id: string; name: string; token?: string; link?: AccountLink; azureOrg?: string; gitlabUrl?: string }>> {
   const settings = await readSettingsWithSecrets('tokens')
   return settings.profiles.map((p) => ({
     id: p.id,
     name: p.name,
     token: p[TOKEN_FIELD[host]]?.trim() || undefined,
     link: validAccountLink(p.links?.[host]),
-    azureOrg: p.azureOrg?.trim() || undefined
+    azureOrg: p.azureOrg?.trim() || undefined,
+    gitlabUrl: p.gitlabUrl?.trim() || undefined
   }))
 }
 
@@ -238,12 +261,13 @@ export async function allProfileAuth(
  */
 export async function boundProfileAuth(
   host: RepoHost,
-  repoPath: string
+  repoPath: string,
+  remoteUrl?: string
 ): Promise<{ token?: string; link?: AccountLink } | undefined> {
   const plain = await readSettings()
   const boundId = plain.repoProfiles?.[repoPath]
   if (!boundId || !plain.profiles.some((p) => p.id === boundId)) return undefined
-  return profileAuth(host, boundId)
+  return profileAuth(host, boundId, remoteUrl)
 }
 
 /**
@@ -300,6 +324,7 @@ onSessionOnlyProbe(hasSessionOnlySecrets)
 
 async function writeSettings(settings: AppSettings): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
+  setKnownGitlabInstances(settings.profiles.map((p) => p.gitlabUrl))
   const secrets = extractSecrets(settings)
   const hasSecrets = Object.keys(secrets).length > 0
   const stripped = JSON.stringify(stripSettingsSecrets(settings), null, 2)

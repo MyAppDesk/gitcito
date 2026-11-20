@@ -1457,6 +1457,10 @@ export const ko: Dict = {
   'settings.azureOrgRequired': '로그인하기 전에 Azure DevOps 조직을 입력하세요.',
   'settings.azureOrgHint':
     'Entra/게스트 계정에는 필수입니다. dev.azure.com/ 뒤의 첫 부분 — 프로젝트가 아니라 조직 — 을 쓰세요 (예: dev.azure.com/contoso/my-project에서는 contoso).',
+  'settings.gitlabUrl': 'GitLab 주소',
+  'settings.gitlabUrlPlaceholder': 'gitlab.com — 또는 직접 운영하는 주소(예: git.example.org)',
+  'settings.gitlabUrlHint': 'gitlab.com이면 비워 두세요. 자체 관리 GitLab이면 그 https 주소를 입력하세요. 이 프로필의 GitLab 토큰은 그곳으로만 전송됩니다.',
+  'settings.gitlabUrlInvalid': 'https 주소가 아닙니다. 토큰은 암호화되지 않은 http로 전송되지 않습니다.',
   'settings.connected': '연결됨',
   'settings.notConnected': '연결되지 않음',
   'settings.integrationsForProfile': '{name} — 이 프로필의 연결',

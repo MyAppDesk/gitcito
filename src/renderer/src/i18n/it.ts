@@ -1439,6 +1439,10 @@ export const it: Dict = {
   'settings.azureOrgRequired': 'Inserisci l’organizzazione di Azure DevOps prima di accedere.',
   'settings.azureOrgHint':
     'Necessaria per gli account Entra e per gli ospiti. Usa la prima parte dopo dev.azure.com/ — l’organizzazione, non il progetto (per esempio contoso in dev.azure.com/contoso/my-project).',
+  'settings.gitlabUrl': 'Indirizzo GitLab',
+  'settings.gitlabUrlPlaceholder': 'gitlab.com — o il tuo, es. git.example.org',
+  'settings.gitlabUrlHint': 'Lascia vuoto per gitlab.com. Per un GitLab self-managed, il suo indirizzo https. Il token GitLab di questo profilo viene inviato solo lì.',
+  'settings.gitlabUrlInvalid': 'Non è un indirizzo https. I token non vengono mai inviati su http in chiaro.',
   'settings.connected': 'Collegato',
   'settings.notConnected': 'Non collegato',
   'settings.integrationsForProfile': 'Collegamenti di {name}',

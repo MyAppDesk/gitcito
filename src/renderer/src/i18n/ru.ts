@@ -1457,6 +1457,10 @@ export const ru: Dict = {
   'settings.azureOrgRequired': 'Укажите организацию Azure DevOps перед входом.',
   'settings.azureOrgHint':
     'Обязательно для учётных записей Entra и гостевых. Возьмите первую часть после dev.azure.com/ — это организация, а не проект (например, contoso в dev.azure.com/contoso/my-project).',
+  'settings.gitlabUrl': 'Адрес GitLab',
+  'settings.gitlabUrlPlaceholder': 'gitlab.com — или ваш, например git.example.org',
+  'settings.gitlabUrlHint': 'Оставьте пустым для gitlab.com. Для self-managed GitLab — его адрес https. Токен GitLab этого профиля отправляется только туда.',
+  'settings.gitlabUrlInvalid': 'Это не адрес https. Токены никогда не отправляются по обычному http.',
   'settings.connected': 'Подключено',
   'settings.notConnected': 'Не подключено',
   'settings.integrationsForProfile': 'Подключения профиля {name}',

@@ -1438,6 +1438,10 @@ export const tr: Dict = {
   'settings.azureOrgRequired': 'Oturum açmadan önce Azure DevOps kuruluşunu girin.',
   'settings.azureOrgHint':
     'Entra/konuk hesaplar için gereklidir. dev.azure.com/ adresinden sonraki ilk parçayı kullanın — projeyi değil, kuruluşu (örneğin dev.azure.com/contoso/my-project içindeki contoso).',
+  'settings.gitlabUrl': 'GitLab adresi',
+  'settings.gitlabUrlPlaceholder': 'gitlab.com — ya da kendi sunucunuz, ör. git.example.org',
+  'settings.gitlabUrlHint': 'gitlab.com için boş bırakın. Kendi barındırdığınız GitLab için https adresini girin. Bu profilin GitLab belirteci yalnızca oraya gönderilir.',
+  'settings.gitlabUrlInvalid': 'Bu bir https adresi değil. Belirteçler asla şifresiz http ile gönderilmez.',
   'settings.connected': 'Bağlı',
   'settings.notConnected': 'Bağlı değil',
   'settings.integrationsForProfile': 'Şu profil için bağlantılar: {name}',

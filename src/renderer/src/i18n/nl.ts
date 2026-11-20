@@ -1458,6 +1458,10 @@ export const nl: Dict = {
   'settings.azureOrgRequired': 'Vul de Azure DevOps-organisatie in voordat je inlogt.',
   'settings.azureOrgHint':
     'Vereist voor Entra-/gastaccounts. Gebruik het eerste deel na dev.azure.com/ — de organisatie, niet het project (bijvoorbeeld contoso in dev.azure.com/contoso/my-project).',
+  'settings.gitlabUrl': 'GitLab-adres',
+  'settings.gitlabUrlPlaceholder': 'gitlab.com — of je eigen, bijv. git.example.org',
+  'settings.gitlabUrlHint': 'Leeg laten voor gitlab.com. Voor een zelfbeheerde GitLab het https-adres ervan. Het GitLab-token van dit profiel wordt alleen daarheen gestuurd.',
+  'settings.gitlabUrlInvalid': 'Geen https-adres. Tokens worden nooit via onversleuteld http verstuurd.',
   'settings.connected': 'Verbonden',
   'settings.notConnected': 'Niet verbonden',
   'settings.integrationsForProfile': 'Verbindingen voor {name}',

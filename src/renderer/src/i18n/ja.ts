@@ -1438,6 +1438,10 @@ export const ja: Dict = {
   'settings.azureOrgRequired': 'サインインする前に、Azure DevOps の組織を入力してください。',
   'settings.azureOrgHint':
     'Entra やゲストのアカウントでは必須です。dev.azure.com/ の直後の部分 — プロジェクトではなく組織 — を入れてください（たとえば dev.azure.com/contoso/my-project なら contoso）。',
+  'settings.gitlabUrl': 'GitLab のアドレス',
+  'settings.gitlabUrlPlaceholder': 'gitlab.com — または独自のもの（例: git.example.org）',
+  'settings.gitlabUrlHint': 'gitlab.com の場合は空のままにします。セルフマネージドの GitLab ならその https アドレスを入力します。このプロファイルの GitLab トークンはそこにだけ送られます。',
+  'settings.gitlabUrlInvalid': 'https のアドレスではありません。トークンが暗号化されていない http で送られることはありません。',
   'settings.connected': '接続済み',
   'settings.notConnected': '未接続',
   'settings.integrationsForProfile': '{name} の接続',

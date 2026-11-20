@@ -1457,6 +1457,10 @@ export const pl: Dict = {
   'settings.azureOrgRequired': 'Podaj organizację Azure DevOps przed zalogowaniem.',
   'settings.azureOrgHint':
     'Wymagane dla kont Entra i gościnnych. Użyj pierwszego członu po dev.azure.com/ — organizacji, nie projektu (na przykład contoso w dev.azure.com/contoso/my-project).',
+  'settings.gitlabUrl': 'Adres GitLaba',
+  'settings.gitlabUrlPlaceholder': 'gitlab.com — albo własny, np. git.example.org',
+  'settings.gitlabUrlHint': 'Zostaw puste dla gitlab.com. Dla samodzielnie hostowanego GitLaba jego adres https. Token GitLaba tego profilu jest wysyłany tylko tam.',
+  'settings.gitlabUrlInvalid': 'To nie jest adres https. Tokeny nigdy nie są wysyłane zwykłym http.',
   'settings.connected': 'Połączono',
   'settings.notConnected': 'Nie połączono',
   'settings.integrationsForProfile': 'Połączenia profilu {name}',

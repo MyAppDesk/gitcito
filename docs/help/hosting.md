@@ -82,9 +82,41 @@ so **approve** uses its approval endpoint and **request changes** removes your
 approval and posts your comment. **Rebase-merge** is not offered — GitLab
 decides merge-commit vs fast-forward from the project's settings, so the merge
 menu shows merge and squash only. Inline threads show the file and line but not
-the surrounding diff hunk, which GitLab's API does not return. Review/merge
-works for projects on **gitlab.com**; self-hosted instances are not supported
-yet. Bitbucket and Azure DevOps still open in the browser for review.
+the surrounding diff hunk, which GitLab's API does not return. Review and merge
+work on gitlab.com and on a [self-managed GitLab](#self-managed-gitlab). Bitbucket
+and Azure DevOps still open in the browser for review.
+
+## Self-managed GitLab
+
+A company GitLab lives at its own address. Give a profile that address in
+**Settings → Integrations → GitLab → GitLab address**, for example
+`git.example.org` or `https://example.net/gitlab` for one served under a path.
+From then on, remotes on that host are GitLab: merge requests list, open,
+review and merge, the clone browser and *create repository* talk to it, and
+push and fetch sign in with that profile's token.
+
+**A GitLab token belongs to one instance.** A profile's token is sent only to
+the address that profile names. If the address is empty, that means gitlab.com.
+A gitlab.com token never reaches the company server, and a company token never
+reaches gitlab.com. If the work and the personal account are on different
+instances, give each its own profile. A repository bound to a profile uses that
+profile's instance.
+
+**Create token** opens the token page on your instance with `api` and
+`write_repository` pre-selected. A read-only token connects fine and then fails
+on the first push.
+
+Limits:
+
+- **https only.** A plain `http://` address is refused, because the token would
+  cross the network in clear text.
+- **One GitLab instance per profile.** Add a second profile for a second
+  instance.
+- Over ssh the host is matched, not the path, so two instances on one host under
+  different paths cannot be told apart for an ssh remote.
+- Remote avatars are drawn only for gitlab.com and github.com. A self-managed
+  remote gets the plain icon, so its group names are never sent to a public
+  host.
 
 ## Issues, milestones, releases — GitHub
 

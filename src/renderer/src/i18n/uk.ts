@@ -1457,6 +1457,10 @@ export const uk: Dict = {
   'settings.azureOrgRequired': 'Вкажіть організацію Azure DevOps перед входом.',
   'settings.azureOrgHint':
     'Обовʼязково для облікових записів Entra/гостей. Використайте першу частину після dev.azure.com/ — саме організацію, а не проєкт (наприклад, contoso у dev.azure.com/contoso/my-project).',
+  'settings.gitlabUrl': 'Адреса GitLab',
+  'settings.gitlabUrlPlaceholder': 'gitlab.com — або ваш, наприклад git.example.org',
+  'settings.gitlabUrlHint': 'Залиште порожнім для gitlab.com. Для self-managed GitLab — його адреса https. Токен GitLab цього профілю надсилається лише туди.',
+  'settings.gitlabUrlInvalid': 'Це не адреса https. Токени ніколи не надсилаються звичайним http.',
   'settings.connected': 'Підключено',
   'settings.notConnected': 'Не підключено',
   'settings.integrationsForProfile': 'Підключення для {name}',

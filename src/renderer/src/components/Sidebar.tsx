@@ -88,6 +88,14 @@ import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInf
 
 import { RemoteIcon } from './RemoteIcon'
 
+/** The self-managed GitLabs the profiles point at, read when a menu is built. */
+const gitlabInstances = (): string[] =>
+  useSettingsStore
+    .getState()
+    .settings.profiles.map((p) => p.gitlabUrl?.trim() ?? '')
+    .filter(Boolean)
+
+
 // Keyboard activation for clickable non-button elements: Enter/Space runs the
 // same onClick handler the mouse uses, so every row and icon is reachable.
 const keyActivate = (e: React.KeyboardEvent): void => {
@@ -1418,7 +1426,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const prMenu = (pr: PullRequest, remote?: RemoteInfo): MenuItem[] => {
     const origin = remote ?? hostOrigin()
     return [
-      ...(repoSupportsPrReview(repo.remotes) && origin
+      ...(repoSupportsPrReview(repo.remotes, gitlabInstances()) && origin
         ? [
             {
               label: t('sidebar.openDetails'),
@@ -1860,7 +1868,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           onKeyDown={keyActivate}
           onClick={() => {
             // Rich PR detail exists for GitHub and GitLab; other hosts open in browser.
-            if (!repoSupportsPrReview(repo.remotes)) {
+            if (!repoSupportsPrReview(repo.remotes, gitlabInstances())) {
               void window.api.openExternal(pr.url)
               return
             }

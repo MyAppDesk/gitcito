@@ -1438,6 +1438,10 @@ export const fr: Dict = {
   'settings.azureOrgRequired': 'Indiquez l’organisation Azure DevOps avant de vous connecter.',
   'settings.azureOrgHint':
     'Obligatoire pour les comptes Entra ou invités. Prenez la première partie après dev.azure.com/ — l’organisation, pas le projet (par exemple contoso dans dev.azure.com/contoso/my-project).',
+  'settings.gitlabUrl': 'Adresse GitLab',
+  'settings.gitlabUrlPlaceholder': 'gitlab.com — ou la vôtre, ex. git.example.org',
+  'settings.gitlabUrlHint': "Laissez vide pour gitlab.com. Pour un GitLab autogéré, son adresse https. Le jeton GitLab de ce profil n'est envoyé que là.",
+  'settings.gitlabUrlInvalid': "Ce n'est pas une adresse https. Les jetons ne passent jamais par http en clair.",
   'settings.connected': 'Connecté',
   'settings.notConnected': 'Non connecté',
   'settings.integrationsForProfile': 'Connexions de {name}',

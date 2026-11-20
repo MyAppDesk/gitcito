@@ -1457,6 +1457,10 @@ export const he: Dict = {
   'settings.azureOrgRequired': 'הזינו את ארגון ה־Azure DevOps לפני ההתחברות.',
   'settings.azureOrgHint':
     'נדרש לחשבונות Entra או אורח. השתמשו בחלק הראשון שאחרי dev.azure.com/ — הארגון, לא הפרויקט (למשל contoso בכתובת dev.azure.com/contoso/my-project).',
+  'settings.gitlabUrl': 'כתובת GitLab',
+  'settings.gitlabUrlPlaceholder': 'gitlab.com — או שלכם, למשל git.example.org',
+  'settings.gitlabUrlHint': 'השאירו ריק עבור gitlab.com. עבור GitLab באירוח עצמי, כתובת ה-https שלו. אסימון ה-GitLab של הפרופיל הזה נשלח רק לשם.',
+  'settings.gitlabUrlInvalid': 'זו לא כתובת https. אסימונים אף פעם לא נשלחים ב-http לא מוצפן.',
   'settings.connected': 'מחובר',
   'settings.notConnected': 'לא מחובר',
   'settings.integrationsForProfile': 'חיבורים עבור {name}',

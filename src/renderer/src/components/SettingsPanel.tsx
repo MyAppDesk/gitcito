@@ -109,6 +109,7 @@ import {
   resolveCodeColors
 } from '../theme/themes'
 import { ansiToSpans } from '../lib/ansi'
+import { gitlabTokenUrl, normalizeGitlabUrl } from '../../../shared/gitlabInstance'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { resolveAI } from '../../../shared/aiAccounts'
 import { AIAccountsEditor } from './AIAccounts'
@@ -392,7 +393,8 @@ const INTEGRATIONS = [
     field: 'gitlabToken',
     kind: 'pat',
     placeholder: 'glpat-…',
-    tokenUrl: 'https://gitlab.com/-/user_settings/personal_access_tokens?name=Gitcito&scopes=read_api,read_repository'
+    // The real link is per instance — see gitlabTokenUrl at the click.
+    tokenUrl: gitlabTokenUrl(undefined)
   },
   {
     id: 'bitbucket',
@@ -421,7 +423,12 @@ export function IntegrationsPage({
   const ActiveIcon = active.icon
   const token = profile[active.field]
   const azureOrg = profile.azureOrg ?? ''
-  const whoAmIOrg = active.id === 'azure' ? azureOrg.trim() : undefined
+  const gitlabUrl = profile.gitlabUrl ?? ''
+  // Typed but not an https address: say so, rather than silently using gitlab.com.
+  const gitlabUrlInvalid = !!gitlabUrl.trim() && !normalizeGitlabUrl(gitlabUrl)
+  // Azure scopes by organization, GitLab by instance (empty = gitlab.com).
+  const whoAmIOrg =
+    active.id === 'azure' ? azureOrg.trim() : active.id === 'gitlab' ? profile.gitlabUrl?.trim() || undefined : undefined
   const azureOrgRequired = t('settings.azureOrgRequired')
 
   const sshNotice = t('settings.sshFromIntegrations').split('{link}')
@@ -675,7 +682,26 @@ export function IntegrationsPage({
           <span className="settings-hint">{t('settings.azureOrgHint')}</span>
         </label>
       )}
-      <button className="link-btn" type="button" onClick={() => void window.api.openExternal(active.tokenUrl)}>
+      {active.id === 'gitlab' && (
+        <label>
+          {t('settings.gitlabUrl')}
+          <input
+            type="text"
+            value={gitlabUrl}
+            placeholder={t('settings.gitlabUrlPlaceholder')}
+            aria-invalid={gitlabUrlInvalid}
+            onChange={(e) => edit({ gitlabUrl: e.target.value })}
+          />
+          <span className="settings-hint">
+            {gitlabUrlInvalid ? t('settings.gitlabUrlInvalid') : t('settings.gitlabUrlHint')}
+          </span>
+        </label>
+      )}
+      <button
+        className="link-btn"
+        type="button"
+        onClick={() => void window.api.openExternal(active.id === 'gitlab' ? gitlabTokenUrl(gitlabUrl) : active.tokenUrl)}
+      >
         <ExternalLink size={12} /> {t('settings.createToken')}
       </button>
       <p className="settings-hint">{t('settings.integrationsHint')}</p>

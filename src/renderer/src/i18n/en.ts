@@ -1451,6 +1451,10 @@ export const en = {
   'settings.azureOrgRequired': 'Enter the Azure DevOps organization before signing in.',
   'settings.azureOrgHint':
     'Required for Entra/guest accounts. Use the first part after dev.azure.com/ — the organization, not the project (for example, contoso in dev.azure.com/contoso/my-project).',
+  'settings.gitlabUrl': 'GitLab address',
+  'settings.gitlabUrlPlaceholder': 'gitlab.com — or your own, e.g. git.example.org',
+  'settings.gitlabUrlHint': "Leave empty for gitlab.com. For a self-managed GitLab, its https address. This profile's GitLab token is only ever sent there.",
+  'settings.gitlabUrlInvalid': 'Not an https address. Tokens are never sent over plain http.',
   'settings.connected': 'Connected',
   'settings.notConnected': 'Not connected',
   'settings.integrationsForProfile': 'Connections for {name}',

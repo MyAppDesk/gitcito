@@ -945,7 +945,8 @@ function ProviderCreateForm({
         description: description.trim() || undefined,
         private: isPrivate
       }
-      const repo = await hostingApi.createRepo(host, token, opts, azureOrg)
+      // Only Azure scopes by organization; GitLab resolves its instance from the profile.
+      const repo = await hostingApi.createRepo(host, token, opts, host === 'azure' ? azureOrg : undefined)
       closeModal()
       await repoActions.addRemoteAndPush(spec.path, remoteName.trim(), repo.url)
     } catch (e) {
@@ -1006,7 +1007,7 @@ function ProviderCreateForm({
             </>
           )}
           <label className="modal-label">{host === 'azure' ? t('modal.project') : t('modal.account')}</label>
-          <OwnerSelect host={host} token={token} org={azureOrg} value={owner} onChange={setOwner} />
+          <OwnerSelect host={host} token={token} org={host === 'azure' ? azureOrg : undefined} value={owner} onChange={setOwner} />
 
           <label className="modal-label">{t('modal.repositoryName')}</label>
           <input

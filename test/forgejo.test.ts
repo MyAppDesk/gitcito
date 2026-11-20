@@ -41,7 +41,8 @@ describe('Forgejo API mapping', () => {
       targetBranch: 'main',
       url: `${FJ}/me/app/pulls/7`,
       isDraft: false,
-      headSha: 'abc'
+      headSha: 'abc',
+      requestedReviewers: []
     })
     expect(mapForgejoPull({ ...base, title: 'WIP: Add x' }).isDraft).toBe(true)
     expect(mapForgejoPull({ ...base, title: 'Add x', draft: true }).isDraft).toBe(true)

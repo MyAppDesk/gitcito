@@ -47,6 +47,7 @@ import { isProtectedBranch } from '../lib/repoConfig'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
 import { forkUpstream, prsFromFork } from '../lib/hosting'
+import { newlyAwaitingReview, notifiesReviewRequests } from '../lib/reviewNotify'
 import { parseRouteConflict } from '../lib/stackOrder'
 import { timeAgo } from '../lib/timeAgo'
 import { splitCommitMessage } from '../lib/commitMenuCapabilities'
@@ -603,6 +604,33 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
   }
 }
 
+/** Per repository, the PRs that were waiting for your review at the last look. */
+const awaitingSeen = new Map<string, Set<number>>()
+
+/**
+ * A desktop notification for each PR that just started waiting for your review
+ * (GitLab and Forgejo; GitHub's come from its inbox). Clicking one opens the PR
+ * page. Off unless desktop notifications are on in Settings.
+ */
+function announceReviewRequests(path: string, remoteUrl: string, provider: HostingProvider, prs: PullRequest[]): void {
+  const { fresh, seen } = newlyAwaitingReview(awaitingSeen.get(path), prs)
+  awaitingSeen.set(path, seen)
+  const settings = useSettingsStore.getState()
+  if (!fresh.length || !notifiesReviewRequests(provider) || !settings.settings.desktopNotifications) return
+  const repoName = path.split(/[\\/]/).pop() ?? path
+  for (const pr of fresh) {
+    try {
+      const note = new Notification(`${t('notif.reviewRequested')} · ${repoName}`, { body: `#${pr.id} ${pr.title}` })
+      note.onclick = () => {
+        window.focus()
+        settings.openPageTab({ type: 'pr', repoPath: path, remoteUrl, number: pr.id, title: pr.title })
+      }
+    } catch {
+      // OS notifications unavailable or denied: the 👁 in the sidebar still shows it.
+    }
+  }
+}
+
 export const useRepoStore = create<RepoStoreState>((set, get) => ({
   repos: {},
   drafts: {},
@@ -767,6 +795,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         path
       )
       get().patch(path, { prs, prProvider: provider })
+      announceReviewRequests(path, origin.url, provider, prs)
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
     }
@@ -2444,6 +2473,43 @@ export const repoActions = {
           undo: () => gitApi.reset(path, 'HEAD~1', 'hard'),
           redo: () => gitApi.cherryPick(path, hash)
         }),
+
+  // A commit dropped on another branch's badge: check that branch out, then
+  // pick the commit onto it. Undo drops the picked commit, like a plain pick.
+  checkoutAndCherryPick: (path: string, branch: string, hash: string) =>
+    useRepoStore.getState().run(
+      path,
+      interp(t('act.cherryPickedOnto'), { sha: hash.slice(0, 7), branch }),
+      async () => {
+        await gitApi.checkout(path, branch)
+        await gitApi.cherryPick(path, hash)
+      },
+      {
+        label: t('undoLabel.cherryPick'),
+        undo: () => gitApi.reset(path, 'HEAD~1', 'hard'),
+        redo: () => gitApi.cherryPick(path, hash)
+      }
+    ),
+
+  // Point a branch that is not checked out at a commit (`git branch -f`); undo
+  // puts it back where it was.
+  moveBranchTo: (path: string, branch: string, hash: string) => {
+    let before = ''
+    return useRepoStore.getState().run(
+      path,
+      interp(t('act.branchMoved'), { branch, sha: hash.slice(0, 7) }),
+      async () => {
+        before = await gitApi.moveBranchTo(path, branch, hash)
+      },
+      {
+        label: interp(t('undoLabel.moveBranch'), { branch }),
+        undo: () => gitApi.setBranchRef(path, branch, before),
+        redo: async () => {
+          before = await gitApi.moveBranchTo(path, branch, hash)
+        }
+      }
+    )
+  },
 
   // Squash a contiguous run of the newest commits into one.
   squashCommits: (path: string, oldestSha: string, message: string, count: number) =>

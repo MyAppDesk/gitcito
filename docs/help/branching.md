@@ -83,6 +83,22 @@ The same gestures work on remote branches, tags and stashes.
 
 ![Slash-separated branch names folded into a tree](../screenshots/branch-grouping.webp)
 
+## A branch from an Azure Boards work item
+
+In a repository whose remote is on Azure DevOps, the command palette has
+**Create branch from Azure work item…**. Type the work item's number (or
+`AB#1234`), and it shows the item's type, title and state; **Create branch**
+opens the usual dialog with the name filled in — `bugfix/1234-title` for a bug,
+`feature/1234-title` for anything else — and `AB#1234 title` as the task, if
+you would rather have AI suggest a name.
+
+Work item mentions link in commit messages and pull request text: `AB#1234`
+everywhere the Azure organization is known, and on an Azure repository plain
+`#1234` too, since Azure numbers work items, not issues. On a GitHub repository
+linked to Azure Boards the organization is not known; a `links.tickets` entry
+in the repository's [`.gitcito.json`](repo-config.md) covers it — pattern
+`AB#(\d+)`, URL `https://dev.azure.com/<org>/_workitems/edit/$1`.
+
 ## Renaming a branch
 
 A branch named `fix` three days ago is a branch nobody can place today. Rename

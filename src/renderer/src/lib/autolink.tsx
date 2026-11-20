@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { RepoConfigLink } from '../../../shared/types'
 import { ticketSegments } from './repoConfig'
+import { azureOrgOf, workItemUrl } from './workItem'
 
 /** Convert a git remote URL (ssh or https) to its web base, or undefined. */
 export function remoteWebUrl(url?: string): string | undefined {
@@ -23,7 +24,8 @@ export function filePermalink(remoteUrl: string | undefined, sha: string, file: 
   return `${base}/blob/${sha}/${path}`
 }
 
-const TOKEN = /(#\d+)|(\B@[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})?)/g
+// `AB#123` first, so its `#123` is not taken as an issue on its own.
+const TOKEN = /(\bAB#\d+)|(#\d+)|(\B@[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})?)/g
 
 /**
  * Turn `#123` issue/PR refs and `@user` mentions in free text into links to the
@@ -52,7 +54,11 @@ export function autolink(text: string, repoWebUrl?: string, tickets?: RepoConfig
   return hostLinks(text, repoWebUrl)
 }
 
-/** `#123` and `@user`, linked to the hosting provider. */
+/**
+ * `#123` and `@user`, linked to the hosting provider. On Azure DevOps `#123` is a
+ * work item, not an issue, and `AB#123` — Azure Boards' own mention — is one
+ * everywhere the organization is known.
+ */
 function hostLinks(text: string, repoWebUrl?: string): ReactNode {
   if (!text || !repoWebUrl) return text
   let origin: string
@@ -61,6 +67,7 @@ function hostLinks(text: string, repoWebUrl?: string): ReactNode {
   } catch {
     return text
   }
+  const azureOrg = azureOrgOf(repoWebUrl)
   const out: ReactNode[] = []
   let last = 0
   let m: RegExpExecArray | null
@@ -69,17 +76,29 @@ function hostLinks(text: string, repoWebUrl?: string): ReactNode {
   while ((m = TOKEN.exec(text)) !== null) {
     if (m.index > last) out.push(text.slice(last, m.index))
     if (m[1]) {
-      const n = m[1].slice(1)
+      // AB#123 — a work item. Without a known Azure org it stays text.
+      const n = m[1].slice(3)
       out.push(
-        <a key={i++} href={`${repoWebUrl}/issues/${n}`}>
-          {m[1]}
+        azureOrg ? (
+          <a key={i++} href={workItemUrl(azureOrg, n)}>
+            {m[1]}
+          </a>
+        ) : (
+          m[1]
+        )
+      )
+    } else if (m[2]) {
+      const n = m[2].slice(1)
+      out.push(
+        <a key={i++} href={azureOrg ? workItemUrl(azureOrg, n) : `${repoWebUrl}/issues/${n}`}>
+          {m[2]}
         </a>
       )
     } else {
-      const user = m[2].slice(1)
+      const user = m[3].slice(1)
       out.push(
         <a key={i++} href={`${origin}/${user}`}>
-          {m[2]}
+          {m[3]}
         </a>
       )
     }

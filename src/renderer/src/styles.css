@@ -4581,6 +4581,23 @@ body.col-resizing .node-ava {
 .prob-icon-error { color: var(--red, #ff5c7a); }
 .prob-icon-warning { color: var(--yellow, #ff7a1a); }
 .prob-icon-info { color: var(--text-2); }
+.test-icon-pass { color: var(--green, #2ea043); flex: none; }
+.test-message,
+.test-error {
+  margin: 2px 12px 8px 34px;
+  padding: 8px 10px;
+  max-height: 260px;
+  overflow: auto;
+  border-radius: 6px;
+  background: var(--bg-1);
+  color: var(--text-1);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.test-error { margin-left: 12px; }
 .problems-search {
   display: inline-flex;
   align-items: center;
@@ -5059,7 +5076,27 @@ body.col-resizing .node-ava {
 
 .terminal-host-inner {
   height: 100%;
+  /* Anchors the `npm run` suggestion list at the cursor. */
+  position: relative;
 }
+.term-suggest {
+  position: absolute;
+  z-index: 5;
+  min-width: 220px;
+  max-width: min(520px, 90%);
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-1);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+}
+.term-suggest[hidden] { display: none; }
+.term-suggest-row { display: flex; gap: 10px; align-items: baseline; padding: 3px 8px; border-radius: 4px; cursor: pointer; }
+.term-suggest-row.selected { background: var(--accent-soft); }
+.term-suggest-name { flex: none; font-weight: 600; color: var(--text-0); font-family: var(--font-mono, monospace); }
+.term-suggest-cmd { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-3); font-family: var(--font-mono, monospace); }
+.term-suggest-hint { margin-top: 3px; padding: 3px 8px 1px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 11px; }
 
 /* ─── Terminal right-side list ──────────────────────────────────────────── */
 
@@ -6875,6 +6912,12 @@ body.col-resizing .node-ava {
   outline: none;
 }
 
+/* Branch from an Azure Boards work item. */
+.work-item-card { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-1); }
+.work-item-meta { font-size: 11.5px; color: var(--text-3); }
+.work-item-title { margin: 3px 0 6px; font-size: 13px; color: var(--text-0); font-weight: 600; }
+.work-item-branch { font-size: 12px; color: var(--accent); }
+
 /* ─── Settings ──────────────────────────────────────────────────────────── */
 
 .settings h3 {
@@ -6885,6 +6928,33 @@ body.col-resizing .node-ava {
   display: flex;
   gap: 18px;
   min-height: 380px;
+}
+
+/* Settings keep one size while you move between sections: the modal is fixed,
+   and only the section column scrolls. It used to grow and shrink with each
+   section's content. */
+.modal-settings {
+  width: min(900px, calc(100vw - 60px));
+  height: min(760px, calc(100vh - 80px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-settings > .settings,
+.modal-settings .settings {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.modal-settings .settings-body {
+  flex: 1;
+  min-height: 0;
+}
+.modal-settings .settings-form {
+  overflow-y: auto;
+  min-height: 0;
+  padding-inline-end: 6px;
 }
 
 .settings-profiles {
@@ -15092,6 +15162,7 @@ html:has(.repo-switcher) .titlebar {
 }
 .sb-pr-flag { display: flex; align-items: center; flex: 0 0 auto; }
 .sb-pr-flag.blocked { color: #e0a020; }
+.sb-pr-flag.awaiting { color: var(--accent); }
 /* Inside a stack the row is one of four, and the title has to survive: the
    per-row actions wait for hover, the state glyphs do not. */
 .sb-pr-stack-body .sb-item.pr .sb-pr-preview,
@@ -17823,6 +17894,10 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-bar-del { background: var(--red, #e5484d); }
 .prp-link { background: none; border: none; padding: 0; color: var(--accent); font-size: 12.5px; cursor: pointer; text-align: start; }
 .prp-link:hover { text-decoration: underline; }
+.prp-work-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.prp-work-item { display: flex; gap: 6px; align-items: baseline; min-width: 0; max-width: 100%; }
+.prp-work-item-id { flex: none; font-variant-numeric: tabular-nums; }
+.prp-work-item-title { color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .prp-check-item { display: flex; flex-direction: column; }
 .prp-check-log { margin: 4px 0 8px 18px; font-size: 12px; }
 .prp-check-log pre {

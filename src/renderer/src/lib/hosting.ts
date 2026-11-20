@@ -68,6 +68,18 @@ export function repoIsGitHub(remotes: RemoteInfo[]): boolean {
 }
 
 /**
+ * True when the repo's origin is on GitHub or on a Forgejo server some profile
+ * names — the hosts whose issues, milestones and releases the sidebar lists.
+ */
+export function repoHasIssueTracker(remotes: RemoteInfo[], forgejoUrls: readonly (string | undefined)[]): boolean {
+  const origin = remotes.find((r) => r.name === 'origin') ?? remotes[0]
+  if (!origin) return false
+  if (isGitHubRemote(origin.url)) return true
+  const bases = forgejoUrls.map((u) => normalizeGitlabUrl(u)).filter((b): b is string => !!b)
+  return !!forgejoInstanceOf(origin.url, bases)
+}
+
+/**
  * True if a remote's host has a rich PR detail/review surface: GitHub, or a
  * GitLab — gitlab.com or one of the self-managed `gitlabInstances` the
  * profiles point at (their `gitlabUrl`s).
@@ -79,6 +91,8 @@ export function isReviewableRemote(
 ): boolean {
   if (!url) return false
   if (/(?:^|[/@.])github\.com[/:]/i.test(url)) return true
+  // Azure DevOps, current and legacy addresses (https and ssh).
+  if (/(?:^|[/@.])dev\.azure\.com[/:]|\.visualstudio\.com\//i.test(url)) return true
   const norm = (list: readonly string[]): string[] =>
     list.map((u) => normalizeGitlabUrl(u)).filter((u): u is string => !!u)
   return gitlabInstanceOf(url, norm(gitlabInstances)) !== null || forgejoInstanceOf(url, norm(forgejoInstances)) !== null

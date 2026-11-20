@@ -605,6 +605,10 @@ export interface PullRequest {
   ciSummary?: string
   /** owner/repo the head branch lives in (GitHub), to tell a fork's PRs apart. */
   headRepo?: string
+  /** Logins asked to review and not answered yet, as the list reports them. */
+  requestedReviewers?: string[]
+  /** You are one of those reviewers — the sidebar marks the row. */
+  awaitingYou?: boolean
 }
 
 export type HostingProvider = 'github' | 'azure' | 'gitlab' | 'bitbucket' | 'forgejo' | null
@@ -736,6 +740,19 @@ export interface PrDetail {
   sourceRepo?: string | null
   /** Avatar URL per login, for everyone the host named in this PR. */
   avatars?: Record<string, string>
+  /** Work items linked to the PR (Azure Boards). */
+  workItems?: PrWorkItem[]
+}
+
+/** A work item a pull request is linked to. */
+export interface PrWorkItem {
+  id: number
+  title: string
+  /** Bug, User Story, Task… */
+  type?: string
+  /** New, Active, Resolved… */
+  state?: string
+  url: string
 }
 
 /** Someone named on a pull request — an assignee or a requested reviewer. */
@@ -1798,6 +1815,47 @@ export interface AnalyzeResult {
   truncated: boolean
   /** Wall-clock of the whole sweep, for the panel's footer. */
   ms: number
+}
+
+/** A test runner the panel knows how to drive and read. */
+export type TestRunner = 'vitest' | 'jest'
+
+export type TestStatus = 'passed' | 'failed' | 'skipped'
+
+/** One test, as the runner's JSON report describes it. */
+export interface TestCase {
+  /** Describe blocks and the test title, joined: `parser › handles empty input`. */
+  name: string
+  status: TestStatus
+  ms: number
+  /** The first failure message, colour codes stripped and capped. */
+  message?: string
+  /** Where it failed in the test file (1-based), when the stack says so. */
+  line?: number
+}
+
+export interface TestFile {
+  /** Repository-relative path, forward slashes. */
+  file: string
+  status: TestStatus
+  tests: TestCase[]
+}
+
+export interface TestRunResult {
+  runner: TestRunner
+  files: TestFile[]
+  passed: number
+  failed: number
+  skipped: number
+  ms: number
+  /** Set when the runner produced no report — what it printed instead (may be empty). */
+  error?: string
+  /** The run hit its time limit and was stopped. */
+  timedOut?: boolean
+  /** The user stopped it: nothing to show, keep the previous result. */
+  cancelled?: boolean
+  /** No runner to run: the panel already explains why. */
+  unavailable?: boolean
 }
 
 /**

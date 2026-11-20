@@ -302,6 +302,8 @@ const api = {
       ipcRenderer.invoke('hosting:createPR', remoteUrl, tokens, opts),
     prDetail: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prDetail', remoteUrl, tokens, number),
+    workItem: (remoteUrl: string, tokens: unknown, id: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:workItem', remoteUrl, tokens, id),
     prComment: (remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prComment', remoteUrl, tokens, number, body),
     prReplyReviewComment: (remoteUrl: string, tokens: unknown, number: number, inReplyTo: number | string, body: string): Promise<unknown> =>
@@ -353,6 +355,7 @@ const api = {
     resize: (id: number, cols: number, rows: number): void => ipcRenderer.send('term:resize', id, cols, rows),
     kill: (id: number): void => ipcRenderer.send('term:kill', id),
     procName: (id: number): Promise<string> => ipcRenderer.invoke('term:process', id),
+    completions: (id: number, kind: string): Promise<unknown> => ipcRenderer.invoke('term:completions', id, kind),
     poshThemes: (): Promise<{ dir: string | null; exe: string | null; themes: string[] }> =>
       ipcRenderer.invoke('term:posh-themes'),
     poshPreview: (theme: string): Promise<string | null> => ipcRenderer.invoke('term:posh-preview', theme),
@@ -407,6 +410,12 @@ const api = {
     run: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('analyze:run', repoPath),
     detect: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('analyze:detect', repoPath),
     cancel: (repoPath: string): void => ipcRenderer.send('analyze:cancel', repoPath)
+  },
+  // Tests: the project's own suite (vitest / jest), run on demand.
+  tests: {
+    run: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('tests:run', repoPath),
+    detect: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('tests:detect', repoPath),
+    cancel: (repoPath: string): void => ipcRenderer.send('tests:cancel', repoPath)
   },
 
   // TODO markers carried by the repository's own source, scanned on demand.

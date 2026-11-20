@@ -146,6 +146,7 @@ export const uk: Dict = {
   'pr.merged': 'Влитий',
   'pr.closed': 'Закритий',
   'pr.blockedDownstack': 'Заблокований нижче',
+  'pr.awaitingYourReview': "Чекає на ваше рев'ю",
   'sidebar.stackNumbered': 'Стек #{n}',
   'sidebar.noTags': 'Немає тегів',
   'sidebar.noReleases': 'Релізи не завантажено',

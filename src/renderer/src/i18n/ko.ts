@@ -146,6 +146,7 @@ export const ko: Dict = {
   'pr.merged': '병합됨',
   'pr.closed': '닫힘',
   'pr.blockedDownstack': '아래에서 막힘',
+  'pr.awaitingYourReview': '내 리뷰를 기다리는 중',
   'sidebar.stackNumbered': '스택 #{n}',
   'sidebar.noTags': '태그 없음',
   'sidebar.noReleases': '불러온 릴리스가 없습니다',

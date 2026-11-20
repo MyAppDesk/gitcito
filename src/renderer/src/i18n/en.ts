@@ -147,6 +147,7 @@ export const en = {
   'pr.merged': 'Merged',
   'pr.closed': 'Closed',
   'pr.blockedDownstack': 'Blocked downstack',
+  'pr.awaitingYourReview': 'Waiting for your review',
   'sidebar.stackNumbered': 'Stack #{n}',
   'sidebar.noTags': 'No tags',
   'sidebar.noReleases': 'No releases loaded',

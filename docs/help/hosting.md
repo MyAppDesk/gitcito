@@ -190,6 +190,14 @@ milestone, Projects v2 fields, close/reopen, and **create a branch for this
 issue** (with AI naming). Milestones show progress and their issues. Releases
 are browsable with a changelog page.
 
+## Waiting for your review
+
+In the sidebar's pull request list, a 👁 marks the PRs where **you** are a
+reviewer who has not answered yet — on GitHub, GitLab and Forgejo alike. Who
+"you" are is asked of the host with the profile's credential and remembered for
+ten minutes. A token that cannot read its own user (no `read:user` on Forgejo,
+for example) marks nothing.
+
 ## Notifications — GitHub
 
 Your whole inbox — review requests, mentions, CI activity — across every

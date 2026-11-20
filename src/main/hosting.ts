@@ -14,6 +14,7 @@ import {
   createForgejoPull,
   createForgejoRepo,
   describeForgejoAccount,
+  fjJson,
   forgejoCompareUrl,
   listForgejoOwners,
   listForgejoPulls,
@@ -452,7 +453,48 @@ export async function githubRepoError(
   )
 }
 
+/** Mark the PRs that wait on `login`'s review. Logins compare case-insensitively, as hosts treat them. */
+export function markAwaitingYou(prs: PullRequest[], login: string | null): PullRequest[] {
+  if (!login) return prs
+  const me = login.toLowerCase()
+  return prs.map((p) => (p.requestedReviewers?.some((r) => r.toLowerCase() === me) ? { ...p, awaitingYou: true } : p))
+}
+
+/** Who a token signs in as, per host — remembered for a while, keyed by a hash of the token (never the token). */
+const loginCache = new Map<string, { login: string | null; at: number }>()
+const LOGIN_TTL_MS = 10 * 60_000
+
+async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Promise<string | null> {
+  const key = `${parsed.provider}|${parsed.base ?? ''}|${createHash('sha256').update(token).digest('hex').slice(0, 16)}`
+  const hit = loginCache.get(key)
+  if (hit && Date.now() - hit.at < LOGIN_TTL_MS) return hit.login
+  let login: string | null = null
+  try {
+    if (parsed.provider === 'github') login = (await ghJson<{ login: string }>('https://api.github.com/user', token)).login
+    else if (parsed.provider === 'gitlab') login = (await glJson<{ username: string }>(`${glApi(parsed.base)}/user`, auth)).username
+    else if (parsed.provider === 'forgejo' && parsed.base) login = (await fjJson<{ login: string }>(`${parsed.base}/api/v1/user`, token)).login
+  } catch {
+    // A token without user scope cannot say who it is: no marks, no error.
+  }
+  loginCache.set(key, { login, at: Date.now() })
+  return login
+}
+
+/** The open PRs of a remote, with the ones waiting on your review marked. */
 async function listPullRequests(
+  remoteUrl: string,
+  tokens: HostTokens,
+  repoPath?: string
+): Promise<{ provider: HostingProvider; prs: PullRequest[] }> {
+  const result = await listPullRequestsOf(remoteUrl, tokens, repoPath)
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || !result.prs.some((p) => p.requestedReviewers?.length)) return result
+  const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens, repoPath).catch(() => null)
+  if (!auth) return result
+  return { ...result, prs: markAwaitingYou(result.prs, await myLogin(parsed, auth.token, auth)) }
+}
+
+async function listPullRequestsOf(
   remoteUrl: string,
   tokens: HostTokens,
   repoPath?: string
@@ -479,6 +521,7 @@ async function listPullRequests(
       web_url: string
       draft?: boolean
       work_in_progress?: boolean
+      reviewers?: Array<{ username: string }>
     }>
     return {
       provider: 'gitlab',
@@ -489,7 +532,8 @@ async function listPullRequests(
         sourceBranch: p.source_branch,
         targetBranch: p.target_branch,
         url: p.web_url,
-        isDraft: !!(p.draft || p.work_in_progress)
+        isDraft: !!(p.draft || p.work_in_progress),
+        requestedReviewers: (p.reviewers ?? []).map((r) => r.username)
       }))
     }
   }
@@ -552,6 +596,7 @@ async function listPullRequests(
       // Present once GitHub's stacked pull requests are in play; absent on a
       // server without them, which is the same as "this one is on its own".
       stack?: { number: number } | null
+      requested_reviewers?: Array<{ login: string }>
     }>
     const prs: PullRequest[] = data.map((p) => ({
       id: p.number,
@@ -564,7 +609,8 @@ async function listPullRequests(
       stackNumber: p.stack?.number,
       state: 'open',
       headSha: p.head.sha,
-      headRepo: p.head.repo?.full_name
+      headRepo: p.head.repo?.full_name,
+      requestedReviewers: (p.requested_reviewers ?? []).map((u) => u.login)
     }))
     if (!auth) return { provider: 'github', prs }
 

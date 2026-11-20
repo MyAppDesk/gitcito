@@ -15119,6 +15119,7 @@ html:has(.repo-switcher) .titlebar {
 }
 .sb-pr-flag { display: flex; align-items: center; flex: 0 0 auto; }
 .sb-pr-flag.blocked { color: #e0a020; }
+.sb-pr-flag.awaiting { color: var(--accent); }
 /* Inside a stack the row is one of four, and the title has to survive: the
    per-row actions wait for hover, the state glyphs do not. */
 .sb-pr-stack-body .sb-item.pr .sb-pr-preview,

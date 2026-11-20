@@ -146,6 +146,7 @@ export const he: Dict = {
   'pr.merged': 'מוזג',
   'pr.closed': 'נסגר',
   'pr.blockedDownstack': 'חסום מלמטה',
+  'pr.awaitingYourReview': 'ממתין לסקירה שלך',
   'sidebar.stackNumbered': 'ערימה #{n}',
   'sidebar.noTags': 'אין תגיות',
   'sidebar.noReleases': 'לא נטענו ריליסים',

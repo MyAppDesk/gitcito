@@ -175,6 +175,14 @@ responsáveis, milestone, campos do Projects v2, fechar/reabrir, e **criar uma
 branch para esta issue** (com nomeação por IA). Milestones mostram progresso e as
 issues delas. Releases são navegáveis com uma página de changelog.
 
+## Aguardando a sua revisão
+
+Na lista de pull requests da sidebar, um 👁 marca os PRs em que **você** é
+revisor e ainda não respondeu — no GitHub, no GitLab e no Forgejo. Quem é
+"você" é perguntado ao host com a credencial do perfil e lembrado por dez
+minutos. Um token que não consegue ler o próprio usuário (sem `read:user` no
+Forgejo, por exemplo) não marca nada.
+
 ## Notificações — GitHub
 
 Sua caixa de entrada inteira — pedidos de revisão, menções, atividade de CI — em

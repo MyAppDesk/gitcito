@@ -146,6 +146,7 @@ export const pl: Dict = {
   'pr.merged': 'Scalony',
   'pr.closed': 'Zamknięty',
   'pr.blockedDownstack': 'Zablokowany niżej',
+  'pr.awaitingYourReview': 'Czeka na twoją recenzję',
   'sidebar.stackNumbered': 'Stos #{n}',
   'sidebar.noTags': 'Brak tagów',
   'sidebar.noReleases': 'Nie wczytano wydań',

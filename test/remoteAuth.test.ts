@@ -74,3 +74,41 @@ describe('remoteAuthFindings', () => {
     expect(remoteAuthStatus({ ...base, source: 'ssh' })).toBe('ok')
   })
 })
+
+describe('checkRemoteAuth across GitLab instances', () => {
+  it("never asks a self-managed GitLab with a gitlab.com profile's credential", async () => {
+    const { mkdtempSync, rmSync, writeFileSync } = await import('node:fs')
+    const { tmpdir } = await import('node:os')
+    const { join } = await import('node:path')
+    const { vi } = await import('vitest')
+    const { app } = await import('electron')
+    const { readSettings } = await import('../src/main/settings')
+    const { defaultSettings } = await import('../src/shared/types')
+    const { checkRemoteAuth } = await import('../src/main/remoteAuthCheck')
+
+    const dir = mkdtempSync(join(tmpdir(), 'gitcito-ra-'))
+    const getPath = vi.spyOn(app, 'getPath').mockReturnValue(dir)
+    const fetchSpy = vi.fn(async () => new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchSpy)
+    try {
+      const s = defaultSettings()
+      // The active profile holds a gitlab.com account; another one points at the company server.
+      const personal = { ...s.profiles[0], id: 'personal', links: { gitlab: { source: 'gh' as const, login: 'me' } } }
+      const work = { ...s.profiles[0], id: 'work', gitlabUrl: 'git.example.org' }
+      writeFileSync(
+        join(dir, 'gitcito-settings.json'),
+        JSON.stringify({ ...s, onboardingCompleted: true, activeProfileId: 'personal', profiles: [personal, work] })
+      )
+      await readSettings()
+      const c = await checkRemoteAuth('/nowhere', 'origin', 'https://git.example.org/team/app.git')
+      expect(c.provider).toBe('gitlab')
+      // Not the personal profile's account: that one belongs to gitlab.com.
+      expect(c.profile).toBeUndefined()
+      expect(c.login).not.toBe('me')
+    } finally {
+      vi.unstubAllGlobals()
+      getPath.mockRestore()
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})

@@ -40,7 +40,7 @@ export function remoteAuthFindings(c: RemoteAuthCheck): RemoteAuthFinding[] {
   if (out.some((f) => f.status !== 'ok')) return out
 
   if (c.canPush) out.unshift({ status: 'ok', key: 'remoteAuth.ok' })
-  else if ((c.provider === 'github' || c.provider === 'gitlab') && !c.scopes) {
+  else if ((c.provider === 'github' || c.provider === 'gitlab' || c.provider === 'forgejo') && !c.scopes) {
     out.unshift({ status: 'ok', key: 'remoteAuth.okUnknown' })
   }
   return out

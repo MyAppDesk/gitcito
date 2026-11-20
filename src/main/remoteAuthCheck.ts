@@ -1,6 +1,7 @@
 import { apiToken, credentialFor, providerOfHost } from './credentials'
 import { activeProfileAuth, boundProfileAuth, readSettings } from './settings'
 import { pickHostAuth } from '../shared/hostToken'
+import { parseRemoteUrl } from './hosting'
 import type { RemoteAuthCheck, RepoHost } from '../shared/types'
 
 /**
@@ -100,8 +101,9 @@ async function askGithub(token: string): Promise<HostVerdict> {
   }
 }
 
-async function askGitlab(host: string, token: string): Promise<HostVerdict> {
-  const api = `https://${host}/api/v4`
+async function askGitlab(base: string, token: string): Promise<HostVerdict> {
+  // The instance's own base — a self-managed GitLab may live under a path.
+  const api = `${base}/api/v4`
   const user = await get(`${api}/user`, { Authorization: `Bearer ${token}` })
   if (!user) return {}
   if (user.status === 401) return { rejected: true }
@@ -117,9 +119,25 @@ async function askGitlab(host: string, token: string): Promise<HostVerdict> {
   return { ...login, ...gitlabScopeVerdict(scopes) }
 }
 
-function askHost(provider: RepoHost, host: string, token: string): Promise<HostVerdict> {
+/** Forgejo lists no token scopes over its API: who it is, or that it was refused. */
+async function askForgejo(base: string, token: string): Promise<HostVerdict> {
+  const res = await get(`${base}/api/v1/user`, { Authorization: `token ${token}`, Accept: 'application/json' })
+  if (!res) return {}
+  if (res.status === 401) return { rejected: true }
+  if (!res.ok) return {}
+  const body = (await res.json().catch(() => ({}))) as { login?: unknown }
+  return typeof body.login === 'string' ? { login: body.login } : {}
+}
+
+/**
+ * Ask the host the token belongs to. `remoteUrl` decides the instance: the
+ * caller already made sure the token is that instance's (`profileAuth`).
+ */
+function askHost(provider: RepoHost, remoteUrl: string, host: string, token: string): Promise<HostVerdict> {
+  const base = parseRemoteUrl(remoteUrl)?.base
   if (provider === 'github') return askGithub(token)
-  if (provider === 'gitlab') return askGitlab(host, token)
+  if (provider === 'gitlab') return askGitlab(base ?? `https://${host}`, token)
+  if (provider === 'forgejo' && base) return askForgejo(base, token)
   // Azure DevOps and Bitbucket do not report a token's scopes in a way worth a
   // round-trip here: the source and profile are still shown.
   return Promise.resolve({})
@@ -153,22 +171,24 @@ export async function checkRemoteAuth(repoPath: string, remote: string, pushUrl:
   // git uses a password in the URL before asking any helper.
   if (kind === 'embedded') {
     const password = decodeURIComponent(new URL(pushUrl).password)
-    return { ...base, source: 'embedded', ...(provider && host ? await askHost(provider, host, password) : {}) }
+    return { ...base, source: 'embedded', ...(provider && host ? await askHost(provider, pushUrl, host, password) : {}) }
   }
 
   if (provider && host) {
     const auth = await pickHostAuth({
-      bound: await boundProfileAuth(provider, repoPath),
-      active: () => activeProfileAuth(provider)
+      // The remote's URL is what lets profileAuth refuse a token from another
+      // GitLab/Forgejo instance — without it, the check would ask the wrong server.
+      bound: await boundProfileAuth(provider, repoPath, pushUrl),
+      active: () => activeProfileAuth(provider, pushUrl)
     })
     if (auth.token || auth.link) {
       const who = await profileName(repoPath)
       const profile = { ...(who.name ? { profile: who.name } : {}), bound: who.bound }
-      if (auth.token) return { ...base, ...profile, source: 'token', ...(await askHost(provider, host, auth.token)) }
+      if (auth.token) return { ...base, ...profile, source: 'token', ...(await askHost(provider, pushUrl, host, auth.token)) }
       const link = auth.link as NonNullable<typeof auth.link>
       const linked = await apiToken(pushUrl, { link }).catch(() => null)
       if (!linked) return { ...base, ...profile, source: link.source, login: link.login, linkMissing: true }
-      return { ...base, ...profile, source: link.source, login: link.login, ...(await askHost(provider, host, linked.token)) }
+      return { ...base, ...profile, source: link.source, login: link.login, ...(await askHost(provider, pushUrl, host, linked.token)) }
     }
   }
 
@@ -179,6 +199,6 @@ export async function checkRemoteAuth(repoPath: string, remote: string, pushUrl:
     ...base,
     source: 'helper',
     ...(cred.username ? { login: cred.username } : {}),
-    ...(provider && host ? await askHost(provider, host, cred.password) : {})
+    ...(provider && host ? await askHost(provider, pushUrl, host, cred.password) : {})
   }
 }

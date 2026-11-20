@@ -108,8 +108,9 @@ conta vinculada que não está mais conectada e uma senha guardada em texto puro
 na URL do remote.
 
 **Limites.** Um token fine-grained do GitHub não lista as permissões, então se
-ele pode fazer push aparece como desconhecido até um push tentar. Azure DevOps e
-Bitbucket aparecem só com origem e perfil. Remotes SSH não são testados, mas
+ele pode fazer push aparece como desconhecido até um push tentar. O Forgejo
+informa a conta, mas não as permissões do token. Azure DevOps e Bitbucket
+aparecem só com origem e perfil. Remotes SSH não são testados, mas
 [Chaves SSH](ssh-keys.md) lista o que o agente tem. A verificação consulta o
 helper do git em silêncio: um helper que precisaria abrir uma janela de login
 conta como sem credencial.

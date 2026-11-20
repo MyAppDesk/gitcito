@@ -107,8 +107,9 @@ account that is no longer signed in, and a password stored in plain text in the
 remote URL.
 
 **Limits.** A fine-grained GitHub token does not list its permissions, so
-whether it can push shows as unknown until a push tries. Azure DevOps and
-Bitbucket are shown by source and profile only. SSH remotes are not tested, but
+whether it can push shows as unknown until a push tries. Forgejo reports the
+account but not the token's permissions. Azure DevOps and Bitbucket are shown by
+source and profile only. SSH remotes are not tested, but
 [SSH keys](ssh-keys.md) lists what the agent holds. The check asks git's helper
 silently: a helper that needs a login window counts as having nothing.
 

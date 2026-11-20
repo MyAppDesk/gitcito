@@ -146,6 +146,7 @@ export const nl: Dict = {
   'pr.merged': 'Gemerged',
   'pr.closed': 'Gesloten',
   'pr.blockedDownstack': 'Geblokkeerd verderop',
+  'pr.awaitingYourReview': 'Wacht op jouw review',
   'sidebar.stackNumbered': 'Stapel #{n}',
   'sidebar.noTags': 'Geen tags',
   'sidebar.noReleases': 'Geen releases geladen',
@@ -1443,7 +1444,7 @@ export const nl: Dict = {
   'settings.noAppSet': 'Geen app geselecteerd',
   'settings.desktopNotifications': 'Bureaubladmeldingen',
   'settings.desktopNotificationsHint':
-    'Toon een systeemmelding zodra er een review gevraagd wordt of CI draait in je GitHub-inbox.',
+    'Toon een systeemmelding zodra er een review gevraagd wordt of CI draait in je GitHub-inbox. Ook wanneer een pull request op GitLab of Forgejo op jouw review gaat wachten.',
   'settings.mergeCommit': 'Altijd een merge-commit maken',
   'settings.mergeCommitHint':
     'Dwing een merge-commit af, ook als een fast-forward mogelijk is, zodat merges een “Merge branch …”-commit laten zien.',
@@ -3412,6 +3413,7 @@ export const nl: Dict = {
   'sidebar.openTagOnRemote': '{name} openen op de remote',
   'sidebar.openRemoteOnWeb': '{name} openen op het web',
   'sidebar.aiPrReview': 'AI-PR-review',
+  'aiReview.noDiff': 'Geen verschillen tussen deze branches — niets te reviewen.',
   'sidebar.newIssue': 'Nieuwe issue',
   'common.expand': 'Uitklappen',
   'common.collapse': 'Inklappen',

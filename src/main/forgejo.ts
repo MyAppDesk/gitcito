@@ -17,7 +17,7 @@ import type {
 const api = (base: string): string => `${base}/api/v1`
 
 /** One place for the auth header and Forgejo's `{ message }` errors. */
-export async function fjJson<T>(url: string, token: string, init?: RequestInit): Promise<T> {
+async function fjResponse(url: string, token: string, init?: RequestInit): Promise<Response> {
   const res = await fetch(url, {
     ...init,
     redirect: 'error',
@@ -33,8 +33,50 @@ export async function fjJson<T>(url: string, token: string, init?: RequestInit):
     const msg = typeof d?.message === 'string' ? d.message.trim() : ''
     throw new Error(msg ? `Forgejo: ${msg}` : `Forgejo API error (${res.status})`)
   }
-  const text = await res.text()
+  return res
+}
+
+export async function fjJson<T>(url: string, token: string, init?: RequestInit): Promise<T> {
+  const text = await (await fjResponse(url, token, init)).text()
   return (text ? JSON.parse(text) : undefined) as T
+}
+
+/** One page of a Forgejo list, with the total the server reports, if it does. */
+export interface FjPage<T> {
+  items: T[]
+  total?: number
+}
+
+/**
+ * Walk a Forgejo list to its end. The server caps a page at its own
+ * MAX_RESPONSE_ITEMS (50 by default, lower if its admin chose) whatever `limit`
+ * asks for, so a page shorter than the limit does not prove the end. The
+ * X-Total-Count header does; without it, the first page's length is taken as
+ * the real page size and a shorter or empty page ends the walk.
+ */
+export async function forgejoPages<T>(fetchPage: (page: number) => Promise<FjPage<T>>, maxPages = 20): Promise<T[]> {
+  const out: T[] = []
+  let size = 0
+  for (let page = 1; page <= maxPages; page++) {
+    const { items, total } = await fetchPage(page)
+    out.push(...items)
+    if (page === 1) size = items.length
+    if (items.length === 0) break
+    if (total !== undefined ? out.length >= total : items.length < size) break
+  }
+  return out
+}
+
+/** Every item of a Forgejo list endpoint (up to `maxPages` pages). */
+async function fjList<T>(url: string, token: string, maxPages?: number): Promise<T[]> {
+  const sep = url.includes('?') ? '&' : '?'
+  return forgejoPages(async (page) => {
+    const res = await fjResponse(`${url}${sep}limit=50&page=${page}`, token)
+    const text = await res.text()
+    const header = res.headers.get('x-total-count')
+    const total = header === null ? NaN : Number(header)
+    return { items: (text ? JSON.parse(text) : []) as T[], ...(Number.isFinite(total) ? { total } : {}) }
+  }, maxPages)
 }
 
 interface FjPull {
@@ -45,6 +87,7 @@ interface FjPull {
   user?: { login?: string }
   head?: { ref?: string; sha?: string; repo?: { full_name?: string } | null }
   base?: { ref?: string }
+  requested_reviewers?: Array<{ login?: string }> | null
 }
 
 /** Forgejo marks a draft with a title prefix on older versions, `draft` on newer ones. */
@@ -60,13 +103,14 @@ export function mapForgejoPull(p: FjPull): PullRequest {
     url: p.html_url,
     isDraft: !!p.draft || WIP.test(p.title),
     ...(p.head?.sha ? { headSha: p.head.sha } : {}),
-    ...(p.head?.repo?.full_name ? { headRepo: p.head.repo.full_name } : {})
+    ...(p.head?.repo?.full_name ? { headRepo: p.head.repo.full_name } : {}),
+    requestedReviewers: (p.requested_reviewers ?? []).map((u) => u.login ?? '').filter(Boolean)
   }
 }
 
 export async function listForgejoPulls(base: string, owner: string, repo: string, token: string): Promise<PullRequest[]> {
-  const data = await fjJson<FjPull[]>(
-    `${api(base)}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls?state=open&limit=50`,
+  const data = await fjList<FjPull>(
+    `${api(base)}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls?state=open`,
     token
   )
   return data.map(mapForgejoPull)
@@ -108,7 +152,7 @@ interface FjRepo {
 }
 
 export async function listForgejoRepos(base: string, token: string): Promise<RemoteRepo[]> {
-  const data = await fjJson<FjRepo[]>(`${api(base)}/user/repos?limit=50`, token)
+  const data = await fjList<FjRepo>(`${api(base)}/user/repos`, token)
   return data.map((r) => ({
     name: r.full_name,
     url: r.clone_url,
@@ -136,7 +180,7 @@ const orgLogin = (o: FjOrg): string => o.username ?? o.name ?? ''
 
 export async function listForgejoOwners(base: string, token: string): Promise<RemoteOwner[]> {
   const user = await fjJson<FjUser>(`${api(base)}/user`, token)
-  const orgs = await fjJson<FjOrg[]>(`${api(base)}/user/orgs?limit=50`, token).catch(() => [])
+  const orgs = await fjList<FjOrg>(`${api(base)}/user/orgs`, token).catch(() => [])
   return [
     { id: user.login, login: user.login, avatarUrl: user.avatar_url, type: 'user' },
     ...orgs.filter(orgLogin).map((o) => ({ id: orgLogin(o), login: orgLogin(o), avatarUrl: o.avatar_url, type: 'org' as const }))
@@ -155,7 +199,7 @@ export async function createForgejoRepo(base: string, token: string, opts: Creat
 
 export async function describeForgejoAccount(base: string, token: string): Promise<ConnectedAccount> {
   const user = await fjJson<FjUser>(`${api(base)}/user`, token)
-  const orgs = await fjJson<FjOrg[]>(`${api(base)}/user/orgs?limit=50`, token).catch(() => [])
+  const orgs = await fjList<FjOrg>(`${api(base)}/user/orgs`, token).catch(() => [])
   return {
     login: user.login,
     name: user.full_name || undefined,

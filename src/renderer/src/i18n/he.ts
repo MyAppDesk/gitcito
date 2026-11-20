@@ -146,6 +146,7 @@ export const he: Dict = {
   'pr.merged': 'מוזג',
   'pr.closed': 'נסגר',
   'pr.blockedDownstack': 'חסום מלמטה',
+  'pr.awaitingYourReview': 'ממתין לסקירה שלך',
   'sidebar.stackNumbered': 'ערימה #{n}',
   'sidebar.noTags': 'אין תגיות',
   'sidebar.noReleases': 'לא נטענו ריליסים',
@@ -1442,7 +1443,7 @@ export const he: Dict = {
   'settings.noAppSet': 'לא נבחרה אפליקציה',
   'settings.desktopNotifications': 'התראות שולחן עבודה',
   'settings.desktopNotificationsHint':
-    'הצגת התראת מערכת כשמתבקשת ביקורת או כש־CI רץ בתיבת ה־GitHub שלכם.',
+    'הצגת התראת מערכת כשמתבקשת ביקורת או כש־CI רץ בתיבת ה־GitHub שלכם. וגם כשבקשת משיכה ב־GitLab או ב־Forgejo מתחילה לחכות לסקירה שלכם.',
   'settings.mergeCommit': 'תמיד ליצור קומיט מיזוג',
   'settings.mergeCommitHint':
     'כפיית קומיט מיזוג גם כשאפשר fast-forward, כך שמיזוגים מציגים קומיט ״Merge branch …״.',
@@ -3407,6 +3408,7 @@ export const he: Dict = {
   'sidebar.openTagOnRemote': 'פתיחת {name} ברימוט',
   'sidebar.openRemoteOnWeb': 'פתיחת {name} באתר',
   'sidebar.aiPrReview': 'ביקורת AI לבקשת משיכה',
+  'aiReview.noDiff': 'אין הבדלים בין הענפים האלה — אין מה לסקור.',
   'sidebar.newIssue': 'בעיה חדשה',
   'common.expand': 'הרחבה',
   'common.collapse': 'כיווץ',

@@ -145,6 +145,7 @@ export const fr: Dict = {
   'pr.merged': 'Fusionnée',
   'pr.closed': 'Fermée',
   'pr.blockedDownstack': 'Bloquée en aval',
+  'pr.awaitingYourReview': 'En attente de votre relecture',
   'sidebar.stackNumbered': 'Pile #{n}',
   'sidebar.noTags': 'Aucune étiquette',
   'sidebar.noReleases': 'Aucune version chargée',
@@ -1427,7 +1428,7 @@ export const fr: Dict = {
   'settings.noAppSet': 'Aucune application sélectionnée',
   'settings.desktopNotifications': 'Notifications du bureau',
   'settings.desktopNotificationsHint':
-    'Affiche une notification système quand une relecture est demandée ou que la CI s’exécute, d’après votre boîte de réception GitHub.',
+    'Affiche une notification système quand une relecture est demandée ou que la CI s’exécute, d’après votre boîte de réception GitHub. Aussi quand une pull request GitLab ou Forgejo se met à attendre votre relecture.',
   'settings.mergeCommit': 'Toujours créer un commit de fusion',
   'settings.mergeCommitHint':
     'Force un commit de fusion même quand une avance rapide serait possible, pour que les fusions affichent un commit « Merge branch … ».',
@@ -3352,6 +3353,7 @@ export const fr: Dict = {
   'sidebar.openTagOnRemote': 'Ouvrir {name} sur le distant',
   'sidebar.openRemoteOnWeb': 'Ouvrir {name} sur le web',
   'sidebar.aiPrReview': 'Relecture de PR par l’IA',
+  'aiReview.noDiff': 'Aucune différence entre ces branches — rien à relire.',
   'sidebar.newIssue': 'Nouveau ticket',
   'common.expand': 'Déplier',
   'common.collapse': 'Replier',

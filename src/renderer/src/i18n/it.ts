@@ -145,6 +145,7 @@ export const it: Dict = {
   'pr.merged': 'Unita',
   'pr.closed': 'Chiusa',
   'pr.blockedDownstack': 'Bloccata più in basso',
+  'pr.awaitingYourReview': 'In attesa della tua revisione',
   'sidebar.stackNumbered': 'Pila #{n}',
   'sidebar.noTags': 'Nessun tag',
   'sidebar.noReleases': 'Nessuna release caricata',
@@ -1428,7 +1429,7 @@ export const it: Dict = {
   'settings.noAppSet': 'Nessuna app selezionata',
   'settings.desktopNotifications': 'Notifiche di sistema',
   'settings.desktopNotificationsHint':
-    'Mostra una notifica di sistema quando ti viene chiesta una revisione o la CI gira, in base alla tua posta in arrivo di GitHub.',
+    'Mostra una notifica di sistema quando ti viene chiesta una revisione o la CI gira, in base alla tua posta in arrivo di GitHub. Anche quando una pull request di GitLab o Forgejo inizia ad attendere la tua revisione.',
   'settings.mergeCommit': 'Crea sempre un commit di merge',
   'settings.mergeCommitHint':
     'Forza un commit di merge anche quando sarebbe possibile un fast-forward, così i merge mostrano un commit “Merge branch …”.',
@@ -3353,6 +3354,7 @@ export const it: Dict = {
   'sidebar.openTagOnRemote': 'Apri {name} sul remoto',
   'sidebar.openRemoteOnWeb': 'Apri {name} sul web',
   'sidebar.aiPrReview': 'Revisione della PR con l’AI',
+  'aiReview.noDiff': 'Nessuna differenza tra questi branch: niente da revisionare.',
   'sidebar.newIssue': 'Nuova issue',
   'common.expand': 'Espandi',
   'common.collapse': 'Comprimi',

@@ -147,6 +147,7 @@ export const en = {
   'pr.merged': 'Merged',
   'pr.closed': 'Closed',
   'pr.blockedDownstack': 'Blocked downstack',
+  'pr.awaitingYourReview': 'Waiting for your review',
   'sidebar.stackNumbered': 'Stack #{n}',
   'sidebar.noTags': 'No tags',
   'sidebar.noReleases': 'No releases loaded',
@@ -1436,7 +1437,7 @@ export const en = {
   'settings.noAppSet': 'No app selected',
   'settings.desktopNotifications': 'Desktop notifications',
   'settings.desktopNotificationsHint':
-    'Raise an OS notification when a review is requested or CI runs on your GitHub inbox.',
+    'Raise an OS notification when a review is requested or CI runs on your GitHub inbox. Also when a GitLab or Forgejo pull request starts waiting for your review.',
   'settings.mergeCommit': 'Always create a merge commit',
   'settings.mergeCommitHint':
     'Force a merge commit even when a fast-forward is possible, so merges show a "Merge branch …" commit.',
@@ -3411,6 +3412,7 @@ export const en = {
   'sidebar.openTagOnRemote': 'Open {name} on remote',
   'sidebar.openRemoteOnWeb': 'Open {name} on web',
   'sidebar.aiPrReview': 'AI PR review',
+  'aiReview.noDiff': 'No differences between these branches — nothing to review.',
   'sidebar.newIssue': 'New issue',
   'common.expand': 'Expand',
   'common.collapse': 'Collapse',

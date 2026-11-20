@@ -146,6 +146,7 @@ export const de: Dict = {
   'pr.merged': 'Gemergt',
   'pr.closed': 'Geschlossen',
   'pr.blockedDownstack': 'Weiter unten blockiert',
+  'pr.awaitingYourReview': 'Wartet auf dein Review',
   'sidebar.stackNumbered': 'Stapel #{n}',
   'sidebar.noTags': 'Keine Tags',
   'sidebar.noReleases': 'Keine Releases geladen',
@@ -1442,7 +1443,7 @@ export const de: Dict = {
   'settings.noAppSet': 'Keine App ausgewählt',
   'settings.desktopNotifications': 'Desktop-Benachrichtigungen',
   'settings.desktopNotificationsHint':
-    'Zeigt eine Systembenachrichtigung, wenn in deinem GitHub-Posteingang ein Review angefragt wird oder CI läuft.',
+    'Zeigt eine Systembenachrichtigung, wenn in deinem GitHub-Posteingang ein Review angefragt wird oder CI läuft. Auch wenn ein Pull Request auf GitLab oder Forgejo auf dein Review zu warten beginnt.',
   'settings.mergeCommit': 'Immer einen Merge-Commit erzeugen',
   'settings.mergeCommitHint':
     'Erzwingt einen Merge-Commit, auch wenn ein Fast-Forward möglich wäre, sodass Merges als „Merge branch …“-Commit sichtbar sind.',
@@ -3412,6 +3413,7 @@ export const de: Dict = {
   'sidebar.openTagOnRemote': '{name} auf dem Remote öffnen',
   'sidebar.openRemoteOnWeb': '{name} im Web öffnen',
   'sidebar.aiPrReview': 'KI-PR-Review',
+  'aiReview.noDiff': 'Keine Unterschiede zwischen diesen Branches – nichts zu prüfen.',
   'sidebar.newIssue': 'Neues Issue',
   'common.expand': 'Ausklappen',
   'common.collapse': 'Einklappen',

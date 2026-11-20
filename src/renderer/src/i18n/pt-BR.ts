@@ -146,6 +146,7 @@ export const ptBR: Dict = {
   'pr.merged': 'Mesclado',
   'pr.closed': 'Fechado',
   'pr.blockedDownstack': 'Bloqueado abaixo',
+  'pr.awaitingYourReview': 'Aguardando a sua revisão',
   'sidebar.stackNumbered': 'Pilha #{n}',
   'sidebar.noTags': 'Nenhuma tag',
   'sidebar.noReleases': 'Nenhum release carregado',
@@ -1443,7 +1444,7 @@ export const ptBR: Dict = {
   'settings.noAppSet': 'Nenhum app selecionado',
   'settings.desktopNotifications': 'Notificações do sistema',
   'settings.desktopNotificationsHint':
-    'Dispara uma notificação do sistema quando pedem um review ou a CI roda na sua caixa de entrada do GitHub.',
+    'Dispara uma notificação do sistema quando pedem um review ou a CI roda na sua caixa de entrada do GitHub. Também quando um pull request do GitLab ou do Forgejo passa a esperar o seu review.',
   'settings.mergeCommit': 'Sempre criar um commit de merge',
   'settings.mergeCommitHint':
     'Força um commit de merge mesmo quando o fast-forward seria possível, para que os merges apareçam como um commit “Merge branch …”.',
@@ -3413,6 +3414,7 @@ export const ptBR: Dict = {
   'sidebar.openTagOnRemote': 'Abrir {name} no remoto',
   'sidebar.openRemoteOnWeb': 'Abrir {name} na web',
   'sidebar.aiPrReview': 'Review de PR com IA',
+  'aiReview.noDiff': 'Nenhuma diferença entre essas branches — nada para revisar.',
   'sidebar.newIssue': 'Nova issue',
   'common.expand': 'Expandir',
   'common.collapse': 'Recolher',

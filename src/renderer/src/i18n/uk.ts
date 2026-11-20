@@ -146,6 +146,7 @@ export const uk: Dict = {
   'pr.merged': 'Влитий',
   'pr.closed': 'Закритий',
   'pr.blockedDownstack': 'Заблокований нижче',
+  'pr.awaitingYourReview': "Чекає на ваше рев'ю",
   'sidebar.stackNumbered': 'Стек #{n}',
   'sidebar.noTags': 'Немає тегів',
   'sidebar.noReleases': 'Релізи не завантажено',
@@ -1442,7 +1443,7 @@ export const uk: Dict = {
   'settings.noAppSet': 'Застосунок не вибрано',
   'settings.desktopNotifications': 'Системні сповіщення',
   'settings.desktopNotificationsHint':
-    'Показувати сповіщення ОС, коли у вашій скриньці GitHub зʼявляється запит на рецензію або запускається CI.',
+    'Показувати сповіщення ОС, коли у вашій скриньці GitHub зʼявляється запит на рецензію або запускається CI. А також коли pull request у GitLab чи Forgejo починає чекати на вашу рецензію.',
   'settings.mergeCommit': 'Завжди створювати коміт злиття',
   'settings.mergeCommitHint':
     'Примусово створювати коміт злиття, навіть коли можливий fast-forward, щоб злиття показувалися комітом «Merge branch …».',
@@ -3404,6 +3405,7 @@ export const uk: Dict = {
   'sidebar.openTagOnRemote': 'Відкрити {name} у віддаленому репозиторії',
   'sidebar.openRemoteOnWeb': 'Відкрити {name} у вебі',
   'sidebar.aiPrReview': 'Рецензія PR від ШІ',
+  'aiReview.noDiff': 'Між цими гілками немає відмінностей — нема чого перевіряти.',
   'sidebar.newIssue': 'Нова задача',
   'common.expand': 'Розгорнути',
   'common.collapse': 'Згорнути',

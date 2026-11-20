@@ -146,6 +146,7 @@ export const ar: Dict = {
   'pr.merged': 'مُدمج',
   'pr.closed': 'مغلق',
   'pr.blockedDownstack': 'محجوب من الأسفل',
+  'pr.awaitingYourReview': 'بانتظار مراجعتك',
   'sidebar.stackNumbered': 'الكومة #{n}',
   'sidebar.noTags': 'لا توجد وسوم',
   'sidebar.noReleases': 'لم تُحمَّل أي إصدارات',
@@ -1442,7 +1443,7 @@ export const ar: Dict = {
   'settings.noAppSet': 'لم يُحدَّد أي تطبيق',
   'settings.desktopNotifications': 'إشعارات سطح المكتب',
   'settings.desktopNotificationsHint':
-    'أظهر إشعارًا من نظام التشغيل عند طلب مراجعة أو عند تشغيل التكامل المستمر في صندوق وارد GitHub لديك.',
+    'أظهر إشعارًا من نظام التشغيل عند طلب مراجعة أو عند تشغيل التكامل المستمر في صندوق وارد GitHub لديك. وأيضًا عندما يبدأ طلب سحب على GitLab أو Forgejo في انتظار مراجعتك.',
   'settings.mergeCommit': 'إنشاء التزام دمج دائمًا',
   'settings.mergeCommitHint':
     'أجبر إنشاء التزام دمج حتى حين يكون التقديم السريع ممكنًا، فتُظهر عمليات الدمج التزامًا بصيغة «Merge branch …».',
@@ -3407,6 +3408,7 @@ export const ar: Dict = {
   'sidebar.openTagOnRemote': 'فتح {name} على المستودع البعيد',
   'sidebar.openRemoteOnWeb': 'فتح {name} على الويب',
   'sidebar.aiPrReview': 'مراجعة طلب السحب بالذكاء الاصطناعي',
+  'aiReview.noDiff': 'لا توجد فروق بين هذه الفروع — لا شيء للمراجعة.',
   'sidebar.newIssue': 'مشكلة جديدة',
   'common.expand': 'توسيع',
   'common.collapse': 'طي',

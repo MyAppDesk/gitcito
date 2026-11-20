@@ -146,6 +146,7 @@ export const ko: Dict = {
   'pr.merged': '병합됨',
   'pr.closed': '닫힘',
   'pr.blockedDownstack': '아래에서 막힘',
+  'pr.awaitingYourReview': '내 리뷰를 기다리는 중',
   'sidebar.stackNumbered': '스택 #{n}',
   'sidebar.noTags': '태그 없음',
   'sidebar.noReleases': '불러온 릴리스가 없습니다',
@@ -1442,7 +1443,7 @@ export const ko: Dict = {
   'settings.noAppSet': '선택된 앱 없음',
   'settings.desktopNotifications': '데스크톱 알림',
   'settings.desktopNotificationsHint':
-    'GitHub 받은편지함에 리뷰 요청이 오거나 CI가 돌면 OS 알림을 띄웁니다.',
+    'GitHub 받은편지함에 리뷰 요청이 오거나 CI가 돌면 OS 알림을 띄웁니다. GitLab이나 Forgejo의 풀 리퀘스트가 내 리뷰를 기다리기 시작할 때도 알립니다.',
   'settings.mergeCommit': '항상 머지 커밋 만들기',
   'settings.mergeCommitHint':
     'fast-forward가 가능해도 머지 커밋을 강제해서 머지가 “Merge branch …” 커밋으로 남게 합니다.',
@@ -3404,6 +3405,7 @@ export const ko: Dict = {
   'sidebar.openTagOnRemote': '원격에서 {name} 열기',
   'sidebar.openRemoteOnWeb': '웹에서 {name} 열기',
   'sidebar.aiPrReview': 'AI PR 리뷰',
+  'aiReview.noDiff': '이 브랜치들 사이에 차이가 없습니다. 리뷰할 내용이 없습니다.',
   'sidebar.newIssue': '새 이슈',
   'common.expand': '펼치기',
   'common.collapse': '접기',

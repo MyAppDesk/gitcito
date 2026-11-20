@@ -146,6 +146,7 @@ export const zhCN: Dict = {
   'pr.merged': '已合并',
   'pr.closed': '已关闭',
   'pr.blockedDownstack': '被下游挡住',
+  'pr.awaitingYourReview': '等待你的评审',
   'sidebar.stackNumbered': '堆栈 #{n}',
   'sidebar.noTags': '没有标签',
   'sidebar.noReleases': '未加载任何发布',
@@ -1442,7 +1443,7 @@ export const zhCN: Dict = {
   'settings.noAppSet': '未选择应用',
   'settings.desktopNotifications': '桌面通知',
   'settings.desktopNotificationsHint':
-    '当你的 GitHub 收件箱收到评审请求或 CI 运行结果时，弹出一条系统通知。',
+    '当你的 GitHub 收件箱收到评审请求或 CI 运行结果时，弹出一条系统通知。GitLab 或 Forgejo 的拉取请求开始等待你的评审时，也会通知。',
   'settings.mergeCommit': '始终创建合并提交',
   'settings.mergeCommitHint':
     '即使可以快进也强制生成合并提交，让每次合并都留下一个「Merge branch …」提交。',
@@ -3404,6 +3405,7 @@ export const zhCN: Dict = {
   'sidebar.openTagOnRemote': '在远程上打开 {name}',
   'sidebar.openRemoteOnWeb': '在网页中打开 {name}',
   'sidebar.aiPrReview': 'AI 拉取请求评审',
+  'aiReview.noDiff': '这些分支之间没有差异——无需评审。',
   'sidebar.newIssue': '新建议题',
   'common.expand': '展开',
   'common.collapse': '折叠',

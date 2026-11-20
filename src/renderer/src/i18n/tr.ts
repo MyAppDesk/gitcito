@@ -145,6 +145,7 @@ export const tr: Dict = {
   'pr.merged': 'Merge edildi',
   'pr.closed': 'Kapatıldı',
   'pr.blockedDownstack': 'Alttan engellendi',
+  'pr.awaitingYourReview': 'İncelemeni bekliyor',
   'sidebar.stackNumbered': 'Yığın #{n}',
   'sidebar.noTags': 'Etiket yok',
   'sidebar.noReleases': 'Yüklenmiş sürüm yok',
@@ -1427,7 +1428,7 @@ export const tr: Dict = {
   'settings.noAppSet': 'Uygulama seçilmedi',
   'settings.desktopNotifications': 'Masaüstü bildirimleri',
   'settings.desktopNotificationsHint':
-    'GitHub gelen kutunuzda bir inceleme istendiğinde ya da CI çalıştığında işletim sistemi bildirimi göster.',
+    'GitHub gelen kutunuzda bir inceleme istendiğinde ya da CI çalıştığında işletim sistemi bildirimi göster. Ayrıca bir GitLab ya da Forgejo pull request’i incelemenizi beklemeye başladığında.',
   'settings.mergeCommit': 'Her zaman birleştirme commit’i oluştur',
   'settings.mergeCommitHint':
     'Fast-forward mümkün olsa bile birleştirme commit’i oluşturmaya zorlar; böylece birleştirmeler bir “Merge branch …” commit’i olarak görünür.',
@@ -3347,6 +3348,7 @@ export const tr: Dict = {
   'sidebar.openTagOnRemote': '{name} etiketini uzak sunucuda aç',
   'sidebar.openRemoteOnWeb': '{name} sunucusunu web’de aç',
   'sidebar.aiPrReview': 'Yapay zekâ PR incelemesi',
+  'aiReview.noDiff': 'Bu dallar arasında fark yok — incelenecek bir şey yok.',
   'sidebar.newIssue': 'Yeni sorun',
   'common.expand': 'Genişlet',
   'common.collapse': 'Daralt',

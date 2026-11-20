@@ -58,7 +58,9 @@ abre como aba separada. Se o repositório não estiver aberto em nenhuma aba, o 
 abre numa aba própria.
 
 O trabalho fica na coluna principal, e a barra lateral diz o que o PR *é*, sem
-precisar rolar a tela.
+precisar rolar a tela. Com a IA ligada, o botão ✨ do cabeçalho revisa o diff do
+PR como o host o informa, então funciona mesmo para uma branch que você nunca
+baixou (um fork, de outra pessoa).
 
 A coluna principal tem três seções:
 
@@ -163,7 +165,8 @@ Limites:
 - Revisar, comentar e fazer merge de um pull request ainda abre no navegador.
   Por enquanto, essa tela de revisão é só do GitHub e do GitLab.
 - Só https, um servidor Forgejo por perfil.
-- As listas mostram os primeiros 50 pull requests e repositórios.
+- As listas param depois de vinte requisições: 1.000 pull requests ou
+  repositórios no tamanho de página padrão do servidor.
 
 ## Issues, milestones, releases — GitHub
 
@@ -171,6 +174,20 @@ Navegue pelas issues e abra uma aba de issue completa: corpo, comentários, labe
 responsáveis, milestone, campos do Projects v2, fechar/reabrir, e **criar uma
 branch para esta issue** (com nomeação por IA). Milestones mostram progresso e as
 issues delas. Releases são navegáveis com uma página de changelog.
+
+## Aguardando a sua revisão
+
+Na lista de pull requests da sidebar, um 👁 marca os PRs em que **você** é
+revisor e ainda não respondeu — no GitHub, no GitLab e no Forgejo. Quem é
+"você" é perguntado ao host com a credencial do perfil e lembrado por dez
+minutos. Um token que não consegue ler o próprio usuário (sem `read:user` no
+Forgejo, por exemplo) não marca nada.
+
+Com **Configurações → Notificações do sistema** ligado, um pull request do GitLab
+ou do Forgejo que *passa* a esperar por você dispara uma; clicar nela abre a
+página do PR. A primeira olhada num repositório só registra o que já está
+esperando, então abrir o app não repete o acúmulo. Os pedidos de review do GitHub
+ficam com a caixa de notificações dele, mais abaixo, que já avisa.
 
 ## Notificações — GitHub
 

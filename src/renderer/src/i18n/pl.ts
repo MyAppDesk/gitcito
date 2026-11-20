@@ -146,6 +146,7 @@ export const pl: Dict = {
   'pr.merged': 'Scalony',
   'pr.closed': 'Zamknięty',
   'pr.blockedDownstack': 'Zablokowany niżej',
+  'pr.awaitingYourReview': 'Czeka na twoją recenzję',
   'sidebar.stackNumbered': 'Stos #{n}',
   'sidebar.noTags': 'Brak tagów',
   'sidebar.noReleases': 'Nie wczytano wydań',
@@ -1442,7 +1443,7 @@ export const pl: Dict = {
   'settings.noAppSet': 'Nie wybrano aplikacji',
   'settings.desktopNotifications': 'Powiadomienia systemowe',
   'settings.desktopNotificationsHint':
-    'Pokazuje powiadomienie systemowe, gdy ktoś poprosi cię o review albo gdy w twojej skrzynce GitHuba ruszy CI.',
+    'Pokazuje powiadomienie systemowe, gdy ktoś poprosi cię o review albo gdy w twojej skrzynce GitHuba ruszy CI. Także gdy pull request w GitLabie lub Forgejo zaczyna czekać na twoje review.',
   'settings.mergeCommit': 'Zawsze twórz commit merge',
   'settings.mergeCommitHint':
     'Wymusza commit merge nawet wtedy, gdy fast-forward jest możliwy, więc scalenia widać jako commit „Merge branch …”.',
@@ -3404,6 +3405,7 @@ export const pl: Dict = {
   'sidebar.openTagOnRemote': 'Otwórz {name} na remote',
   'sidebar.openRemoteOnWeb': 'Otwórz {name} w przeglądarce',
   'sidebar.aiPrReview': 'Review PR-a przez AI',
+  'aiReview.noDiff': 'Brak różnic między tymi gałęziami — nie ma czego recenzować.',
   'sidebar.newIssue': 'Nowe zgłoszenie',
   'common.expand': 'Rozwiń',
   'common.collapse': 'Zwiń',

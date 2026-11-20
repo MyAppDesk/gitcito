@@ -145,6 +145,7 @@ export const ja: Dict = {
   'pr.merged': 'マージ済み',
   'pr.closed': 'クローズ済み',
   'pr.blockedDownstack': '下位でブロック',
+  'pr.awaitingYourReview': 'あなたのレビュー待ち',
   'sidebar.stackNumbered': 'スタック #{n}',
   'sidebar.noTags': 'タグはありません',
   'sidebar.noReleases': '読み込まれたリリースはありません',
@@ -1427,7 +1428,7 @@ export const ja: Dict = {
   'settings.noAppSet': 'アプリは選ばれていません',
   'settings.desktopNotifications': 'デスクトップ通知',
   'settings.desktopNotificationsHint':
-    'GitHub の受信箱にレビュー依頼が届いたときや CI が動いたときに、OS の通知を出します。',
+    'GitHub の受信箱にレビュー依頼が届いたときや CI が動いたときに、OS の通知を出します。GitLab や Forgejo のプルリクエストがあなたのレビュー待ちになったときにも通知します。',
   'settings.mergeCommit': '常にマージコミットを作る',
   'settings.mergeCommitHint':
     'fast-forward できる場合でもマージコミットを強制するので、マージが「Merge branch …」というコミットとして残ります。',
@@ -3344,6 +3345,7 @@ export const ja: Dict = {
   'sidebar.openTagOnRemote': '{name} をリモートで開く',
   'sidebar.openRemoteOnWeb': '{name} を Web で開く',
   'sidebar.aiPrReview': 'AI による PR レビュー',
+  'aiReview.noDiff': 'これらのブランチ間に差分はありません。レビューするものはありません。',
   'sidebar.newIssue': '新しいイシュー',
   'common.expand': '展開',
   'common.collapse': '折りたたむ',

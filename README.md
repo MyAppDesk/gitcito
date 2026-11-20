@@ -106,6 +106,7 @@ git actually is.
 | **[Bundles & archives](docs/help/export.md)** | The repository as one file git can clone from — or a tree as a zip, honouring `export-ignore`. |
 | **[Credential helper](docs/help/credentials.md)** | Git's own password store — why https keeps asking, and the plaintext file nobody meant to have. Launched from an editor's terminal, git never borrows that editor's sign-in window. |
 | **[Remote sign-in check](docs/help/credentials.md#which-account-a-push-uses)** | Right-click a remote: which profile and account a push signs in with, the token's scopes, and whether it may push workflow files — asked of the host itself. |
+| **[Environment check](docs/help/environment.md)** | Git version, LFS, the native terminal, git's credential helper, the GitHub CLI's `workflow` scope and the inotify limit — checked in one place, each fix a command to copy. |
 | **[SSH keys](docs/help/ssh-keys.md)** | See which key the agent is holding, generate one, test the host — the auth path tokens never covered. |
 
 ### AI, optional and grounded

@@ -156,6 +156,7 @@
       "settings-ai": "ai",
       "settings-security": "security",
       "remote-auth": "credentials",
+      "settings-environment": "environment",
       "ssh-keys": "ssh-keys",
       "subtree": "subtree",
       "settings-shortcuts": "keyboard",

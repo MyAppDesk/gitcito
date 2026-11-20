@@ -64,7 +64,8 @@ import {
   ToggleLeft,
   Keyboard,
   Map as MapIcon,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Stethoscope
 } from 'lucide-react'
 import hljs from 'highlight.js'
 import { useSettingsStore } from '../stores/settings'
@@ -111,6 +112,7 @@ import {
 } from '../theme/themes'
 import { ansiToSpans } from '../lib/ansi'
 import { forgejoTokenUrl, gitlabTokenUrl, normalizeGitlabUrl } from '../../../shared/gitlabInstance'
+import { EnvironmentPage } from './EnvironmentSettings'
 import { readableError } from '../lib/gitErrorHint'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { resolveAI } from '../../../shared/aiAccounts'
@@ -131,6 +133,7 @@ type SettingsPage =
   | 'security'
   | 'shortcuts'
   | 'data'
+  | 'environment'
 
 const PAGES: { id: SettingsPage; key: TranslationKey; icon: React.ReactNode }[] = [
   { id: 'general', key: 'settings.general', icon: <Settings2 size={13} /> },
@@ -142,7 +145,8 @@ const PAGES: { id: SettingsPage; key: TranslationKey; icon: React.ReactNode }[] 
   { id: 'themes', key: 'settings.themes', icon: <Palette size={13} /> },
   { id: 'security', key: 'settings.security', icon: <ShieldCheck size={13} /> },
   { id: 'shortcuts', key: 'settings.shortcuts', icon: <KeyboardIcon size={13} /> },
-  { id: 'data', key: 'settings.data', icon: <HardDrive size={13} /> }
+  { id: 'data', key: 'settings.data', icon: <HardDrive size={13} /> },
+  { id: 'environment', key: 'settings.environment', icon: <Stethoscope size={13} /> }
 ]
 
 const COMMIT_STYLES: { id: CommitStyle; key: TranslationKey }[] = [
@@ -4558,6 +4562,7 @@ export function SettingsPanel({ initialPage, initialThemeTab }: { initialPage?: 
           {page === 'security' && <SecurityPage />}
           {page === 'shortcuts' && <ShortcutsPage />}
           {page === 'data' && <DataPage />}
+          {page === 'environment' && <EnvironmentPage />}
         </div>
       </div>
     </div>

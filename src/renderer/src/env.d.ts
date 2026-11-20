@@ -220,6 +220,10 @@ interface PreloadApi {
     exportAll(): Promise<unknown>
     importAll(data: unknown): Promise<unknown>
   }
+  env: {
+    check(): Promise<unknown>
+    checkNetwork(): Promise<unknown>
+  }
   log: {
     get(): Promise<unknown>
     clear(): Promise<unknown>

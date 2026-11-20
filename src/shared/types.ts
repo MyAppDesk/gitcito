@@ -821,6 +821,43 @@ export interface ReleaseInfo {
 
 export type RepoHost = 'github' | 'gitlab' | 'bitbucket' | 'azure' | 'forgejo'
 
+/**
+ * Where a remote's credential comes from on push and fetch — the same
+ * precedence `withRemoteAuth` applies (git.ts).
+ *
+ * - `token` / `gh` / `git`: a profile's PAT, or its linked GitHub CLI / git
+ *   helper account.
+ * - `helper`: no profile credential for this host; git's own helper answers.
+ * - `embedded`: a password written into the remote URL itself.
+ * - `ssh`: an ssh remote — the key in the agent decides.
+ * - `none`: https with nothing that would answer.
+ */
+export type RemoteAuthSource = 'token' | 'gh' | 'git' | 'helper' | 'embedded' | 'ssh' | 'none'
+
+export interface RemoteAuthCheck {
+  remote: string
+  /** The push URL with any user:password removed. */
+  url: string
+  provider?: RepoHost
+  source: RemoteAuthSource
+  /** The profile whose credential is used, when it is one. */
+  profile?: string
+  /** The repository is explicitly bound to that profile (vs. the active one). */
+  bound?: boolean
+  /** The account the host says the credential belongs to. */
+  login?: string
+  /** A linked account whose credential could not be found on this machine. */
+  linkMissing?: boolean
+  /** The host refused the credential (401). */
+  rejected?: boolean
+  /** Scopes the host reported; absent when it does not report them (fine-grained tokens). */
+  scopes?: string[]
+  /** Whether the scopes allow pushing at all. Absent when unknown. */
+  scopeAllowsPush?: boolean
+  /** GitHub only: whether pushes that change `.github/workflows` are allowed. Absent when unknown. */
+  canPushWorkflows?: boolean
+}
+
 export interface RemoteRepo {
   name: string // display name, e.g. owner/repo
   url: string // https clone url

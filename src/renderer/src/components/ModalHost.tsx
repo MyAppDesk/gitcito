@@ -30,6 +30,7 @@ import { ConflictRadar } from './ConflictRadar'
 import { TeammateRadarModal } from './TeammateRadarModal'
 import { CommitEditModal } from './CommitEditModal'
 import { ResetToCommitModal } from './ResetToCommitModal'
+import { RemoteAuthModal } from './RemoteAuthModal'
 import { LocalCIModal } from './LocalCIModal'
 import { KeychainConsentModal } from './KeychainConsentModal'
 import { RangeDiffModal } from './RangeDiffModal'
@@ -2231,6 +2232,7 @@ export function ModalHost(): React.JSX.Element {
               {modal.kind === 'diverged-checkout' && <DivergedCheckoutModal spec={modal} />}
               {modal.kind === 'ahead-checkout' && <AheadCheckoutModal spec={modal} />}
               {modal.kind === 'addRemote' && <AddRemoteModal spec={modal} />}
+              {modal.kind === 'remoteAuth' && <RemoteAuthModal spec={modal} />}
               {modal.kind === 'add-worktree' && <AddWorktreeModal spec={modal} />}
               {modal.kind === 'editRemote' && <EditRemoteModal spec={modal} />}
               {modal.kind === 'clone' && <CloneModal spec={modal} />}

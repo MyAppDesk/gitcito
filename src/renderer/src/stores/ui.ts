@@ -103,6 +103,7 @@ export type ModalSpec =
       /** "branch → base" per level that changes, top level first. */
       lines: string[]
     }
+  | { kind: 'remoteAuth'; path: string; remote?: string }
   | {
       kind: 'addRemote'
       path: string

@@ -86,6 +86,39 @@ imprimiria uma senha viva na saída padrão.
 
 O próximo push pergunta uma vez, e o helper guarda a nova resposta.
 
+## Qual conta um push usa
+
+Cada URL de push é verificada separadamente. Um escopo de escrita indica uma capacidade do token. A verificação não testa a participação no repositório, as regras da branch nem a permissão para alterar um arquivo específico. A leitura pública pode funcionar sem credenciais.
+
+![Verificação de login do remoto](../../screenshots/remote-sign-in.webp)
+
+Um push pode entrar de várias formas: o token de um perfil, um login do GitHub
+CLI vinculado a um perfil, o helper do próprio git, uma senha esquecida na URL
+do remote ou uma chave SSH. Quando ele é recusado, primeiro é preciso saber qual
+delas foi usada. Clique com o botão direito num remote na sidebar e escolha
+**Verificar login…** (ou *Verificar login dos remotes* na paleta de comandos). A
+verificação resolve a credencial do mesmo jeito que um push e depois pergunta
+ao host sobre ela:
+
+| Mostra | De onde vem |
+|--------|-------------|
+| A origem, e o [perfil](profiles.md) por trás dela | A mesma precedência de um push — o perfil vinculado ao repositório, senão o ativo, senão o helper do git |
+| A conta | A resposta do próprio host (`/user`), não o que foi digitado nas Configurações |
+| Os escopos | O cabeçalho `X-OAuth-Scopes` do GitHub; a descrição que o GitLab dá do próprio token |
+| O que eles permitem | Fazer push (`repo` no GitHub, `write_repository` no GitLab), e no GitHub se `.github/workflows` pode mudar |
+
+Ela também aponta uma credencial que o host recusa (expirada ou revogada), uma
+conta vinculada que não está mais conectada e uma senha guardada em texto puro
+na URL do remote.
+
+**Limites.** Um token fine-grained do GitHub não lista as permissões, então se
+ele pode fazer push aparece como desconhecido até um push tentar. O Forgejo
+informa a conta, mas não as permissões do token. Azure DevOps e Bitbucket
+aparecem só com origem e perfil. Remotes SSH não são testados, mas
+[Chaves SSH](ssh-keys.md) lista o que o agente tem. A verificação consulta o
+helper do git em silêncio: um helper que precisaria abrir uma janela de login
+conta como sem credencial.
+
 ## Limites que vale conhecer
 
 - **Este é o armazenamento do git, não o do Gitcito.** Mudá-lo muda o que o seu

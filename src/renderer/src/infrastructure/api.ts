@@ -47,6 +47,7 @@ import type {
   GraphCommit,
   RebaseStep,
   RemoteInfo,
+  RemoteAuthCheck,
   PushRemoteResult,
   RepoStatus,
   RerereStatus,
@@ -188,6 +189,7 @@ export const gitApi = {
   status: (path: string) => call<RepoStatus>('status', path),
   stashes: (path: string) => call<StashInfo[]>('stashes', path),
   remotes: (path: string) => call<RemoteInfo[]>('remotes', path),
+  remoteAuthChecks: (path: string) => call<RemoteAuthCheck[]>('remoteAuthChecks', path),
   addRemote: (path: string, name: string, url: string, pushUrl?: string) =>
     call<void>('addRemote', path, name, url, pushUrl),
   removeRemote: (path: string, name: string) => call<void>('removeRemote', path, name),

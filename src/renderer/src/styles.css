@@ -17701,6 +17701,19 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .profile-avatar-account img { width: 18px; height: 18px; border-radius: 50%; }
 .noreply-email { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 2px; }
 
+/* Remote sign-in check: one card per remote. */
+.remote-auth-list { display: flex; flex-direction: column; gap: 10px; margin: 10px 0; max-height: 60vh; overflow: auto; }
+.remote-auth-card { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; }
+.remote-auth-card.is-fail { border-color: var(--red, #f85149); }
+.remote-auth-card.is-warn { border-color: var(--yellow, #d29922); }
+.remote-auth-card.is-ok .rc-doctor-icon { color: var(--green, #3fb950); }
+.remote-auth-card.is-warn .remote-auth-head .rc-doctor-icon { color: var(--yellow, #d29922); }
+.remote-auth-card.is-fail .remote-auth-head .rc-doctor-icon { color: var(--red, #f85149); }
+.remote-auth-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.remote-auth-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-size: 11px; }
+.remote-auth-line { margin: 2px 0; font-size: 12px; }
+.remote-auth-muted { color: var(--text-2); }
+.remote-auth-findings { list-style: none; margin: 6px 0 0; padding: 0; }
 /* ── Pull request page ───────────────────────────────────────────────────────
    A PR as a tab: conversation / files / checks on the left, everything about
    the PR on the right. Shares the issue page's field styles (.issue-field…). */

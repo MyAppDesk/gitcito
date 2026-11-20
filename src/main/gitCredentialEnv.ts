@@ -21,7 +21,8 @@ export const GIT_USERNAME_VAR = 'GITCITO_GIT_USERNAME'
 export const GIT_PASSWORD_VAR = 'GITCITO_GIT_PASSWORD'
 
 // Answers `get` only; `store` and `erase` are no-ops, so nothing persists it.
-const HELPER = `!f() { test "$1" = get || exit 0; printf 'username=%s\\npassword=%s\\n' "$${GIT_USERNAME_VAR}" "$${GIT_PASSWORD_VAR}"; }; f`
+const helperCommand = (usernameVar: string, passwordVar: string): string =>
+  `!f() { test "$1" = get || exit 0; printf 'username=%s\\npassword=%s\\n' "$${usernameVar}" "$${passwordVar}"; }; f`
 
 export interface BasicCredential {
   username: string
@@ -37,13 +38,14 @@ export interface BasicCredential {
 export function gitCredentialEnv(
   url: string,
   cred: BasicCredential,
-  base: NodeJS.ProcessEnv = process.env
+  base: NodeJS.ProcessEnv = process.env,
+  scope: 'host' | 'repository' = 'host'
 ): NodeJS.ProcessEnv | null {
   let origin: string
   try {
     const u = new URL(url)
     if (u.protocol !== 'https:') return null
-    origin = `${u.protocol}//${u.host}`
+    origin = u.origin + (scope === 'repository' ? u.pathname : '')
   } catch {
     return null
   }
@@ -52,15 +54,22 @@ export function gitCredentialEnv(
   // Append to config the caller may already pass this way rather than replace it.
   const n = Number.parseInt(base.GIT_CONFIG_COUNT ?? '', 10)
   const at = Number.isFinite(n) && n > 0 ? n : 0
+  // Each destination of a multi-URL push needs its own helper and secret variables.
+  const usernameVar = scope === 'repository' ? GIT_USERNAME_VAR + '_' + at : GIT_USERNAME_VAR
+  const passwordVar = scope === 'repository' ? GIT_PASSWORD_VAR + '_' + at : GIT_PASSWORD_VAR
   const key = `credential.${origin}.helper`
   return {
-    GIT_CONFIG_COUNT: String(at + 2),
+    GIT_CONFIG_COUNT: String(at + (scope === 'repository' ? 3 : 2)),
     [`GIT_CONFIG_KEY_${at}`]: key,
     [`GIT_CONFIG_VALUE_${at}`]: '',
     [`GIT_CONFIG_KEY_${at + 1}`]: key,
-    [`GIT_CONFIG_VALUE_${at + 1}`]: HELPER,
-    [GIT_USERNAME_VAR]: cred.username,
-    [GIT_PASSWORD_VAR]: cred.password
+    [`GIT_CONFIG_VALUE_${at + 1}`]: helperCommand(usernameVar, passwordVar),
+    ...(scope === 'repository' && {
+      [`GIT_CONFIG_KEY_${at + 2}`]: `credential.${origin}.useHttpPath`,
+      [`GIT_CONFIG_VALUE_${at + 2}`]: 'true'
+    }),
+    [usernameVar]: cred.username,
+    [passwordVar]: cred.password
   }
 }
 

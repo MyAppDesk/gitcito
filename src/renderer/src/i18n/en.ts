@@ -1458,6 +1458,7 @@ export const en = {
   'settings.forgejoUrl': 'Forgejo address',
   'settings.forgejoUrlPlaceholder': 'e.g. git.example.org or codeberg.org',
   'settings.forgejoUrlHint': "Your Forgejo (or Gitea) server's https address. This profile's Forgejo token is only ever sent there.",
+  'settings.forgejoScopesHint': "When creating the token, grant: repository — read and write; user — read; organization — read. A token's permissions cannot be changed later.",
   'settings.connected': 'Connected',
   'settings.notConnected': 'Not connected',
   'settings.integrationsForProfile': 'Connections for {name}',

@@ -1445,6 +1445,7 @@ export const fr: Dict = {
   'settings.forgejoUrl': 'Adresse Forgejo',
   'settings.forgejoUrlPlaceholder': 'ex. git.example.org ou codeberg.org',
   'settings.forgejoUrlHint': "L'adresse https de votre serveur Forgejo (ou Gitea). Le jeton Forgejo de ce profil n'est envoyé que là.",
+  'settings.forgejoScopesHint': "En créant le jeton, accordez : repository — lecture et écriture ; user — lecture ; organization — lecture. Les permissions d'un jeton ne peuvent pas être modifiées ensuite.",
   'settings.connected': 'Connecté',
   'settings.notConnected': 'Non connecté',
   'settings.integrationsForProfile': 'Connexions de {name}',

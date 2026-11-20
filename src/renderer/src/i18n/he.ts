@@ -1464,6 +1464,7 @@ export const he: Dict = {
   'settings.forgejoUrl': 'כתובת Forgejo',
   'settings.forgejoUrlPlaceholder': 'למשל git.example.org או codeberg.org',
   'settings.forgejoUrlHint': 'כתובת ה-https של שרת ה-Forgejo (או Gitea) שלכם. אסימון ה-Forgejo של הפרופיל הזה נשלח רק לשם.',
+  'settings.forgejoScopesHint': 'ביצירת האסימון, תנו: repository — קריאה וכתיבה; user — קריאה; organization — קריאה. אי אפשר לשנות את הרשאות האסימון אחר כך.',
   'settings.connected': 'מחובר',
   'settings.notConnected': 'לא מחובר',
   'settings.integrationsForProfile': 'חיבורים עבור {name}',

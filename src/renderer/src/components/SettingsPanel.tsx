@@ -749,6 +749,9 @@ export function IntegrationsPage({
       >
         <ExternalLink size={12} /> {t('settings.createToken')}
       </button>
+      {/* Forgejo cannot pre-select scopes from a link, and a token's scopes are
+          fixed once created — so say which ones before the user makes it. */}
+      {active.id === 'forgejo' && <p className="settings-hint">{t('settings.forgejoScopesHint')}</p>}
       <p className="settings-hint">{t('settings.integrationsHint')}</p>
 
       <LocalCiSection />

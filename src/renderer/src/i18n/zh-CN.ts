@@ -1464,6 +1464,7 @@ export const zhCN: Dict = {
   'settings.forgejoUrl': 'Forgejo 地址',
   'settings.forgejoUrlPlaceholder': '例如 git.example.org 或 codeberg.org',
   'settings.forgejoUrlHint': '你的 Forgejo（或 Gitea）服务器的 https 地址。此配置文件的 Forgejo 令牌只会发送到那里。',
+  'settings.forgejoScopesHint': '创建令牌时请授予：repository — 读写；user — 读取；organization — 读取。令牌的权限之后无法更改。',
   'settings.connected': '已连接',
   'settings.notConnected': '未连接',
   'settings.integrationsForProfile': '{name} 的连接',

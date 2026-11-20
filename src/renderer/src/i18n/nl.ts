@@ -1465,6 +1465,7 @@ export const nl: Dict = {
   'settings.forgejoUrl': 'Forgejo-adres',
   'settings.forgejoUrlPlaceholder': 'bijv. git.example.org of codeberg.org',
   'settings.forgejoUrlHint': 'Het https-adres van je Forgejo- (of Gitea-)server. Het Forgejo-token van dit profiel wordt alleen daarheen gestuurd.',
+  'settings.forgejoScopesHint': 'Geef bij het maken van het token: repository — lezen en schrijven; user — lezen; organization — lezen. De rechten van een token zijn achteraf niet te wijzigen.',
   'settings.connected': 'Verbonden',
   'settings.notConnected': 'Niet verbonden',
   'settings.integrationsForProfile': 'Verbindingen voor {name}',

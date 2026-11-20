@@ -1465,6 +1465,7 @@ export const ptBR: Dict = {
   'settings.forgejoUrl': 'Endereço do Forgejo',
   'settings.forgejoUrlPlaceholder': 'ex.: git.example.org ou codeberg.org',
   'settings.forgejoUrlHint': 'O endereço https do seu servidor Forgejo (ou Gitea). O token do Forgejo deste perfil só é enviado para lá.',
+  'settings.forgejoScopesHint': 'Ao criar o token, marque: repository — leitura e escrita; user — leitura; organization — leitura. As permissões de um token não podem ser alteradas depois.',
   'settings.connected': 'Conectado',
   'settings.notConnected': 'Não conectado',
   'settings.integrationsForProfile': 'Conexões de {name}',

@@ -1445,6 +1445,7 @@ export const ja: Dict = {
   'settings.forgejoUrl': 'Forgejo のアドレス',
   'settings.forgejoUrlPlaceholder': '例: git.example.org または codeberg.org',
   'settings.forgejoUrlHint': 'Forgejo（または Gitea）サーバーの https アドレス。このプロファイルの Forgejo トークンはそこにだけ送られます。',
+  'settings.forgejoScopesHint': 'トークン作成時に次を付与してください: repository — 読み取りと書き込み、user — 読み取り、organization — 読み取り。トークンの権限は後から変更できません。',
   'settings.connected': '接続済み',
   'settings.notConnected': '未接続',
   'settings.integrationsForProfile': '{name} の接続',

@@ -1445,6 +1445,7 @@ export const tr: Dict = {
   'settings.forgejoUrl': 'Forgejo adresi',
   'settings.forgejoUrlPlaceholder': 'ör. git.example.org ya da codeberg.org',
   'settings.forgejoUrlHint': 'Forgejo (ya da Gitea) sunucunuzun https adresi. Bu profilin Forgejo belirteci yalnızca oraya gönderilir.',
+  'settings.forgejoScopesHint': 'Belirteci oluştururken şu izinleri verin: repository — okuma ve yazma; user — okuma; organization — okuma. Bir belirtecin izinleri sonradan değiştirilemez.',
   'settings.connected': 'Bağlı',
   'settings.notConnected': 'Bağlı değil',
   'settings.integrationsForProfile': 'Şu profil için bağlantılar: {name}',

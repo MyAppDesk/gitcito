@@ -1464,6 +1464,7 @@ export const ko: Dict = {
   'settings.forgejoUrl': 'Forgejo 주소',
   'settings.forgejoUrlPlaceholder': '예: git.example.org 또는 codeberg.org',
   'settings.forgejoUrlHint': 'Forgejo(또는 Gitea) 서버의 https 주소입니다. 이 프로필의 Forgejo 토큰은 그곳으로만 전송됩니다.',
+  'settings.forgejoScopesHint': '토큰을 만들 때 다음 권한을 주세요: repository — 읽기 및 쓰기, user — 읽기, organization — 읽기. 토큰의 권한은 나중에 바꿀 수 없습니다.',
   'settings.connected': '연결됨',
   'settings.notConnected': '연결되지 않음',
   'settings.integrationsForProfile': '{name} — 이 프로필의 연결',

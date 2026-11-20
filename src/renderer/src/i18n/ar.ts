@@ -1464,6 +1464,7 @@ export const ar: Dict = {
   'settings.forgejoUrl': 'عنوان Forgejo',
   'settings.forgejoUrlPlaceholder': 'مثل git.example.org أو codeberg.org',
   'settings.forgejoUrlHint': 'عنوان https لخادم Forgejo (أو Gitea) الخاص بك. لا يُرسل رمز Forgejo لهذا الملف الشخصي إلا إلى هناك.',
+  'settings.forgejoScopesHint': 'عند إنشاء الرمز امنح: repository — قراءة وكتابة؛ user — قراءة؛ organization — قراءة. لا يمكن تغيير صلاحيات الرمز لاحقًا.',
   'settings.connected': 'متصل',
   'settings.notConnected': 'غير متصل',
   'settings.integrationsForProfile': 'اتصالات {name}',

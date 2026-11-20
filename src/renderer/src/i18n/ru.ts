@@ -1464,6 +1464,7 @@ export const ru: Dict = {
   'settings.forgejoUrl': 'Адрес Forgejo',
   'settings.forgejoUrlPlaceholder': 'например git.example.org или codeberg.org',
   'settings.forgejoUrlHint': 'Адрес https вашего сервера Forgejo (или Gitea). Токен Forgejo этого профиля отправляется только туда.',
+  'settings.forgejoScopesHint': 'При создании токена выдайте: repository — чтение и запись; user — чтение; organization — чтение. Разрешения токена потом изменить нельзя.',
   'settings.connected': 'Подключено',
   'settings.notConnected': 'Не подключено',
   'settings.integrationsForProfile': 'Подключения профиля {name}',

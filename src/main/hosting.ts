@@ -800,10 +800,16 @@ async function glProjectOf(
   return { base: `https://gitlab.com/api/v4/projects/${pid}`, auth }
 }
 
+/** The user shape GitLab embeds in MRs, notes and approvals. */
+interface GlUser {
+  username: string
+  avatar_url?: string | null
+}
+
 interface GlNote {
   id: number
   system: boolean
-  author: { username: string } | null
+  author: GlUser | null
   body: string
   created_at: string
   position?: {
@@ -817,12 +823,12 @@ interface GlNote {
 async function glMergeRequestDetail(remoteUrl: string, token: string | undefined, number: number): Promise<PrDetail> {
   const { base, auth } = await glProjectOf(remoteUrl, token)
   const mrUrl = `${base}/merge_requests/${number}`
-  const [mr, discussions, approvals] = await Promise.all([
+  const [mr, discussions, approvals, commits] = await Promise.all([
     glJson<{
       iid: number
       title: string
       description: string | null
-      author: { username: string } | null
+      author: GlUser | null
       source_branch: string
       target_branch: string
       draft?: boolean
@@ -830,14 +836,38 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
       state: string
       merge_status?: string
       web_url: string
-    }>(mrUrl, auth),
+      created_at: string
+      updated_at: string
+      closed_at: string | null
+      merged_at: string | null
+      merged_by: GlUser | null
+      assignees?: GlUser[]
+      reviewers?: GlUser[]
+      labels?: Array<{ name: string; color?: string } | string>
+      milestone: { title: string } | null
+      /** A string, and "1000+" past GitLab's cap. */
+      changes_count?: string | null
+      source_project_id?: number
+      project_id?: number
+    }>(`${mrUrl}?with_labels_details=true`, auth),
     glJson<Array<{ id: string; notes: GlNote[] }>>(`${mrUrl}/discussions?per_page=100`, auth).catch(
       () => [] as Array<{ id: string; notes: GlNote[] }>
     ),
-    glJson<{ approved_by?: Array<{ user: { username: string } | null }> }>(`${mrUrl}/approvals`, auth).catch(() => ({
+    glJson<{ approved_by?: Array<{ user: GlUser | null }> }>(`${mrUrl}/approvals`, auth).catch(() => ({
       approved_by: []
-    }))
+    })),
+    // Only the count is shown; one page of 100 is enough to say "100+".
+    glJson<unknown[]>(`${mrUrl}/commits?per_page=100`, auth).catch(() => null)
   ])
+
+  const avatars: Record<string, string> = {}
+  const seen = (u: GlUser | null | undefined): void => {
+    if (u?.username && u.avatar_url) avatars[u.username] = u.avatar_url
+  }
+  ;[mr.author, mr.merged_by, ...(mr.assignees ?? []), ...(mr.reviewers ?? [])].forEach(seen)
+  for (const d of discussions) d.notes.forEach((n) => seen(n.author))
+  ;(approvals.approved_by ?? []).forEach((a) => seen(a.user))
+  const approvedBy = new Set((approvals.approved_by ?? []).map((a) => a.user?.username).filter(Boolean))
 
   // Discussions hold both kinds of comment: a note with a position is an inline
   // review thread, one without is plain conversation. System notes are noise.
@@ -868,7 +898,27 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
   }
   comments.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
+  const changed = Number.parseInt(mr.changes_count ?? '', 10)
   return {
+    createdAt: mr.created_at,
+    updatedAt: mr.updated_at,
+    closedAt: mr.closed_at,
+    mergedAt: mr.merged_at,
+    mergedBy: mr.merged_by?.username ?? null,
+    assignees: (mr.assignees ?? []).map((u) => ({ login: u.username })),
+    // GitLab keeps reviewers listed after they approve; only the ones still to
+    // answer are "requested" — the approvals say who already did.
+    requestedReviewers: (mr.reviewers ?? [])
+      .filter((u) => !approvedBy.has(u.username))
+      .map((u) => ({ login: u.username })),
+    labels: (mr.labels ?? []).map((l) =>
+      typeof l === 'string' ? { name: l } : { name: l.name, ...(l.color ? { color: l.color } : {}) }
+    ),
+    milestone: mr.milestone?.title ?? null,
+    ...(Number.isFinite(changed) ? { changedFiles: changed } : {}),
+    ...(commits ? { commits: commits.length } : {}),
+    sourceRepo: null,
+    avatars,
     number: mr.iid,
     title: mr.title,
     body: mr.description ?? '',
@@ -1009,6 +1059,12 @@ async function glMergeMr(
   })
 }
 
+/** The user shape GitHub embeds in PRs, comments and reviews. */
+interface GhUser {
+  login: string
+  avatar_url?: string
+}
+
 async function pullRequestDetail(
   remoteUrl: string,
   tokens: HostTokens,
@@ -1022,27 +1078,41 @@ async function pullRequestDetail(
       number: number
       title: string
       body: string | null
-      user: { login: string }
-      head: { ref: string }
-      base: { ref: string }
+      user: GhUser
+      head: { ref: string; repo: { full_name: string } | null }
+      base: { ref: string; repo: { full_name: string } | null }
       draft: boolean
       state: string
       merged: boolean
       mergeable: boolean | null
       html_url: string
+      created_at: string
+      updated_at: string
+      closed_at: string | null
+      merged_at: string | null
+      merged_by: GhUser | null
+      assignees?: GhUser[]
+      requested_reviewers?: GhUser[]
+      requested_teams?: Array<{ slug: string }>
+      labels?: Array<{ name: string; color?: string }>
+      milestone: { title: string } | null
+      additions?: number
+      deletions?: number
+      changed_files?: number
+      commits?: number
     }>(`${api}/pulls/${number}`, token),
-    ghJson<Array<{ user: { login: string } | null; body: string; created_at: string }>>(
+    ghJson<Array<{ user: GhUser | null; body: string; created_at: string }>>(
       `${api}/issues/${number}/comments?per_page=100`,
       token
     ),
-    ghJson<Array<{ user: { login: string } | null; state: string }>>(
+    ghJson<Array<{ user: GhUser | null; state: string }>>(
       `${api}/pulls/${number}/reviews?per_page=100`,
       token
     ),
     ghJson<
       Array<{
         id: number
-        user: { login: string } | null
+        user: GhUser | null
         body: string
         created_at: string
         path: string
@@ -1073,7 +1143,40 @@ async function pullRequestDetail(
       })
   }
   const reviewThreads = [...threadById.values()]
+
+  // Every user object the API handed back carries its avatar: collect them once
+  // so the page can draw a face next to any login without asking again.
+  const avatars: Record<string, string> = {}
+  const seen = (u: GhUser | null | undefined): void => {
+    if (u?.login && u.avatar_url) avatars[u.login] = u.avatar_url
+  }
+  ;[pr.user, pr.merged_by, ...(pr.assignees ?? []), ...(pr.requested_reviewers ?? [])].forEach(seen)
+  comments.forEach((c) => seen(c.user))
+  reviews.forEach((r) => seen(r.user))
+  reviewComments.forEach((c) => seen(c.user))
+
+  const baseRepo = pr.base.repo?.full_name
+  const headRepo = pr.head.repo?.full_name
   return {
+    createdAt: pr.created_at,
+    updatedAt: pr.updated_at,
+    closedAt: pr.closed_at,
+    mergedAt: pr.merged_at,
+    mergedBy: pr.merged_by?.login ?? null,
+    assignees: (pr.assignees ?? []).map((u) => ({ login: u.login })),
+    requestedReviewers: [
+      ...(pr.requested_reviewers ?? []).map((u) => ({ login: u.login })),
+      ...(pr.requested_teams ?? []).map((tm) => ({ login: `${owner}/${tm.slug}`, team: true }))
+    ],
+    labels: (pr.labels ?? []).map((l) => ({ name: l.name, ...(l.color ? { color: l.color } : {}) })),
+    milestone: pr.milestone?.title ?? null,
+    ...(pr.additions !== undefined ? { additions: pr.additions } : {}),
+    ...(pr.deletions !== undefined ? { deletions: pr.deletions } : {}),
+    ...(pr.changed_files !== undefined ? { changedFiles: pr.changed_files } : {}),
+    ...(pr.commits !== undefined ? { commits: pr.commits } : {}),
+    // A fork's head lives in another repository; a deleted fork reports null.
+    sourceRepo: headRepo && baseRepo && headRepo !== baseRepo ? headRepo : null,
+    avatars,
     number: pr.number,
     title: pr.title,
     body: pr.body ?? '',

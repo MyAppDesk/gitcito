@@ -52,6 +52,7 @@ import { RepositoriesPage } from './components/RepositoriesPage'
 import { ReleasePage } from './components/ReleasePage'
 import { IssueDetailPage } from './components/IssueDetailPage'
 import { MilestoneDetailPage } from './components/MilestoneDetailPage'
+import { PrDetailPage } from './components/PrDetailPage'
 import { ResizeHandle } from './components/ResizeHandle'
 import { ZoomControl } from './components/ZoomControl'
 import { RepoChatPanel } from './components/RepoChatPanel'
@@ -282,6 +283,8 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
       return <IssueDetailPage page={tab.page} />
     case 'milestone':
       return <MilestoneDetailPage page={tab.page} />
+    case 'pr':
+      return <PrDetailPage page={tab.page} />
     default:
       return <Welcome />
   }

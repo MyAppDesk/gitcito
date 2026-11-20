@@ -727,6 +727,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           t.page.type === page.type &&
           (page.type !== 'release' || (t.page.type === 'release' && t.page.release.id === page.release.id)) &&
           (page.type !== 'issue' || (t.page.type === 'issue' && t.page.issue.number === page.issue.number)) &&
+          // A PR is one tab per remote + number: two repos can both have a #12.
+          (page.type !== 'pr' ||
+            (t.page.type === 'pr' && t.page.number === page.number && t.page.remoteUrl === page.remoteUrl)) &&
           (page.type !== 'milestone' ||
             (t.page.type === 'milestone' && t.page.milestone.number === page.milestone.number)) &&
           // A wiki belongs to one repo, so each repo gets its own tab.

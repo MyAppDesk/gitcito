@@ -66,13 +66,34 @@ parent costs one more request per refresh.
 
 ## Reviewing — GitHub and GitLab
 
-| | |
+Clicking a pull request opens it as a **page of its own**, a tab like an issue.
+The work happens in the main column, and the sidebar says what the PR *is*, so
+you do not have to scroll through it.
+
+The main column has three sections:
+
+| Section | What it holds |
 |---|---|
-| **Conversation** | Comments and review state |
-| **Checks** | CI check-runs (GitHub) or pipeline jobs (GitLab) with pass/fail/pending and view-logs links |
-| **Files viewed** | A per-file ✓ checklist with progress |
-| **Inline threads** | Line comments grouped by `file:line`, and replies |
-| **Actions** | Comment, approve, request changes, and merge / squash |
+| **Conversation** | The description, comments and inline review threads (`file:line`, with replies). Then the comment box with comment / approve / request changes, and the merge box (merge, squash or rebase) |
+| **Files** | Every changed file with +/− lines and a ✓ "viewed" checklist that remembers your progress |
+| **Checks** | CI check-runs (GitHub) or pipeline jobs (GitLab), with pass/fail/pending and links to the logs |
+
+The sidebar shows:
+
+| Row | Shows |
+|---|---|
+| **Author** | Who opened it, and when |
+| **Status** | Open, draft, merged (by whom, when) or closed; conflicts with the target |
+| **Reviewers** | Each reviewer's latest decision (approved, changes requested, commented) and who is still awaiting review, teams included |
+| **Assignees, labels, milestone** | As set on the host, labels in their own colours |
+| **Branches** | Source → target, and the fork it comes from |
+| **Changes** | Files changed, commits, lines added and removed, with a bar |
+| **Checks** | Passed / failing / running, a click away from the Checks section |
+| **Participants** | Everyone who took part |
+| **Activity** | When it was opened and last updated |
+
+GitLab does not report line totals for a merge request; they are summed from
+the file list once it loads. A row the host does not report is left out.
 
 If someone force-pushes mid-review, [what changed since](range-diff.md) shows
 you exactly what moved.

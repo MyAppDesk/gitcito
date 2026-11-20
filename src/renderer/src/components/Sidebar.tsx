@@ -1422,7 +1422,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
         ? [
             {
               label: t('sidebar.openDetails'),
-              onClick: (): void => openModal({ kind: 'pr-detail', repoPath: path, remoteUrl: origin.url, number: pr.id })
+              onClick: (): void =>
+                openPageTab({ type: 'pr', repoPath: path, remoteUrl: origin.url, number: pr.id, title: pr.title })
             } satisfies MenuItem
           ]
         : []),
@@ -1865,7 +1866,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               return
             }
             const origin = remote ?? repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
-            if (origin) openModal({ kind: 'pr-detail', repoPath: path, remoteUrl: origin.url, number: pr.id })
+            if (origin) openPageTab({ type: 'pr', repoPath: path, remoteUrl: origin.url, number: pr.id, title: pr.title })
           }}
           onContextMenu={(e) => {
             e.preventDefault()

@@ -1444,7 +1444,7 @@ export const es: Dict = {
   'settings.noAppSet': 'Ninguna app seleccionada',
   'settings.desktopNotifications': 'Notificaciones de escritorio',
   'settings.desktopNotificationsHint':
-    'Mostrar una notificación del sistema cuando te piden revisión o hay actividad de CI en tu bandeja de GitHub.',
+    'Mostrar una notificación del sistema cuando te piden revisión o hay actividad de CI en tu bandeja de GitHub. También cuando un pull request de GitLab o Forgejo empieza a esperar tu revisión.',
   'settings.mergeCommit': 'Crear siempre un commit de merge',
   'settings.mergeCommitHint':
     'Forzar un commit de merge aunque sea posible un fast-forward, para que los merges muestren un commit "Merge branch …".',

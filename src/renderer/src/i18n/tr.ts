@@ -1428,7 +1428,7 @@ export const tr: Dict = {
   'settings.noAppSet': 'Uygulama seçilmedi',
   'settings.desktopNotifications': 'Masaüstü bildirimleri',
   'settings.desktopNotificationsHint':
-    'GitHub gelen kutunuzda bir inceleme istendiğinde ya da CI çalıştığında işletim sistemi bildirimi göster.',
+    'GitHub gelen kutunuzda bir inceleme istendiğinde ya da CI çalıştığında işletim sistemi bildirimi göster. Ayrıca bir GitLab ya da Forgejo pull request’i incelemenizi beklemeye başladığında.',
   'settings.mergeCommit': 'Her zaman birleştirme commit’i oluştur',
   'settings.mergeCommitHint':
     'Fast-forward mümkün olsa bile birleştirme commit’i oluşturmaya zorlar; böylece birleştirmeler bir “Merge branch …” commit’i olarak görünür.',

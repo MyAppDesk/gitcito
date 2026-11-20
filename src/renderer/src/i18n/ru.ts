@@ -1443,7 +1443,7 @@ export const ru: Dict = {
   'settings.noAppSet': 'Приложение не выбрано',
   'settings.desktopNotifications': 'Уведомления на рабочем столе',
   'settings.desktopNotificationsHint':
-    'Показывать уведомление ОС, когда у вас во входящих GitHub запрашивают ревью или отрабатывает CI.',
+    'Показывать уведомление ОС, когда у вас во входящих GitHub запрашивают ревью или отрабатывает CI. А также когда pull request в GitLab или Forgejo начинает ждать вашего ревью.',
   'settings.mergeCommit': 'Всегда создавать коммит слияния',
   'settings.mergeCommitHint':
     'Делать коммит слияния даже там, где возможен fast-forward, чтобы у слияний был коммит «Merge branch …».',

@@ -1443,7 +1443,7 @@ export const uk: Dict = {
   'settings.noAppSet': 'Застосунок не вибрано',
   'settings.desktopNotifications': 'Системні сповіщення',
   'settings.desktopNotificationsHint':
-    'Показувати сповіщення ОС, коли у вашій скриньці GitHub зʼявляється запит на рецензію або запускається CI.',
+    'Показувати сповіщення ОС, коли у вашій скриньці GitHub зʼявляється запит на рецензію або запускається CI. А також коли pull request у GitLab чи Forgejo починає чекати на вашу рецензію.',
   'settings.mergeCommit': 'Завжди створювати коміт злиття',
   'settings.mergeCommitHint':
     'Примусово створювати коміт злиття, навіть коли можливий fast-forward, щоб злиття показувалися комітом «Merge branch …».',

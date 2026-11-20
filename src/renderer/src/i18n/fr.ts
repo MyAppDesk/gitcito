@@ -1428,7 +1428,7 @@ export const fr: Dict = {
   'settings.noAppSet': 'Aucune application sélectionnée',
   'settings.desktopNotifications': 'Notifications du bureau',
   'settings.desktopNotificationsHint':
-    'Affiche une notification système quand une relecture est demandée ou que la CI s’exécute, d’après votre boîte de réception GitHub.',
+    'Affiche une notification système quand une relecture est demandée ou que la CI s’exécute, d’après votre boîte de réception GitHub. Aussi quand une pull request GitLab ou Forgejo se met à attendre votre relecture.',
   'settings.mergeCommit': 'Toujours créer un commit de fusion',
   'settings.mergeCommitHint':
     'Force un commit de fusion même quand une avance rapide serait possible, pour que les fusions affichent un commit « Merge branch … ».',

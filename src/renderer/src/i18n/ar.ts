@@ -1443,7 +1443,7 @@ export const ar: Dict = {
   'settings.noAppSet': 'لم يُحدَّد أي تطبيق',
   'settings.desktopNotifications': 'إشعارات سطح المكتب',
   'settings.desktopNotificationsHint':
-    'أظهر إشعارًا من نظام التشغيل عند طلب مراجعة أو عند تشغيل التكامل المستمر في صندوق وارد GitHub لديك.',
+    'أظهر إشعارًا من نظام التشغيل عند طلب مراجعة أو عند تشغيل التكامل المستمر في صندوق وارد GitHub لديك. وأيضًا عندما يبدأ طلب سحب على GitLab أو Forgejo في انتظار مراجعتك.',
   'settings.mergeCommit': 'إنشاء التزام دمج دائمًا',
   'settings.mergeCommitHint':
     'أجبر إنشاء التزام دمج حتى حين يكون التقديم السريع ممكنًا، فتُظهر عمليات الدمج التزامًا بصيغة «Merge branch …».',

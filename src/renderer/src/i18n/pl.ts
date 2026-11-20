@@ -1443,7 +1443,7 @@ export const pl: Dict = {
   'settings.noAppSet': 'Nie wybrano aplikacji',
   'settings.desktopNotifications': 'Powiadomienia systemowe',
   'settings.desktopNotificationsHint':
-    'Pokazuje powiadomienie systemowe, gdy ktoś poprosi cię o review albo gdy w twojej skrzynce GitHuba ruszy CI.',
+    'Pokazuje powiadomienie systemowe, gdy ktoś poprosi cię o review albo gdy w twojej skrzynce GitHuba ruszy CI. Także gdy pull request w GitLabie lub Forgejo zaczyna czekać na twoje review.',
   'settings.mergeCommit': 'Zawsze twórz commit merge',
   'settings.mergeCommitHint':
     'Wymusza commit merge nawet wtedy, gdy fast-forward jest możliwy, więc scalenia widać jako commit „Merge branch …”.',

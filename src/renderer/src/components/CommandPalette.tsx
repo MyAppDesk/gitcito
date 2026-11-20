@@ -211,6 +211,7 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'stash', title: t('cmd.stash'), group: 'Actions', keywords: 'save shelve', icon: <Archive size={15} />, run: act(() => void repoActions.stash(path)) },
       { id: 'stash-partial', title: t('cmd.stashSelected'), group: 'Actions', keywords: 'partial stash selected files keep-index shelve', icon: <Archive size={15} />, run: act(() => ui.openModal({ kind: 'stash-partial', repoPath: path })) },
       { id: 'create-branch', title: t('cmd.createBranch'), group: 'Actions', keywords: 'new', icon: <Plus size={15} />, run: act(() => ui.openModal({ kind: 'create-branch', path, currentBranch: repo.branches.current })) },
+      ...(repo?.remotes.some((r) => /dev\.azure\.com|\.visualstudio\.com/i.test(r.url)) ? [{ id: 'work-item-branch', title: t('cmd.workItemBranch'), group: 'Actions', keywords: 'azure boards work item ab# task bug user story branch from', icon: <Plus size={15} />, run: act(() => ui.openModal({ kind: 'work-item-branch', path, remoteUrl: (repo.remotes.find((r) => r.name === 'origin' && /dev\.azure\.com|\.visualstudio\.com/i.test(r.url)) ?? repo.remotes.find((r) => /dev\.azure\.com|\.visualstudio\.com/i.test(r.url)))!.url })) } as Command] : []),
       // Renaming the checked-out branch is the one branch edit you reach for
       // without first hunting the branch down in the sidebar.
       ...((): Command[] => {

@@ -14,6 +14,7 @@
       "ai-accounts-notice": "ai",
       "ai-pr-review": "ai",
       "addRemote": "branching",
+      "work-item-branch": "branching",
       "remoteAuth": "credentials",
       "editRemote": "branching",
       "bisect": "recovery",
@@ -107,6 +108,7 @@
   },
   "commands": {
     "covered": {
+      "work-item-branch": "branching",
       "repo-switcher": "workspaces",
       "problems": "problems",
       "code-todos": "code-todos",

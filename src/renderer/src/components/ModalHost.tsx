@@ -30,6 +30,7 @@ import { ConflictRadar } from './ConflictRadar'
 import { TeammateRadarModal } from './TeammateRadarModal'
 import { CommitEditModal } from './CommitEditModal'
 import { ResetToCommitModal } from './ResetToCommitModal'
+import { WorkItemBranchModal } from './WorkItemBranchModal'
 import { RemoteAuthModal } from './RemoteAuthModal'
 import { LocalCIModal } from './LocalCIModal'
 import { KeychainConsentModal } from './KeychainConsentModal'
@@ -477,7 +478,7 @@ function CreateBranchModal({ spec }: { spec: Extract<ModalSpec, { kind: 'create-
   const aiFor = useSettingsStore((s) => s.aiFor)
   const aiEnabled = profile.ai.enabled !== false
 
-  const [name, setName] = useState('')
+  const [name, setName] = useState(spec.initialName ?? '')
   const [description, setDescription] = useState(spec.description ?? '')
   const [aiBusy, setAiBusy] = useState(false)
 
@@ -2236,6 +2237,7 @@ export function ModalHost(): React.JSX.Element {
               {modal.kind === 'add-worktree' && <AddWorktreeModal spec={modal} />}
               {modal.kind === 'editRemote' && <EditRemoteModal spec={modal} />}
               {modal.kind === 'clone' && <CloneModal spec={modal} />}
+              {modal.kind === 'work-item-branch' && <WorkItemBranchModal spec={modal} />}
               {modal.kind === 'settings' && <SettingsPanel initialPage={modal.page} initialThemeTab={modal.themeTab} />}
               {modal.kind === 'launcher' && <LauncherModal spec={modal} />}
               {modal.kind === 'create-repo' && <CreateRepoModal spec={modal} />}

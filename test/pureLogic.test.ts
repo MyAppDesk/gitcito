@@ -1025,6 +1025,20 @@ describe('autolink', () => {
     expect((out as unknown[]).length).toBeGreaterThan(1)
   })
 
+  it('links work items: AB#123 and, on Azure, #123', () => {
+    const hrefs = (out: unknown): string[] =>
+      (Array.isArray(out) ? out : [out])
+        .filter((n): n is { props: { href: string } } => !!n && typeof n === 'object' && 'props' in (n as object))
+        .map((n) => n.props.href)
+    const azure = 'https://dev.azure.com/example-org/proj/_git/app'
+    expect(hrefs(autolink('fix #12 and AB#34', azure))).toEqual([
+      'https://dev.azure.com/example-org/_workitems/edit/12',
+      'https://dev.azure.com/example-org/_workitems/edit/34'
+    ])
+    // On GitHub, #12 stays an issue; AB#34 has no known org and stays text.
+    expect(hrefs(autolink('fix #12 and AB#34', 'https://github.com/o/r'))).toEqual(['https://github.com/o/r/issues/12'])
+  })
+
   it('builds host-specific file permalinks', () => {
     expect(filePermalink('git@github.com:o/r.git', 'abc123', 'src/a.ts')).toBe('https://github.com/o/r/blob/abc123/src/a.ts')
     expect(filePermalink('https://gitlab.com/g/s/r.git', 'abc', 'x.ts')).toBe('https://gitlab.com/g/s/r/-/blob/abc/x.ts')

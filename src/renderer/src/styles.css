@@ -6875,6 +6875,12 @@ body.col-resizing .node-ava {
   outline: none;
 }
 
+/* Branch from an Azure Boards work item. */
+.work-item-card { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-1); }
+.work-item-meta { font-size: 11.5px; color: var(--text-3); }
+.work-item-title { margin: 3px 0 6px; font-size: 13px; color: var(--text-0); font-weight: 600; }
+.work-item-branch { font-size: 12px; color: var(--accent); }
+
 /* ─── Settings ──────────────────────────────────────────────────────────── */
 
 .settings h3 {

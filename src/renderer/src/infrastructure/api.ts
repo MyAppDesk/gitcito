@@ -979,6 +979,8 @@ export const hostingApi = {
     window.api.hosting.createPR(remoteUrl, tokens, opts) as Promise<CreatePrResult>,
   prDetail: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number) =>
     window.api.hosting.prDetail(remoteUrl, tokens, number) as Promise<PrDetail>,
+  workItem: (remoteUrl: string, tokens: { azure?: string }, id: number) =>
+    window.api.hosting.workItem(remoteUrl, tokens, id) as Promise<{ id: number; title: string; type: string; state?: string }>,
   prComment: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number, body: string) =>
     window.api.hosting.prComment(remoteUrl, tokens, number, body) as Promise<void>,
   prReplyReviewComment: (

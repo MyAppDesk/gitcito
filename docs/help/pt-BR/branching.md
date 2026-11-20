@@ -74,6 +74,23 @@ funcionam em branches remotas, tags e stashes.
 
 ![Nomes de branch separados por barra dobrados numa árvore](../../screenshots/branch-grouping.webp)
 
+## Branch a partir de um work item do Azure Boards
+
+Num repositório cujo remote está no Azure DevOps, a paleta de comandos tem
+**Criar branch a partir de work item do Azure…**. Digite o número do item (ou
+`AB#1234`) e ele mostra o tipo, o título e o estado; **Criar branch** abre o
+diálogo de sempre com o nome preenchido — `bugfix/1234-titulo` para um bug,
+`feature/1234-titulo` para o resto — e `AB#1234 título` como tarefa, se preferir
+que a IA sugira um nome.
+
+Menções a work items viram link em mensagens de commit e no texto dos pull
+requests: `AB#1234` onde a organização do Azure é conhecida, e num repositório
+do Azure também o `#1234` simples, porque lá a numeração é de work items, não de
+issues. Num repositório do GitHub ligado ao Azure Boards a organização não é
+conhecida; uma entrada `links.tickets` no [`.gitcito.json`](repo-config.md) do
+repositório resolve — padrão `AB#(\d+)`, URL
+`https://dev.azure.com/<org>/_workitems/edit/$1`.
+
 ## Renomeando uma branch
 
 Uma branch chamada `fix` três dias atrás é uma branch que hoje ninguém situa.

@@ -381,8 +381,43 @@ export async function forgejoPullChecks(base: string, owner: string, repo: strin
     name: s.context,
     status: s.status === 'pending' ? 'in_progress' : 'completed',
     conclusion: s.status === 'pending' ? null : s.status === 'success' ? 'success' : s.status === 'warning' ? 'neutral' : 'failure',
-    url: s.target_url ?? ''
+    url: s.target_url ?? '',
+    ...(forgejoJobLogUrl(base, s.target_url ?? '') ? { hasLog: true } : {})
   }))
+}
+
+/**
+ * The log of a Forgejo Actions job, when `target` is one: a status whose link is
+ * `<this instance>/<owner>/<repo>/actions/runs/<run>/jobs/<job>`. Anything else —
+ * an external CI, another host, a look-alike path — is null, and the token is
+ * never sent to it. Forgejo has no API for job logs; this is the web route its
+ * own log viewer downloads.
+ */
+export function forgejoJobLogUrl(base: string, target: string): string | null {
+  const prefix = `${base.replace(/\/+$/, '')}/`
+  if (!target.startsWith(prefix)) return null
+  const m = /^([^/?#]+)\/([^/?#]+)\/actions\/runs\/(\d+)\/jobs\/(\d+)\/?$/.exec(target.slice(prefix.length))
+  return m ? `${prefix}${m[1]}/${m[2]}/actions/runs/${m[3]}/jobs/${m[4]}/logs` : null
+}
+
+/** How much of a log the page shows: the end, where a failure is. */
+const LOG_TAIL_BYTES = 512 * 1024
+
+/**
+ * A Forgejo Actions job log, or null when the server will not give it to the
+ * token (the route is a web one: some servers only serve it to a signed-in
+ * browser). Only the last LOG_TAIL_BYTES are kept.
+ */
+export async function forgejoJobLog(base: string, token: string, target: string): Promise<string | null> {
+  const url = forgejoJobLogUrl(base, target)
+  if (!url) return null
+  const res = await fetch(url, { redirect: 'error', headers: { Authorization: `token ${token}`, Accept: 'text/plain' } }).catch(
+    () => null
+  )
+  // A redirect to the sign-in page throws (redirect: 'error'); an HTML answer is that page served directly.
+  if (!res || !res.ok || (res.headers.get('content-type') ?? '').includes('text/html')) return null
+  const text = await res.text()
+  return text.length > LOG_TAIL_BYTES ? text.slice(-LOG_TAIL_BYTES) : text
 }
 
 export async function forgejoComment(base: string, owner: string, repo: string, token: string, number: number, body: string): Promise<void> {

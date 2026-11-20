@@ -988,6 +988,9 @@ export const hostingApi = {
     inReplyTo: number | string,
     body: string
   ) => window.api.hosting.prReplyReviewComment(remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
+  /** A check's log text, or null when the app cannot read it (open it in the browser instead). */
+  prCheckLog: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string }, url: string) =>
+    window.api.hosting.prCheckLog(remoteUrl, tokens, url) as Promise<string | null>,
   prChecks: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string }, number: number) =>
     window.api.hosting.prChecks(remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCheck[]>,
   prFiles: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string }, number: number) =>

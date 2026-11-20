@@ -17823,6 +17823,23 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-bar-del { background: var(--red, #e5484d); }
 .prp-link { background: none; border: none; padding: 0; color: var(--accent); font-size: 12.5px; cursor: pointer; text-align: start; }
 .prp-link:hover { text-decoration: underline; }
+.prp-check-item { display: flex; flex-direction: column; }
+.prp-check-log { margin: 4px 0 8px 18px; font-size: 12px; }
+.prp-check-log pre {
+  margin: 0;
+  max-height: 420px;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-0, #0d1117);
+  color: var(--text-1);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.prp-check-log-note { margin-bottom: 4px; }
 
 /* Narrow windows: the sidebar moves under the conversation instead of squeezing it. */
 @media (max-width: 860px) {

@@ -679,6 +679,8 @@ export interface PrCheck {
   /** success | failure | neutral | cancelled | skipped | timed_out | action_required | null (while running) */
   conclusion: string | null
   url: string // details/logs URL
+  /** The app can read this check's log itself (a Forgejo Actions job on the PR's own server). */
+  hasLog?: boolean
 }
 
 /** A changed file in a pull request (file-by-file review checklist). */

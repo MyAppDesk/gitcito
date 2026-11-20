@@ -16,6 +16,7 @@ import {
   forgejoComment,
   forgejoMerge,
   forgejoPullChecks,
+  forgejoJobLog,
   forgejoPullDetail,
   forgejoPullFiles,
   forgejoReview,
@@ -1348,6 +1349,16 @@ async function pullRequestDetail(
   }
 }
 
+/**
+ * A check's log, read by the app — Forgejo Actions jobs on the PR's own server.
+ * Null when it cannot be read here; the page then offers the browser.
+ */
+async function pullRequestCheckLog(remoteUrl: string, tokens: HostTokens, url: string): Promise<string | null> {
+  if (parseRemoteUrl(remoteUrl)?.provider !== 'forgejo' || typeof url !== 'string') return null
+  const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+  return forgejoJobLog(f.base, f.token, url)
+}
+
 /** CI checks on a PR's head commit (GitHub check-runs / GitLab pipeline jobs). */
 async function pullRequestChecks(
   remoteUrl: string,
@@ -2665,6 +2676,9 @@ export function registerHostingHandlers(): void {
   )
   ipcMain.handle('hosting:prFiles', (_e, remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestFiles(remoteUrl, tokens, number)
+  )
+  ipcMain.handle('hosting:prCheckLog', (_e, remoteUrl: string, tokens: HostTokens, url: string) =>
+    pullRequestCheckLog(remoteUrl, tokens, url)
   )
   ipcMain.handle('hosting:prChecks', (_e, remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestChecks(remoteUrl, tokens, number)

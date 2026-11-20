@@ -62,6 +62,7 @@ export const uk: Dict = {
   'tests.notInstalled': '{runner} є в package.json, але не встановлений — спершу виконайте install менеджера пакетів.',
   'tests.idle': 'Запустіть набір, щоб побачити результати тут.',
   'tests.noReport': 'Раннер завершився без звіту. Що він вивів:',
+  'tests.timedOut': 'Запуск тривав понад десять хвилин і був зупинений. Що він вивів:',
   'tests.noneShown': 'Жоден тест не відповідає фільтру.',
   'tests.search': 'Фільтр тестів',
   'tests.failedOnly': 'Лише невдалі',

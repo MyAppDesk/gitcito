@@ -102,8 +102,9 @@ Os limites, sem rodeios:
 - **Só vitest e jest**, encontrados no `package.json` da raiz do repositório; o
   vitest ganha quando os dois estão listados. As suítes de cada pacote de um
   monorepo não rodam uma a uma.
-- **Só roda o runner instalado** — `node_modules/.bin`. Se ele está listado mas
-  não instalado, a aba avisa; nada é baixado por você.
+- **Só roda o runner instalado** — o pacote em `node_modules`, iniciado direto
+  pelo Node (sem shell, então nenhum caminho é lido como comando). Se ele está
+  listado mas não instalado, a aba avisa; nada é baixado por você.
 - **A suíte inteira, toda vez.** Ainda não há "só o que eu mudei", e uma suíte
   lenta demora aqui o mesmo que num terminal. Ela para depois de dez minutos.
 - Se o runner quebrar antes de escrever o relatório, a aba mostra o que ele

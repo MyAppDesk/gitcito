@@ -62,6 +62,7 @@ export const nl: Dict = {
   'tests.notInstalled': '{runner} staat in package.json maar is niet geïnstalleerd — voer eerst de install van de pakketbeheerder uit.',
   'tests.idle': 'Voer de suite uit om de resultaten hier te zien.',
   'tests.noReport': 'De runner stopte zonder rapport. Wat hij afdrukte:',
+  'tests.timedOut': 'De run duurde langer dan tien minuten en is gestopt. Wat hij afdrukte:',
   'tests.noneShown': 'Geen test past bij het filter.',
   'tests.search': 'Tests filteren',
   'tests.failedOnly': 'Alleen mislukt',

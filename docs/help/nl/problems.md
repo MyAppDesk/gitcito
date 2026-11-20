@@ -76,6 +76,28 @@ deze diff ze toegevoegd" een vraag is die je vóór het committen beantwoordt.
 De ernst-chips filteren ook. Uit betekent *alles tonen*; er één aanzetten
 versmalt ertoe.
 
+## Tests
+
+Het derde tabblad van het paneel voert de testsuite van het project uit en toont het resultaat als boom: elk testbestand en daarin de tests, mislukte eerst. **Tests uitvoeren** in het opdrachtenpalet opent het en start de run; de ▶-knop in het tabblad doet hetzelfde, en ↻ voert opnieuw uit.
+
+| Rij | Een klik |
+|---|---|
+| Een mislukte test | Opent het testbestand op de regel waar de fout naar wijst, en klapt het foutbericht onder de rij open |
+| Een geslaagde of overgeslagen test | Opent het testbestand |
+| Een bestand dat faalde voordat er een test liep (syntaxfout, kapotte import) | Opent het bestand; het bericht zegt wat het tegenhield |
+
+**Alleen mislukt** houdt alleen de fouten over; het zoekveld filtert op testnaam, of op pad om een heel bestand te houden.
+
+Het leest het machinerapport van de runner zelf — `vitest run --reporter=json` of `jest --json` — en niet zijn uitvoer, dus namen, duren en berichten kloppen precies. De regel komt uit de stack van de fout: het is de mislukte assertion, niet het begin van de test.
+
+De grenzen, eerlijk gezegd:
+
+- **Alleen vitest en jest**, gevonden in de `package.json` in de root van de repository; vitest wint als beide er staan. De suites van losse pakketten in een monorepo lopen niet een voor een.
+- **Alleen de geïnstalleerde runner draait** — het pakket in `node_modules`, direct met Node gestart (zonder shell, dus geen pad wordt ooit als commando gelezen). Staat hij erin maar is hij niet geïnstalleerd, dan zegt het tabblad dat; er wordt niets voor je gedownload.
+- **Elke keer de hele suite.** Een „alleen wat ik veranderde” is er nog niet, en een trage suite duurt hier even lang als in een terminal. Na tien minuten stopt hij.
+- Crasht de runner voordat hij zijn rapport schrijft, dan toont het tabblad wat hij afdrukte.
+- Het voert de code van het project uit, zoals `npm test` zou doen — op verzoek, nooit uit zichzelf.
+
 ## De grenzen
 
 - **Geen language server.** Dit is een sweep, geen daemon: geen kronkels tijdens

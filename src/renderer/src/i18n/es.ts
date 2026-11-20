@@ -62,6 +62,7 @@ export const es: Dict = {
   'tests.notInstalled': '{runner} está en package.json pero no instalado — ejecuta antes el install del gestor de paquetes.',
   'tests.idle': 'Ejecuta la suite para ver aquí sus resultados.',
   'tests.noReport': 'El runner terminó sin informe. Lo que imprimió:',
+  'tests.timedOut': 'La ejecución superó los diez minutos y se detuvo. Lo que imprimió:',
   'tests.noneShown': 'Ningún test coincide con el filtro.',
   'tests.search': 'Filtrar tests',
   'tests.failedOnly': 'Solo fallos',

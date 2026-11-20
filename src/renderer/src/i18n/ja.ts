@@ -61,6 +61,7 @@ export const ja: Dict = {
   'tests.notInstalled': '{runner} は package.json にありますがインストールされていません — 先にパッケージマネージャーの install を実行してください。',
   'tests.idle': 'スイートを実行すると、ここに結果が表示されます。',
   'tests.noReport': 'ランナーはレポートなしで終了しました。出力内容:',
+  'tests.timedOut': '実行が 10 分を超えたため停止しました。出力内容:',
   'tests.noneShown': 'フィルターに一致するテストはありません。',
   'tests.search': 'テストを絞り込む',
   'tests.failedOnly': '失敗のみ',

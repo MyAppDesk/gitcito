@@ -1,8 +1,8 @@
 import { execFile, type ChildProcess } from 'child_process'
-import { existsSync, readFileSync } from 'fs'
-import { readFile, rm } from 'fs/promises'
+import { existsSync, readFileSync, statSync } from 'fs'
+import { mkdtemp, readFile, rm } from 'fs/promises'
 import { tmpdir } from 'os'
-import { isAbsolute, join, relative } from 'path'
+import { delimiter, isAbsolute, join, relative } from 'path'
 import { ipcMain } from 'electron'
 import type { TestCase, TestFile, TestRunner, TestRunResult, TestStatus } from '../shared/types'
 
@@ -44,9 +44,11 @@ export function detectTestRunner(packageJson: string): TestRunner | null {
  */
 export function failureLine(message: string, absFile: string, relFile: string): number | undefined {
   const esc = (p: string): string => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  for (const p of [absFile, relFile]) {
+  // An absolute frame stands on its own; a relative one must not be the tail of
+  // another path (`lib/math.test.mjs` is not the root's `math.test.mjs`).
+  for (const [p, before] of [[absFile, '(?:^|[\\s(])'], [relFile, '(?:^|[\\s(❯>])']] as const) {
     if (!p) continue
-    const m = new RegExp(`(?:^|[\\s(/])${esc(p)}:(\\d+):\\d+`).exec(message)
+    const m = new RegExp(`${before}${esc(p)}:(\\d+):\\d+`).exec(message)
     if (m) return Number(m[1])
   }
   return undefined
@@ -122,6 +124,23 @@ export function parseTestReport(json: string, repoPath: string, runner: TestRunn
   return { runner, files, passed: count('passed'), failed: count('failed'), skipped: count('skipped') }
 }
 
+/**
+ * The runner's JavaScript entry, as its installed package.json declares it
+ * (`bin`) — vitest's `vitest.mjs`, jest's `bin/jest.js`. Run through Node
+ * directly: no `.bin` shim, so no shell on Windows to re-parse the arguments.
+ */
+export function runnerEntry(repoPath: string, runner: TestRunner): string | null {
+  const dir = join(repoPath, 'node_modules', runner)
+  try {
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as { bin?: string | Record<string, string> }
+    const bin = typeof pkg.bin === 'string' ? pkg.bin : pkg.bin?.[runner]
+    const entry = bin ? join(dir, bin) : null
+    return entry && existsSync(entry) ? entry : null
+  } catch {
+    return null
+  }
+}
+
 /** The runner this repository can run right now: declared, and installed in node_modules. */
 export function installedRunner(repoPath: string): { runner: TestRunner | null; installed: boolean } {
   const pkgPath = join(repoPath, 'package.json')
@@ -133,57 +152,84 @@ export function installedRunner(repoPath: string): { runner: TestRunner | null; 
     return { runner: null, installed: false }
   }
   if (!runner) return { runner: null, installed: false }
-  return { runner, installed: existsSync(binPath(repoPath, runner)) }
+  return { runner, installed: !!runnerEntry(repoPath, runner) }
 }
 
-const binPath = (repoPath: string, runner: TestRunner): string =>
-  join(repoPath, 'node_modules', '.bin', process.platform === 'win32' ? `${runner}.cmd` : runner)
+/**
+ * The Node that runs the suite: the one on PATH — what `npm test` would use —
+ * else Electron's own, run as Node, so a machine without Node still works.
+ */
+function nodeCommand(): { cmd: string; env: Record<string, string> } {
+  const exe = process.platform === 'win32' ? 'node.exe' : 'node'
+  for (const dir of (process.env.PATH ?? '').split(delimiter)) {
+    const candidate = dir && join(dir, exe)
+    try {
+      if (candidate && statSync(candidate).isFile()) return { cmd: candidate, env: {} }
+    } catch {
+      /* not here */
+    }
+  }
+  return { cmd: process.execPath, env: { ELECTRON_RUN_AS_NODE: '1' } }
+}
 
 const running = new Map<string, ChildProcess>()
+/** Runs the user stopped: their result is dropped, not shown as a failure. */
+const cancelled = new Set<string>()
 
 export async function runTests(repoPath: string): Promise<TestRunResult> {
   const started = Date.now()
   cancelTests(repoPath)
-  const { runner, installed } = installedRunner(repoPath)
-  if (!runner || !installed) throw new Error(runner ? `${runner} is not installed (node_modules)` : 'no test runner')
-  const out = join(tmpdir(), `gitcito-tests-${process.pid}-${Date.now()}.json`)
+  cancelled.delete(repoPath)
+  const { runner } = installedRunner(repoPath)
+  const entry = runner ? runnerEntry(repoPath, runner) : null
+  // Not a failure to report in English: the panel already says which, translated.
+  if (!runner || !entry) return { runner: runner ?? 'vitest', files: [], passed: 0, failed: 0, skipped: 0, ms: 0, unavailable: true }
+  // A private directory, so the report's name is not guessable in the shared tmp.
+  const dir = await mkdtemp(join(tmpdir(), 'gitcito-tests-'))
+  const out = join(dir, 'report.json')
   const args =
     runner === 'vitest'
       ? ['run', '--reporter=json', `--outputFile=${out}`]
       : ['--json', `--outputFile=${out}`, '--testLocationInResults']
-  const printed = await new Promise<string>((done) => {
+  const node = nodeCommand()
+  const { printed, timedOut } = await new Promise<{ printed: string; timedOut: boolean }>((done) => {
+    // No shell: every argument reaches the runner whole, and nothing in a path
+    // (a space, an `&`) is ever read as a command.
     const child = execFile(
-      binPath(repoPath, runner),
-      args,
+      node.cmd,
+      [entry, ...args],
       {
         cwd: repoPath,
         timeout: TEST_TIMEOUT,
         maxBuffer: 64 * 1024 * 1024,
         windowsHide: true,
-        // A .cmd shim only runs through a shell on Windows.
-        shell: process.platform === 'win32',
         // CI: no watch mode, no interactive prompts. Colour off: the report is read, not shown.
-        env: { ...process.env, CI: '1', FORCE_COLOR: '0', NO_COLOR: '1' }
+        env: { ...process.env, ...node.env, CI: '1', FORCE_COLOR: '0', NO_COLOR: '1' }
       },
       // A failing suite exits non-zero — that is the normal case, not an error.
-      (_err, stdout, stderr) => done(`${stderr}\n${stdout}`)
+      (err, stdout, stderr) =>
+        done({ printed: `${stderr}\n${stdout}`, timedOut: !!err && err.killed === true && !cancelled.has(repoPath) })
     )
     running.set(repoPath, child)
   })
   running.delete(repoPath)
   const ms = Date.now() - started
   const json = await readFile(out, 'utf8').catch(() => null)
-  await rm(out, { force: true })
+  await rm(dir, { recursive: true, force: true })
+  if (cancelled.delete(repoPath)) return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms, cancelled: true }
   if (!json) {
     const tail = stripAnsi(printed).trim().slice(-MESSAGE_CAP)
-    return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms, error: tail || '(no output)' }
+    return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms, error: tail, ...(timedOut ? { timedOut: true } : {}) }
   }
   return { ...parseTestReport(json, repoPath, runner), ms }
 }
 
 export function cancelTests(repoPath: string): void {
+  const child = running.get(repoPath)
+  if (!child) return
+  cancelled.add(repoPath)
   try {
-    running.get(repoPath)?.kill()
+    child.kill()
   } catch {
     /* already gone */
   }

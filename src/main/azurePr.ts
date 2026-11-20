@@ -289,3 +289,21 @@ export async function azureMerge(ado: Ado, r: AzureRepo, id: number, method: PrM
     })
   })
 }
+
+/** An Azure Boards work item's title, type and state — for a branch named after it. */
+export async function azureWorkItem(
+  ado: Ado,
+  org: string,
+  id: number
+): Promise<{ id: number; title: string; type: string; state?: string }> {
+  const wi = await ado<{ id: number; fields?: Record<string, unknown> }>(
+    `https://dev.azure.com/${encodeURIComponent(org)}/_apis/wit/workitems/${id}?fields=System.Title,System.WorkItemType,System.State&${V}`
+  )
+  const f = wi.fields ?? {}
+  return {
+    id: wi.id,
+    title: typeof f['System.Title'] === 'string' ? f['System.Title'] : '',
+    type: typeof f['System.WorkItemType'] === 'string' ? f['System.WorkItemType'] : '',
+    ...(typeof f['System.State'] === 'string' ? { state: f['System.State'] } : {})
+  }
+}

@@ -97,6 +97,7 @@ import {
   azurePrFiles,
   azureReply,
   azureReview,
+  azureWorkItem,
   type Ado,
   type AzureRepo
 } from './azurePr'
@@ -2849,6 +2850,12 @@ export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:prDetail', (_e, remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestDetail(remoteUrl, tokens, number)
   )
+  // An Azure Boards work item, in the organization of the repository's Azure remote.
+  ipcMain.handle('hosting:workItem', async (_e, remoteUrl: string, tokens: HostTokens, id: number) => {
+    if (!Number.isInteger(id) || id <= 0) throw new Error('A work item number is a positive integer.')
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureWorkItem(a.ado, a.repo.org, id)
+  })
   ipcMain.handle('hosting:prComment', (_e, remoteUrl: string, tokens: HostTokens, number: number, body: string) =>
     commentOnPr(remoteUrl, tokens, number, body)
   )

@@ -302,6 +302,8 @@ const api = {
       ipcRenderer.invoke('hosting:createPR', remoteUrl, tokens, opts),
     prDetail: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prDetail', remoteUrl, tokens, number),
+    workItem: (remoteUrl: string, tokens: unknown, id: number): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:workItem', remoteUrl, tokens, id),
     prComment: (remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prComment', remoteUrl, tokens, number, body),
     prReplyReviewComment: (remoteUrl: string, tokens: unknown, number: number, inReplyTo: number | string, body: string): Promise<unknown> =>

@@ -156,7 +156,8 @@ export type ModalSpec =
       onReset: (strategy: ResetStrategy, backup: boolean) => void
     }
   | { kind: 'clone'; onClone: (repo: { path: string; name: string }) => void }
-  | { kind: 'create-branch'; path: string; currentBranch?: string; description?: string }
+  | { kind: 'create-branch'; path: string; currentBranch?: string; description?: string; initialName?: string }
+  | { kind: 'work-item-branch'; path: string; remoteUrl: string }
   | { kind: 'settings'; page?: 'profile' | 'layout' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data' | 'environment'; themeTab?: 'theme' | 'graph' }
   | { kind: 'launcher'; groupId?: string }
   | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }

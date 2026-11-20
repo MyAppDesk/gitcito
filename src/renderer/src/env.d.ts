@@ -242,6 +242,7 @@ interface PreloadApi {
     openCreatePR(remoteUrl: string, source: string, target: string): Promise<boolean>
     createPR(remoteUrl: string, tokens: unknown, opts: unknown): Promise<unknown>
     prDetail(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>
+    workItem(remoteUrl: string, tokens: unknown, id: number): Promise<unknown>
     prComment(remoteUrl: string, tokens: unknown, number: number, body: string): Promise<unknown>
     prReplyReviewComment(remoteUrl: string, tokens: unknown, number: number, inReplyTo: number | string, body: string): Promise<unknown>
     prChecks(remoteUrl: string, tokens: unknown, number: number): Promise<unknown>

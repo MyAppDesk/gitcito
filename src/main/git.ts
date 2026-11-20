@@ -166,8 +166,7 @@ import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
 import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
-import { profileForgejoInstance, profileGitlabInstance, readSettings } from './settings'
-import { remoteIsOnForgejo, remoteIsOnGitlab } from '../shared/gitlabInstance'
+import { activeProfileAuth, readSettings } from './settings'
 import { providerOfHost } from './credentials'
 import { checkRemoteAuth, profileCredentialForUrl } from './remoteAuthCheck'
 import { gitCredentialEnv, gitSupportsCredentialEnv, MIN_GIT_FOR_CREDENTIAL_ENV, type BasicCredential } from './gitCredentialEnv'
@@ -953,8 +952,10 @@ export async function cloneCredentialEnv(url: string, host?: string, token?: str
   if (!host || hostFromUrl(url) !== host) return null
   // The renderer sends the active profile's token. A GitLab or Forgejo token
   // only goes to the instance that issued it — never to another profile's server.
-  if (host === 'gitlab' && !remoteIsOnGitlab(url, await profileGitlabInstance())) return null
-  if (host === 'forgejo' && !remoteIsOnForgejo(url, await profileForgejoInstance())) return null
+  if (host === 'gitlab' || host === 'forgejo') {
+    token = (await activeProfileAuth(host, url)).token
+    if (!token) return null
+  }
   const auth = basicAuthFor(host as RepoHost | undefined, token, url)
   return auth ? gitCredentialEnv(url, auth) : null
 }

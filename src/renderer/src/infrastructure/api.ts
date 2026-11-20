@@ -958,8 +958,8 @@ export const hostingApi = {
   accountOwner: (provider: RepoHost, login: string, found: AccountLink, exceptProfileId: string) =>
     window.api.hosting.accountOwner(provider, login, found, exceptProfileId) as Promise<string | null>,
   /** Null when the profile has neither a token nor a link and no sign-in was asked for. */
-  whoAmI: (provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: AccountLink) =>
-    window.api.hosting.whoAmI(provider, token, org, interactive, link) as Promise<ConnectedAccount | null>,
+  whoAmI: (provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: AccountLink, issuer?: string) =>
+    window.api.hosting.whoAmI(provider, token, org, interactive, link, issuer) as Promise<ConnectedAccount | null>,
   createRepo: (provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
     window.api.hosting.createRepo(provider, token, opts, org) as Promise<RemoteRepo>,
   // `repoPath` lets main use the profile the repository is bound to (see shared/hostToken.ts).

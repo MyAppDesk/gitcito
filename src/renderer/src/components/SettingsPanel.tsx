@@ -111,7 +111,7 @@ import {
   resolveCodeColors
 } from '../theme/themes'
 import { ansiToSpans } from '../lib/ansi'
-import { forgejoTokenUrl, gitlabTokenUrl, normalizeGitlabUrl } from '../../../shared/gitlabInstance'
+import { editInstance, tokenInstance, tokenMatchesInstance, forgejoTokenUrl, gitlabTokenUrl, normalizeGitlabUrl } from '../../../shared/gitlabInstance'
 import { EnvironmentPage } from './EnvironmentSettings'
 import { readableError } from '../lib/gitErrorHint'
 import { useT, interp, type TranslationKey } from '../i18n'
@@ -437,7 +437,10 @@ export function IntegrationsPage({
   const [tab, setTab] = useState<(typeof INTEGRATIONS)[number]['id']>('github')
   const active = INTEGRATIONS.find((i) => i.id === tab) ?? INTEGRATIONS[0]
   const ActiveIcon = active.icon
-  const token = profile[active.field] ?? ''
+  const scoped = active.id === 'gitlab' || active.id === 'forgejo' ? active.id : undefined
+  const issuer = scoped ? profile[`${scoped}TokenIssuer`] : undefined
+  const address = scoped ? profile[`${scoped}Url`] : undefined
+  const token = !scoped || tokenMatchesInstance(scoped, address, issuer) ? profile[active.field] ?? '' : ''
   const azureOrg = profile.azureOrg ?? ''
   const gitlabUrl = profile.gitlabUrl ?? ''
   // Typed but not an https address: say so, rather than silently using gitlab.com.
@@ -511,7 +514,7 @@ export function IntegrationsPage({
       void hostingApi
         // Signing in is always a fresh look for a login: reusing the current link
         // would ask again for an account that may be gone, with no way to pick another.
-        .whoAmI(active.id, token, whoAmIOrg, interactive, interactive ? undefined : latest.current.link)
+        .whoAmI(active.id, token, whoAmIOrg, interactive, interactive ? undefined : latest.current.link, issuer)
         .then(async (info) => {
           if (!alive) return
           const { edit, profile, label, t } = latest.current
@@ -543,7 +546,7 @@ export function IntegrationsPage({
       }
     },
     // linkKey, not the link object: a new object with the same account is no reason to re-check.
-    [active.id, token, linkKey, whoAmIOrg, azureOrgRequired]
+    [active.id, token, issuer, linkKey, whoAmIOrg, azureOrgRequired]
   )
 
   // Silent on mount — opening Settings must never pop four sign-in windows.
@@ -690,7 +693,11 @@ export function IntegrationsPage({
           type="password"
           value={token}
           placeholder={'placeholderKey' in active ? t(active.placeholderKey) : active.placeholder}
-          onChange={(e) => edit({ [active.field]: e.target.value } as Partial<Profile>)}
+          disabled={!!scoped && !tokenInstance(scoped, address)}
+          onChange={(e) => edit({
+            [active.field]: e.target.value,
+            ...(scoped && { [`${scoped}TokenIssuer`]: tokenInstance(scoped, address) })
+          } as Partial<Profile>)}
         />
       </label>
       <TokenKeychainNotice />
@@ -716,7 +723,7 @@ export function IntegrationsPage({
             value={gitlabUrl}
             placeholder={t('settings.gitlabUrlPlaceholder')}
             aria-invalid={gitlabUrlInvalid}
-            onChange={(e) => edit({ gitlabUrl: e.target.value })}
+            onChange={(e) => edit(editInstance(profile, 'gitlab', e.target.value))}
           />
           <span className="settings-hint">
             {gitlabUrlInvalid ? t('settings.gitlabUrlInvalid') : t('settings.gitlabUrlHint')}
@@ -733,7 +740,7 @@ export function IntegrationsPage({
             required
             aria-required="true"
             aria-invalid={forgejoUrlInvalid}
-            onChange={(e) => edit({ forgejoUrl: e.target.value })}
+            onChange={(e) => edit(editInstance(profile, 'forgejo', e.target.value))}
           />
           <span className="settings-hint">
             {forgejoUrlInvalid ? t('settings.gitlabUrlInvalid') : t('settings.forgejoUrlHint')}

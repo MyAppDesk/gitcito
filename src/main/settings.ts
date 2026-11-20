@@ -4,7 +4,7 @@ import { existsSync } from 'fs'
 import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
 import { defaultSettings, type AccountLink, type AppSettings, type RepoHost } from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
-import { profileForgejoBase, profileGitlabBase, remoteIsOnForgejo, remoteIsOnGitlab } from '../shared/gitlabInstance'
+import { profileForgejoBase, profileGitlabBase, instanceOf, tokenInstance, GITLAB_COM } from '../shared/gitlabInstance'
 import { setKnownForgejoInstances, setKnownGitlabInstances } from './gitlabInstances'
 import {
   applySecrets,
@@ -183,34 +183,39 @@ const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketTo
 async function profileAuth(
   host: RepoHost,
   profileId: string | undefined,
-  remoteUrl?: string
+  remoteUrl?: string,
+  expectedBase?: string
 ): Promise<{ token?: string; link?: AccountLink }> {
   const plain = await readSettings()
-  const profile =
-    (profileId ? plain.profiles.find((p) => p.id === profileId) : undefined) ??
-    plain.profiles.find((p) => p.id === plain.activeProfileId) ??
-    plain.profiles[0]
-  if (!profile) return {}
-  // A GitLab token is issued by one instance. A remote on any other — gitlab.com
-  // for a self-managed profile, or the reverse — gets nothing from this profile,
-  // and the keychain is not even opened.
-  if (host === 'gitlab' && remoteUrl && !remoteIsOnGitlab(remoteUrl, profileGitlabBase(profile.gitlabUrl))) return {}
-  // Forgejo has no default instance: a profile without an address has no Forgejo
-  // credential at all, and one with an address only for remotes on it.
-  if (host === 'forgejo') {
-    const base = profileForgejoBase(profile.forgejoUrl)
-    if (!base || (remoteUrl && !remoteIsOnForgejo(remoteUrl, base))) return {}
+  const id = profileId ?? plain.activeProfileId
+  const candidate = plain.profiles.find((p) => p.id === id) ?? (profileId ? undefined : plain.profiles[0])
+  if (!candidate) return {}
+  if (host === 'gitlab' || host === 'forgejo') {
+    const base = tokenInstance(host, candidate[`${host}Url`])
+    if (!base || (expectedBase && base !== expectedBase)) return {}
+    if (remoteUrl && instanceOf(remoteUrl, [base])?.base !== base) return {}
   }
-  // Links are plain settings and arrive with imports too: a malformed one is no link.
-  const link = validAccountLink(profile.links?.[host])
   const settings = await readSettingsWithSecrets('tokens')
-  const token = settings.profiles.find((p) => p.id === profile.id)?.[TOKEN_FIELD[host]]?.trim() || undefined
+  const profile = settings.profiles.find((p) => p.id === id) ?? (profileId ? undefined : settings.profiles[0])
+  if (!profile) return {}
+  if (host === 'gitlab' || host === 'forgejo') {
+    const base = tokenInstance(host, profile[`${host}Url`])
+    if (!base || (expectedBase && base !== expectedBase)) return {}
+    if (remoteUrl) {
+      const bases = [GITLAB_COM, ...settings.profiles.flatMap((p) =>
+        [profileForgejoBase(p.forgejoUrl), profileGitlabBase(p.gitlabUrl)].filter((b): b is string => !!b)
+      )]
+      if (instanceOf(remoteUrl, bases)?.base !== base) return {}
+    }
+  }
+  const link = validAccountLink(profile.links?.[host])
+  const token = profile[TOKEN_FIELD[host]]?.trim() || undefined
   return { token, link }
 }
 
 /** The active profile's PAT and link for a host. */
-export function activeProfileAuth(host: RepoHost, remoteUrl?: string): Promise<{ token?: string; link?: AccountLink }> {
-  return profileAuth(host, undefined, remoteUrl)
+export function activeProfileAuth(host: RepoHost, remoteUrl?: string, expectedBase?: string): Promise<{ token?: string; link?: AccountLink }> {
+  return profileAuth(host, undefined, remoteUrl, expectedBase)
 }
 
 /** The Forgejo instance a profile (the active one by default) points at, or null. */

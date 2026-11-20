@@ -732,13 +732,21 @@ export const shots = [
     repos: ['octopus-merge'],
     prepare: async ({ repoPaths, run }) => {
       const repo = repoPaths['octopus-merge']
-      const names = (await run('git', ['-C', repo, 'remote'])).trim().split(/\s+/).filter(Boolean)
-      for (const name of names) await run('git', ['-C', repo, 'remote', 'remove', name])
+      await run('git', ['-C', repo, 'remote', 'remove', 'origin'], { allowFail: true })
       await run('git', ['-C', repo, 'remote', 'add', 'origin', 'git@forge.example.org:studio/catalog.git'])
     },
     drive: async (page, repos) => {
       await page.evaluate((path) => window.__shot.ui.getState().openModal({ kind: 'remoteAuth', path }), repos['octopus-merge'])
       await page.locator('.remote-auth-card').waitFor()
+    }
+  },
+  {
+    out: 'forgejo-integration',
+    repos: ['octopus-merge'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'integrations' }))
+      await page.getByRole('button', { name: 'Forgejo', exact: true }).click()
+      await page.locator('input[aria-required="true"]').fill('https://forge.example.org')
     }
   },
   {

@@ -56,7 +56,7 @@ describe('Forgejo API mapping', () => {
 describe('Forgejo token storage', () => {
   it('is a secret: kept out of the settings JSON and out of exports', () => {
     const s = defaultSettings()
-    const settings = { ...s, profiles: [{ ...s.profiles[0], forgejoToken: 'fj-secret' }] }
+    const settings = { ...s, profiles: [{ ...s.profiles[0], forgejoUrl: FJ, forgejoTokenIssuer: FJ, forgejoToken: 'fj-secret' }] }
     expect(extractSecrets(settings)[settings.profiles[0].id]?.forgejoToken).toBe('fj-secret')
     expect(stripSettingsSecrets(settings).profiles[0].forgejoToken).toBe('')
   })
@@ -106,7 +106,7 @@ describe('clone credentials across two Forgejo servers', () => {
     dirs.push(dir)
     vi.spyOn(app, 'getPath').mockReturnValue(dir)
     const s = defaultSettings()
-    const work = { ...s.profiles[0], id: 'work', name: 'work', forgejoUrl: 'git.work.example' }
+    const work = { ...s.profiles[0], id: 'work', name: 'work', forgejoTokenIssuer: 'https://git.work.example', forgejoToken: 'fj_work', forgejoUrl: 'git.work.example' }
     const home = { ...s.profiles[0], id: 'home', name: 'home', forgejoUrl: 'git.home.example' }
     writeFileSync(
       join(dir, 'gitcito-settings.json'),

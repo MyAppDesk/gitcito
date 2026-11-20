@@ -2729,6 +2729,8 @@ export interface Profile {
   /** Azure DevOps organization, used to validate the PAT and scope repo/PR lookups. */
   azureOrg?: string
   gitlabToken: string
+  gitlabTokenIssuer?: string
+  forgejoTokenIssuer?: string
   /** Self-managed GitLab this profile's GitLab token belongs to (`https://git.example.org`).
    *  Empty means gitlab.com. The token is only ever sent to this instance. */
   gitlabUrl?: string

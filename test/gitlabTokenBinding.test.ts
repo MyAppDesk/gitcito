@@ -1,3 +1,5 @@
+import { applySecrets, extractSecrets, stripSettingsSecrets } from '../src/shared/secrets'
+import { editInstance } from '../src/shared/gitlabInstance'
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -75,4 +77,30 @@ describe('GitLab credentials stay on their own instance', () => {
       base: 'https://git.example.org'
     })
   })
+})
+
+describe.each(['gitlab', 'forgejo'] as const)('%s token issuer', (provider) => {
+  it('does not transfer a credential through an address edit or an address-only import', () => {
+    const settings = defaultSettings()
+    const address = `${provider}Url` as const
+    const field = `${provider}Token` as const
+    const issuer = `${provider}TokenIssuer` as const
+    const profile = { ...settings.profiles[0], [address]: 'https://one.example', [issuer]: 'https://one.example', [field]: 'sample' }
+    settings.profiles = [profile]
+    const saved = extractSecrets(settings)
+    const plain = stripSettingsSecrets(settings)
+    expect(applySecrets(plain, saved).profiles[0][field]).toBe('sample')
+    expect({ ...profile, ...editInstance(profile, provider, 'https://two.example') }[field]).toBe('')
+    plain.profiles[0][address] = 'https://two.example'
+    expect(applySecrets(plain, saved).profiles[0][field]).toBe('')
+    expect(extractSecrets({ ...settings, profiles: [{ ...profile, [address]: 'https://two.example' }] })).toEqual({})
+  })
+})
+
+it('restores a pre-instance GitLab token only on gitlab.com', () => {
+  const settings = defaultSettings()
+  const store = { [settings.profiles[0].id]: { gitlabToken: 'legacy' } }
+  expect(applySecrets(settings, store).profiles[0].gitlabToken).toBe('legacy')
+  settings.profiles[0].gitlabUrl = 'https://other.example'
+  expect(applySecrets(settings, store).profiles[0].gitlabToken).toBe('')
 })

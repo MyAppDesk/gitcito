@@ -27,8 +27,7 @@ import {
   normalizeGitlabUrl,
   profileForgejoBase,
   profileGitlabBase,
-  remoteIsOnForgejo,
-  remoteIsOnGitlab
+  tokenMatchesInstance
 } from '../shared/gitlabInstance'
 import { linkHoldsAccount, pickHostAuth, validAccountLink, type HostAuthInput } from '../shared/hostToken'
 import { noreplyEmail } from '../shared/profileAvatar'
@@ -237,17 +236,9 @@ async function profileAuth(
   repoPath?: string,
   remoteUrl?: string
 ): Promise<HostAuthInput> {
-  // The renderer's token is the active profile's: for GitLab it is only good on
-  // that profile's instance.
-  const sentFits =
-    !remoteUrl ||
-    (provider === 'gitlab'
-      ? remoteIsOnGitlab(remoteUrl, await profileGitlabInstance())
-      : provider === 'forgejo'
-        ? remoteIsOnForgejo(remoteUrl, await profileForgejoInstance())
-        : true)
+  // An IPC token alone carries no issuing instance. Resolve scoped tokens in main.
   return pickHostAuth({
-    sent: sentFits ? sent : undefined,
+    sent: provider === 'gitlab' || provider === 'forgejo' ? undefined : sent,
     bound: repoPath ? await boundProfileAuth(provider, repoPath, remoteUrl) : undefined,
     active: () => activeProfileAuth(provider, remoteUrl)
   })
@@ -344,17 +335,13 @@ async function tokenForProvider(
   provider: RepoHost,
   token: string,
   org?: string
-): Promise<ApiAuth | null> {
+): Promise<(ApiAuth & { base: string }) | null> {
   const base = await providerBase(provider, org)
-  // The token here is the active profile's (sent, or resolved without a remote).
-  // `org` comes from the renderer: it may only name that same profile's instance.
-  if (provider === 'gitlab' && base !== (await profileGitlabInstance())) {
-    throw new Error("This GitLab address is not the active profile's. Switch to that profile first.")
-  }
-  if (provider === 'forgejo' && base !== (await profileForgejoInstance())) {
-    throw new Error("This Forgejo address is not the active profile's. Switch to that profile first.")
-  }
-  return apiToken(base, await profileAuth(provider, token))
+  const input = provider === 'gitlab' || provider === 'forgejo'
+    ? await activeProfileAuth(provider, undefined, base)
+    : await profileAuth(provider, token)
+  const auth = await apiToken(base, input)
+  return auth ? { ...auth, base } : null
 }
 
 /**
@@ -1881,7 +1868,7 @@ async function listRepositories(provider: RepoHost, token: string, org?: string)
 
   if (provider === 'gitlab') {
     const res = await fetch(
-      `${glApi(await providerBase(provider, org))}/projects?membership=true&per_page=100&order_by=last_activity_at&simple=true`,
+      `${glApi(auth.base)}/projects?membership=true&per_page=100&order_by=last_activity_at&simple=true`,
       { redirect: 'error', headers: gitlabAuth(auth) }
     )
     if (!res.ok) throw new Error(`GitLab API error (${res.status})`)
@@ -1902,7 +1889,7 @@ async function listRepositories(provider: RepoHost, token: string, org?: string)
     }))
   }
 
-  if (provider === 'forgejo') return listForgejoRepos(await providerBase(provider, org), auth.token)
+  if (provider === 'forgejo') return listForgejoRepos(auth.base, auth.token)
 
   if (provider === 'bitbucket') {
     const res = await fetch('https://api.bitbucket.org/2.0/repositories?role=member&pagelen=100&sort=-updated_on', {
@@ -1985,11 +1972,11 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
     // glJson checks the status: a revoked token used to come back as a 401 body
     // and fail later as "groups.map is not a function".
     const user = await glJson<{ id: number; username: string; avatar_url: string | null; namespace_id?: number }>(
-      `${glApi(await providerBase(provider, org))}/user`,
+      `${glApi(auth.base)}/user`,
       auth
     )
     const groups = await glJson<Array<{ id: number; full_path: string; avatar_url: string | null }>>(
-      `${glApi(await providerBase(provider, org))}/groups?min_access_level=30&per_page=100`,
+      `${glApi(auth.base)}/groups?min_access_level=30&per_page=100`,
       auth
     )
     return [
@@ -2003,7 +1990,7 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
     ]
   }
 
-  if (provider === 'forgejo') return listForgejoOwners(await providerBase(provider, org), auth.token)
+  if (provider === 'forgejo') return listForgejoOwners(auth.base, auth.token)
 
   if (provider === 'bitbucket') {
     const wsRes = await fetch('https://api.bitbucket.org/2.0/workspaces?pagelen=100', {
@@ -2049,7 +2036,8 @@ async function fetchConnectedAccount(
   token: string,
   org?: string,
   interactive = false,
-  link?: AccountLink
+  link?: AccountLink,
+  issuer?: string
 ): Promise<ConnectedAccount | null> {
   // Nothing on this profile and no sign-in asked for: simply not connected. A
   // login elsewhere on the machine is not this profile's until it is linked.
@@ -2057,7 +2045,8 @@ async function fetchConnectedAccount(
   // Only an explicit "sign in" may open the helper's login window. Merely opening
   // the Settings page must not prompt for four providers at once.
   // GitLab: the instance of the profile being edited, which the renderer sends as `org`.
-  const base = await providerBase(provider, org)
+  const base = provider === 'gitlab' || provider === 'forgejo' ? providerBaseUrl(provider, org) : await providerBase(provider, org)
+  if ((provider === 'gitlab' || provider === 'forgejo') && token && !tokenMatchesInstance(provider, base, issuer)) return null
   const auth = await apiToken(base, { token, link }, { interactive })
   if (!auth) throw await noCredential(provider, base)
   const account = await describeAccount(provider, auth, provider === 'gitlab' || provider === 'forgejo' ? base : org)
@@ -2271,7 +2260,7 @@ async function createRepository(
   }
 
   if (provider === 'gitlab') {
-    const res = await fetch(`${glApi(await providerBase(provider, org))}/projects`, {
+    const res = await fetch(`${glApi(auth.base)}/projects`, {
       method: 'POST',
       redirect: 'error',
       headers: { ...gitlabAuth(auth), 'Content-Type': 'application/json' },
@@ -2290,7 +2279,7 @@ async function createRepository(
     return { name: repo.path_with_namespace, url: repo.http_url_to_repo, private: repo.visibility !== 'public' }
   }
 
-  if (provider === 'forgejo') return createForgejoRepo(await providerBase(provider, org), auth.token, opts)
+  if (provider === 'forgejo') return createForgejoRepo(auth.base, auth.token, opts)
 
   if (provider === 'bitbucket') {
     const slug = opts.name.trim().toLowerCase().replace(/\s+/g, '-')
@@ -2591,8 +2580,8 @@ export function registerHostingHandlers(): void {
   )
   ipcMain.handle(
     'hosting:whoAmI',
-    (_e, provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: unknown) =>
-      fetchConnectedAccount(provider, token, org, interactive, validAccountLink(link))
+    (_e, provider: RepoHost, token: string, org?: string, interactive?: boolean, link?: unknown, issuer?: string) =>
+      fetchConnectedAccount(provider, token, org, interactive, validAccountLink(link), issuer)
   )
   ipcMain.handle('hosting:createRepo', (_e, provider: RepoHost, token: string, opts: CreateRepoOpts, org?: string) =>
     createRepository(provider, token, opts, org)

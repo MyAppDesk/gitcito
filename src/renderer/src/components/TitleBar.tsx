@@ -865,7 +865,7 @@ export function TitleBar(): React.JSX.Element {
     pagesForRepo(pages, repoPath).map(({ page, index }) => (
       <span
         key={`${page.type}-${index}`}
-        className={`tab-page-chip ${activePage === index ? 'active' : ''}`}
+        className={`tab-page-chip ${page.type === 'pr' ? 'tab-page-chip-pr' : ''} ${activePage === index ? 'active' : ''}`}
         role="button"
         tabIndex={0}
         title={pageTabLabel(page, t)}

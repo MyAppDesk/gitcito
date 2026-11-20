@@ -4429,6 +4429,23 @@ body.col-resizing .node-ava {
 .tab-page-chip:hover { color: var(--text-1); background: var(--bg-3); }
 .tab-page-chip.active { color: var(--accent); background: var(--accent-soft); }
 .tab-page-num { margin-inline-start: 3px; font-size: 10.5px; font-variant-numeric: tabular-nums; }
+/* A pull request is a destination of its own, not a tool icon: a bordered pill
+   with a bigger icon and the number in bold, solid accent while it is open. */
+.tab-page-chip-pr {
+  gap: 4px;
+  padding: 2px 7px 2px 5px;
+  margin-inline-start: 4px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--text-0);
+}
+.tab-page-chip-pr svg { width: 14px; height: 14px; color: var(--accent); }
+.tab-page-chip-pr .tab-page-num { margin-inline-start: 0; font-size: 12px; font-weight: 700; }
+.tab-page-chip-pr:hover { background: var(--bg-3); color: var(--text-0); }
+.tab-page-chip-pr.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tab-page-chip-pr.active svg { color: #fff; }
+.tab-page-chip-pr .tab-page-close svg { width: 9px; height: 9px; color: inherit; }
 .tab-page-close {
   position: absolute;
   inset-block-start: -4px;

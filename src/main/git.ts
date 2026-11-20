@@ -3686,6 +3686,17 @@ export const gitService = {
   },
 
   /**
+   * Move a local branch to `sha` (a commit dropped on its badge) and return
+   * where it pointed before — the undo's target. Same guard as setBranchRef:
+   * git refuses to move a branch checked out in any worktree.
+   */
+  async moveBranchTo(repoPath: string, branch: string, sha: string): Promise<string> {
+    const before = (await runGit(repoPath, ['rev-parse', '--verify', `refs/heads/${branch}^{commit}`])).trim()
+    await runGit(repoPath, ['branch', '-f', branch, sha])
+    return before
+  },
+
+  /**
    * Whether `ancestor` is a strict ancestor of `descendant`: the one can be
    * fast-forwarded to the other. False for the same commit (nothing to move),
    * for an unknown ref, and for a name that would read as an option.

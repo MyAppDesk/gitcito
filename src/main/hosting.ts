@@ -916,7 +916,7 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
     ),
     milestone: mr.milestone?.title ?? null,
     ...(Number.isFinite(changed) ? { changedFiles: changed } : {}),
-    ...(commits ? { commits: commits.length } : {}),
+    ...(commits ? { commits: commits.length, ...(commits.length >= 100 ? { commitsCapped: true } : {}) } : {}),
     sourceRepo: null,
     avatars,
     number: mr.iid,
@@ -987,16 +987,17 @@ export function diffLineCounts(diff: string): { additions: number; deletions: nu
 
 async function glMergeRequestFiles(remoteUrl: string, token: string | undefined, number: number): Promise<PrFile[]> {
   const { base, auth } = await glProjectOf(remoteUrl, token)
-  const diffs = await glJson<
-    Array<{
-      old_path: string
-      new_path: string
-      new_file: boolean
-      renamed_file: boolean
-      deleted_file: boolean
-      diff: string
-    }>
-  >(`${base}/merge_requests/${number}/diffs?per_page=100`, auth).catch(() => [])
+  type GlDiff = {
+    old_path: string
+    new_path: string
+    new_file: boolean
+    renamed_file: boolean
+    deleted_file: boolean
+    diff: string
+  }
+  const diffs = await allPages((page) =>
+    glJson<GlDiff[]>(`${base}/merge_requests/${number}/diffs?per_page=100&page=${page}`, auth)
+  ).catch(() => [] as GlDiff[])
   return diffs.map((d) => ({
     filename: d.new_path || d.old_path,
     status: d.new_file ? 'added' : d.deleted_file ? 'removed' : d.renamed_file ? 'renamed' : 'modified',
@@ -1060,6 +1061,21 @@ async function glMergeMr(
     method: 'PUT',
     body: JSON.stringify({ squash: method === 'squash' })
   })
+}
+
+/**
+ * Every page of a list endpoint, 100 at a time — the most GitHub and GitLab
+ * serve per page, whatever `per_page` asks for. Capped so a pathological PR
+ * cannot loop for ever (GitHub stops listing a PR's files at 3000 anyway).
+ */
+export async function allPages<T>(fetchPage: (page: number) => Promise<T[]>, maxPages = 30): Promise<T[]> {
+  const out: T[] = []
+  for (let page = 1; page <= maxPages; page++) {
+    const items = await fetchPage(page)
+    out.push(...items)
+    if (items.length < 100) break
+  }
+  return out
 }
 
 /** The user shape GitHub embeds in PRs, comments and reviews. */
@@ -1228,17 +1244,19 @@ async function pullRequestFiles(
 ): Promise<PrFile[]> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestFiles(remoteUrl, tokens.gitlab, number)
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
-  const data = await ghJson<
-    Array<{
-      filename: string
-      status: string
-      additions: number
-      deletions: number
-      /** Omitted by GitHub for binaries and for very large diffs. */
-      patch?: string
-      previous_filename?: string
-    }>
-  >(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/files?per_page=300`, token).catch(() => [])
+  type GhFile = {
+    filename: string
+    status: string
+    additions: number
+    deletions: number
+    /** Omitted by GitHub for binaries and for very large diffs. */
+    patch?: string
+    previous_filename?: string
+  }
+  // per_page above 100 is silently capped: a 150-file PR used to list 100.
+  const data = await allPages((page) =>
+    ghJson<GhFile[]>(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/files?per_page=100&page=${page}`, token)
+  ).catch(() => [] as GhFile[])
   return data.map((f) => ({
     filename: f.filename,
     status: f.status,

@@ -217,7 +217,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
         </header>
         {pr && (
           <div className="prp-sub">
-            {interp(t('prPage.wantsToMerge'), { author: pr.author, source: pr.source, target: pr.target })}
+            {interp(t(status === 'merged' ? 'prPage.headMerged' : status === 'closed' ? 'prPage.headClosed' : 'prPage.wantsToMerge'), {
+              author: pr.author,
+              source: pr.source,
+              target: pr.target
+            })}
           </div>
         )}
 
@@ -570,7 +574,9 @@ function Avatar({
   title?: string
 }): React.JSX.Element {
   const [failed, setFailed] = useState(false)
-  const url = avatars?.[login]
+  // Only an https picture is drawn; anything else falls back to the initial.
+  const raw = avatars?.[login]
+  const url = raw && /^https:\/\//i.test(raw) ? raw : undefined
   const style = { width: size, height: size, fontSize: Math.round(size * 0.5) }
   if (url && !failed) {
     return <img className="prp-avatar" src={url} alt="" style={style} title={title} onError={() => setFailed(true)} draggable={false} />
@@ -614,7 +620,9 @@ function ChangeSummary({ pr, files }: { pr: PrDetail; files: PrFile[] | null }):
       {pr.commits !== undefined && (
         <div className="prp-commits">
           <GitCommitHorizontal size={12} />
-          {interp(t(pr.commits === 1 ? 'prPage.commitsOne' : 'prPage.commitsMany'), { n: String(pr.commits) })}
+          {interp(t(pr.commits === 1 ? 'prPage.commitsOne' : 'prPage.commitsMany'), {
+            n: pr.commitsCapped ? `${pr.commits}+` : String(pr.commits)
+          })}
         </div>
       )}
       {add !== undefined && del !== undefined && (

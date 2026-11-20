@@ -728,6 +728,8 @@ export interface PrDetail {
   deletions?: number
   changedFiles?: number
   commits?: number
+  /** `commits` is a floor: the host was asked for one page and it was full. */
+  commitsCapped?: boolean
   /** owner/repo the head branch lives in, when it differs from the base (a fork). */
   sourceRepo?: string | null
   /** Avatar URL per login, for everyone the host named in this PR. */

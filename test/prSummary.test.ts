@@ -110,3 +110,19 @@ describe('status, checks and labels', () => {
     expect(labelTextColor('#1d1d1d')).toBe('#fff')
   })
 })
+
+describe('allPages', () => {
+  it('follows pages of 100 until a short one, and stops at the cap', async () => {
+    const { allPages } = await import('../src/main/hosting')
+    const sizes = [100, 100, 40, 100]
+    const seen: number[] = []
+    const items = await allPages(async (page) => {
+      seen.push(page)
+      return Array.from({ length: sizes[page - 1] ?? 0 }, (_, i) => i)
+    })
+    expect(items).toHaveLength(240)
+    expect(seen).toEqual([1, 2, 3])
+    const capped = await allPages(async () => Array.from({ length: 100 }, () => 0), 2)
+    expect(capped).toHaveLength(200)
+  })
+})

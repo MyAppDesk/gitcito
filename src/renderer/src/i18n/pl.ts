@@ -2968,6 +2968,8 @@ export const pl: Dict = {
   'gitError.permissionDenied': 'Host odmówił zapisu: używane konto nie może tu zapisywać albo jego token wygasł. Sprawdź aktywny profil, dostęp konta i token.',
   'gitError.repoNotFound': 'Serwer twierdzi, że repozytorium nie istnieje — albo używane konto go nie widzi. Sprawdź adres URL zdalnego repozytorium i aktywny profil.',
   'gitError.sshKey': 'Serwer odrzucił twój klucz SSH. Sprawdź w Ustawienia → Bezpieczeństwo, który klucz ma agent, i czy jest dodany do twojego konta.',
+  'gitError.tokenScope': 'Temu tokenowi brakuje uprawnienia {scopes}. Uprawnień tokenu nie da się zmienić po utworzeniu: utwórz nowy, który je zawiera, i wklej go tutaj.',
+  'gitError.tokenScopeAny': 'Ten token nie ma potrzebnych uprawnień. Uprawnień tokenu nie da się zmienić po utworzeniu: utwórz nowy z uprawnieniami podanymi w podręczniku i wklej go tutaj.',
   'toast.showMore': 'Pokaż więcej',
   'toast.reportIssue': 'Zgłoś ten problem na GitHubie',
   'toast.fixWithAI': 'Poproś asystenta AI o naprawienie tego problemu',

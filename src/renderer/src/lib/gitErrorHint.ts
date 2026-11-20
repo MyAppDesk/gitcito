@@ -63,6 +63,17 @@ const RULES: Rule[] = [
   {
     test: /Permission denied \(publickey/i,
     hint: () => ({ key: 'gitError.sshKey' })
+  },
+  {
+    // Forgejo / Gitea name the scope a token lacks; the fix is a new token,
+    // because neither lets you change an existing token's scopes.
+    test: /token does not have at least one of required scope\(s\): \[([^\]]+)\]/i,
+    hint: (m) => ({ key: 'gitError.tokenScope', vars: { scopes: m[1] } })
+  },
+  {
+    // GitLab's OAuth-style refusal for a token with too few scopes.
+    test: /insufficient_scope/i,
+    hint: () => ({ key: 'gitError.tokenScopeAny' })
   }
 ]
 
@@ -80,6 +91,20 @@ const IPC_PREFIX = /^Error invoking remote method '[^']*': (?:\w*Error: )?/
 /** The error without Electron's IPC wrapper — what the reader actually needs. */
 export function withoutIpcPrefix(message: string): string {
   return message.replace(IPC_PREFIX, '')
+}
+
+/**
+ * What to show for an error, in the current language: the explanation when one
+ * matches, else git's text without Electron's wrapper. Pure — `t` and `interp`
+ * come from the caller, so this stays usable outside React.
+ */
+export function readableError(
+  message: string,
+  t: (key: TranslationKey) => string,
+  interp: (s: string, vars: Record<string, string>) => string
+): string {
+  const hint = explainGitError(message)
+  return hint ? interp(t(hint.key), hint.vars ?? {}) : withoutIpcPrefix(message)
 }
 
 export function explainGitError(message: string): GitErrorHint | null {

@@ -2975,6 +2975,8 @@ export const de: Dict = {
   'gitError.permissionDenied': 'Der Host hat den Schreibzugriff abgelehnt: Das verwendete Konto darf hier nicht schreiben, oder sein Token ist abgelaufen. Prüfe das aktive Profil, den Zugriff des Kontos und das Token.',
   'gitError.repoNotFound': 'Der Server sagt, das Repository existiert nicht — oder das verwendete Konto kann es nicht sehen. Prüfe die Remote-URL und das aktive Profil.',
   'gitError.sshKey': 'Der Server hat deinen SSH-Schlüssel abgelehnt. Prüfe unter Einstellungen → Sicherheit, welchen Schlüssel der Agent hält, und ob er deinem Konto hinzugefügt ist.',
+  'gitError.tokenScope': 'Diesem Token fehlt die Berechtigung {scopes}. Die Berechtigungen eines Tokens lassen sich nachträglich nicht ändern: Erstelle ein neues, das sie enthält, und füge es hier ein.',
+  'gitError.tokenScopeAny': 'Diesem Token fehlen die nötigen Berechtigungen. Die Berechtigungen eines Tokens lassen sich nachträglich nicht ändern: Erstelle ein neues mit den im Handbuch genannten Berechtigungen und füge es hier ein.',
   'toast.showMore': 'Mehr anzeigen',
   'toast.reportIssue': 'Dieses Problem auf GitHub melden',
   'toast.fixWithAI': 'Den KI-Assistenten um eine Lösung bitten',

@@ -5,7 +5,7 @@ import { useUIStore, type Toast } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoChatAvailable } from '../lib/repoChatUI'
 import { reportIssueUrl } from '../lib/issueReport'
-import { explainGitError, withoutIpcPrefix } from '../lib/gitErrorHint'
+import { explainGitError, readableError, withoutIpcPrefix } from '../lib/gitErrorHint'
 import { useT, interp } from '../i18n'
 
 const icons = {
@@ -43,7 +43,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   // text moves to the details. Copy, report and "fix with AI" keep using the raw
   // message — it is what names the failing call.
   const hint = toast.kind === 'error' ? explainGitError(toast.message) : null
-  const text = hint ? interp(t(hint.key), hint.vars ?? {}) : withoutIpcPrefix(toast.message)
+  const text = readableError(toast.message, t, interp)
 
   return (
     <motion.div

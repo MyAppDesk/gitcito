@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { explainGitError, withoutIpcPrefix } from '../src/renderer/src/lib/gitErrorHint'
+import { explainGitError, readableError, withoutIpcPrefix } from '../src/renderer/src/lib/gitErrorHint'
 
 const IPC = "Error invoking remote method 'git': Error: "
 
@@ -57,5 +57,26 @@ describe('withoutIpcPrefix', () => {
     expect(withoutIpcPrefix(IPC + 'fatal: boom')).toBe('fatal: boom')
     expect(withoutIpcPrefix("Error invoking remote method 'git': fatal: boom")).toBe('fatal: boom')
     expect(withoutIpcPrefix('fatal: boom')).toBe('fatal: boom')
+  })
+})
+
+describe('token scope errors', () => {
+  it('names the scope a Forgejo/Gitea token lacks', () => {
+    const msg =
+      "Error invoking remote method 'hosting:whoAmI': Error: Forgejo: token does not have at least one of required scope(s): [read:user]"
+    expect(explainGitError(msg)).toEqual({ key: 'gitError.tokenScope', vars: { scopes: 'read:user' } })
+  })
+
+  it("recognises GitLab's insufficient_scope", () => {
+    expect(explainGitError('GitLab: insufficient_scope')?.key).toBe('gitError.tokenScopeAny')
+  })
+})
+
+describe('readableError', () => {
+  const t = (k: string): string => `<${k}>`
+  const interp = (s: string, v: Record<string, string>): string => `${s}${JSON.stringify(v)}`
+  it('explains what it recognises and unwraps the rest', () => {
+    expect(readableError('remote: Repository not found.', t, interp)).toBe('<gitError.repoNotFound>{}')
+    expect(readableError("Error invoking remote method 'git': Error: fatal: boom", t, interp)).toBe('fatal: boom')
   })
 })

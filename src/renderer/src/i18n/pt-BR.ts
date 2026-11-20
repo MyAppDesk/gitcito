@@ -2976,6 +2976,8 @@ export const ptBR: Dict = {
   'gitError.permissionDenied': 'O host recusou a escrita: a conta em uso não pode escrever aqui, ou o token dela expirou. Confira o perfil ativo, o acesso da conta e o token.',
   'gitError.repoNotFound': 'O servidor diz que o repositório não existe — ou a conta em uso não consegue vê-lo. Confira a URL do remote e o perfil ativo.',
   'gitError.sshKey': 'O servidor recusou sua chave SSH. Veja qual chave o agente tem em Configurações → Segurança e se ela está cadastrada na sua conta.',
+  'gitError.tokenScope': 'Este token não tem a permissão {scopes}. As permissões de um token não mudam depois de criado: crie um novo que a inclua e cole aqui.',
+  'gitError.tokenScopeAny': 'Este token não tem as permissões necessárias. As permissões de um token não mudam depois de criado: crie um novo com as permissões que o manual indica e cole aqui.',
   'toast.showMore': 'Mostrar mais',
   'toast.reportIssue': 'Relatar este problema no GitHub',
   'toast.fixWithAI': 'Pedir ao assistente de IA para corrigir',

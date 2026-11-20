@@ -2968,6 +2968,8 @@ export const zhCN: Dict = {
   'gitError.permissionDenied': '主机拒绝了写入：当前账号无权在此写入，或其令牌已过期。请检查当前配置文件、账号权限和令牌。',
   'gitError.repoNotFound': '服务器表示仓库不存在——或当前账号无法看到它。请检查远程 URL 和当前配置文件。',
   'gitError.sshKey': '服务器拒绝了你的 SSH 密钥。请在 设置 → 安全 中查看代理持有的密钥，并确认它已添加到你的账号。',
+  'gitError.tokenScope': '此令牌缺少 {scopes} 权限。令牌创建后无法修改权限：请新建一个包含该权限的令牌并粘贴到这里。',
+  'gitError.tokenScopeAny': '此令牌缺少所需权限。令牌创建后无法修改权限：请按手册列出的权限新建令牌并粘贴到这里。',
   'toast.showMore': '展开',
   'toast.reportIssue': '在 GitHub 上反馈这个问题',
   'toast.fixWithAI': '让 AI 助手修复这个问题',

@@ -2916,6 +2916,8 @@ export const it: Dict = {
   'gitError.permissionDenied': "L'host ha rifiutato la scrittura: l'account in uso non può scrivere qui, oppure il suo token è scaduto. Controlla il profilo attivo, l'accesso dell'account e il token.",
   'gitError.repoNotFound': "Il server dice che il repository non esiste — oppure l'account in uso non può vederlo. Controlla l'URL del remoto e il profilo attivo.",
   'gitError.sshKey': "Il server ha rifiutato la tua chiave SSH. Controlla quale chiave ha l'agente in Impostazioni → Sicurezza e che sia aggiunta al tuo account.",
+  'gitError.tokenScope': 'A questo token manca il permesso {scopes}. I permessi di un token non si possono cambiare dopo la creazione: creane uno nuovo che lo includa e incollalo qui.',
+  'gitError.tokenScopeAny': 'Questo token non ha i permessi necessari. I permessi di un token non si possono cambiare dopo la creazione: creane uno nuovo con i permessi indicati nel manuale e incollalo qui.',
   'toast.showMore': 'Mostra di più',
   'toast.reportIssue': 'Segnala questo problema su GitHub',
   'toast.fixWithAI': 'Chiedi all’assistente AI di sistemarlo',

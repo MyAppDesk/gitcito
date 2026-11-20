@@ -2968,6 +2968,8 @@ export const ko: Dict = {
   'gitError.permissionDenied': '호스트가 쓰기를 거부했습니다. 사용 중인 계정에 쓰기 권한이 없거나 토큰이 만료되었습니다. 활성 프로필, 계정의 권한, 토큰을 확인하세요.',
   'gitError.repoNotFound': '서버는 저장소가 없다고 합니다. 또는 사용 중인 계정에서 볼 수 없습니다. 원격 URL과 활성 프로필을 확인하세요.',
   'gitError.sshKey': '서버가 SSH 키를 거부했습니다. 설정 → 보안에서 에이전트가 가진 키와 그 키가 계정에 추가되어 있는지 확인하세요.',
+  'gitError.tokenScope': '이 토큰에는 {scopes} 권한이 없습니다. 토큰의 권한은 만든 뒤에 바꿀 수 없습니다. 이 권한을 포함한 새 토큰을 만들어 여기에 붙여 넣으세요.',
+  'gitError.tokenScopeAny': '이 토큰에는 필요한 권한이 없습니다. 토큰의 권한은 만든 뒤에 바꿀 수 없습니다. 설명서에 나온 권한으로 새 토큰을 만들어 여기에 붙여 넣으세요.',
   'toast.showMore': '자세히 보기',
   'toast.reportIssue': 'GitHub에 이 문제 신고',
   'toast.fixWithAI': 'AI 도우미에게 해결 요청',

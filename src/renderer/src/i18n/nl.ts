@@ -2976,6 +2976,8 @@ export const nl: Dict = {
   'gitError.permissionDenied': 'De host weigerde schrijftoegang: het gebruikte account mag hier niet schrijven, of het token is verlopen. Controleer het actieve profiel, de toegang van het account en het token.',
   'gitError.repoNotFound': 'De server zegt dat de repository niet bestaat — of het gebruikte account kan hem niet zien. Controleer de remote-URL en het actieve profiel.',
   'gitError.sshKey': 'De server weigerde je SSH-sleutel. Controleer in Instellingen → Beveiliging welke sleutel de agent heeft, en of die aan je account is toegevoegd.',
+  'gitError.tokenScope': 'Dit token mist de rechten {scopes}. De rechten van een token zijn achteraf niet te wijzigen: maak een nieuw token dat ze bevat en plak het hier.',
+  'gitError.tokenScopeAny': 'Dit token heeft niet de benodigde rechten. De rechten van een token zijn achteraf niet te wijzigen: maak een nieuw token met de rechten uit de handleiding en plak het hier.',
   'toast.showMore': 'Meer tonen',
   'toast.reportIssue': 'Dit probleem melden op GitHub',
   'toast.fixWithAI': 'De AI-assistent vragen dit op te lossen',

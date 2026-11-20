@@ -2970,6 +2970,8 @@ export const es: Dict = {
   'gitError.permissionDenied': 'El host rechazó la escritura: la cuenta en uso no puede escribir aquí, o su token caducó. Revisa el perfil activo, el acceso de la cuenta y el token.',
   'gitError.repoNotFound': 'El servidor dice que el repositorio no existe — o la cuenta en uso no puede verlo. Revisa la URL del remoto y el perfil activo.',
   'gitError.sshKey': 'El servidor rechazó tu clave SSH. Revisa qué clave tiene el agente en Ajustes → Seguridad y que esté añadida a tu cuenta.',
+  'gitError.tokenScope': 'A este token le falta el permiso {scopes}. Los permisos de un token no se pueden cambiar una vez creado: crea uno nuevo que lo incluya y pégalo aquí.',
+  'gitError.tokenScopeAny': 'Este token no tiene los permisos necesarios. Los permisos de un token no se pueden cambiar una vez creado: crea uno nuevo con los permisos que indica el manual y pégalo aquí.',
   'toast.showMore': 'Ver más',
   'toast.reportIssue': 'Reportar este problema en GitHub',
   'toast.fixWithAI': 'Pídele al asistente de IA que lo arregle',

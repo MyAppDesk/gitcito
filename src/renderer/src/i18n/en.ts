@@ -2967,6 +2967,8 @@ export const en = {
   'gitError.permissionDenied': "The host refused write access: the account in use cannot write here, or its token has expired. Check the active profile, its account's access, and the token.",
   'gitError.repoNotFound': 'The server says the repository does not exist — or the account in use cannot see it. Check the remote URL and the active profile.',
   'gitError.sshKey': 'The server refused your SSH key. Check which key the agent holds in Settings → Security, and that it is added to your account.',
+  'gitError.tokenScope': "This token is missing the {scopes} permission. A token's permissions cannot be changed once it exists: create a new one that includes it, and paste it here.",
+  'gitError.tokenScopeAny': "This token does not have the permissions this needs. A token's permissions cannot be changed once it exists: create a new one with the permissions the handbook lists, and paste it here.",
   'toast.showMore': 'Show more',
   'toast.reportIssue': 'Report this issue on GitHub',
   'toast.fixWithAI': 'Ask the AI assistant to fix this',

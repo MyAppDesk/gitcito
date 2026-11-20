@@ -2911,6 +2911,8 @@ export const tr: Dict = {
   'gitError.permissionDenied': 'Sunucu yazma erişimini reddetti: kullanılan hesap buraya yazamıyor ya da belirtecinin süresi doldu. Etkin profili, hesabın erişimini ve belirteci kontrol edin.',
   'gitError.repoNotFound': "Sunucu deponun olmadığını söylüyor — ya da kullanılan hesap onu göremiyor. Uzak deponun URL'sini ve etkin profili kontrol edin.",
   'gitError.sshKey': "Sunucu SSH anahtarınızı reddetti. Ayarlar → Güvenlik'te ajanın hangi anahtarı tuttuğunu ve hesabınıza ekli olup olmadığını kontrol edin.",
+  'gitError.tokenScope': 'Bu belirteçte {scopes} izni eksik. Bir belirtecin izinleri oluşturulduktan sonra değiştirilemez: bu izni içeren yeni bir belirteç oluşturup buraya yapıştırın.',
+  'gitError.tokenScopeAny': 'Bu belirteçte gereken izinler yok. Bir belirtecin izinleri oluşturulduktan sonra değiştirilemez: el kitabındaki izinlerle yeni bir belirteç oluşturup buraya yapıştırın.',
   'toast.showMore': 'Daha fazla göster',
   'toast.reportIssue': 'Bu sorunu GitHub’da bildir',
   'toast.fixWithAI': 'Yapay zekâ asistanından bunu düzeltmesini iste',

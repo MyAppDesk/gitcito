@@ -2915,6 +2915,8 @@ export const fr: Dict = {
   'gitError.permissionDenied': "L'hôte a refusé l'écriture : le compte utilisé ne peut pas écrire ici, ou son jeton a expiré. Vérifiez le profil actif, l'accès du compte et le jeton.",
   'gitError.repoNotFound': "Le serveur indique que le dépôt n'existe pas — ou que le compte utilisé ne peut pas le voir. Vérifiez l'URL du dépôt distant et le profil actif.",
   'gitError.sshKey': "Le serveur a refusé votre clé SSH. Vérifiez quelle clé l'agent détient dans Réglages → Sécurité et qu'elle est ajoutée à votre compte.",
+  'gitError.tokenScope': "Il manque à ce jeton la permission {scopes}. Les permissions d'un jeton ne changent plus après sa création : créez-en un nouveau qui l'inclut et collez-le ici.",
+  'gitError.tokenScopeAny': "Ce jeton n'a pas les permissions nécessaires. Les permissions d'un jeton ne changent plus après sa création : créez-en un nouveau avec les permissions indiquées dans le manuel et collez-le ici.",
   'toast.showMore': 'Afficher plus',
   'toast.reportIssue': 'Signaler ce problème sur GitHub',
   'toast.fixWithAI': 'Demander à l’assistant IA de corriger',

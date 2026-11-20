@@ -91,6 +91,8 @@ export function isReviewableRemote(
 ): boolean {
   if (!url) return false
   if (/(?:^|[/@.])github\.com[/:]/i.test(url)) return true
+  // Azure DevOps, current and legacy addresses (https and ssh).
+  if (/(?:^|[/@.])dev\.azure\.com[/:]|\.visualstudio\.com\//i.test(url)) return true
   const norm = (list: readonly string[]): string[] =>
     list.map((u) => normalizeGitlabUrl(u)).filter((u): u is string => !!u)
   return gitlabInstanceOf(url, norm(gitlabInstances)) !== null || forgejoInstanceOf(url, norm(forgejoInstances)) !== null

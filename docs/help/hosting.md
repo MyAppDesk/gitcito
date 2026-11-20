@@ -115,7 +115,14 @@ decides merge-commit vs fast-forward from the project's settings, so the merge
 menu shows merge and squash only. Inline threads show the file and line but not
 the surrounding diff hunk, which GitLab's API does not return. Review and merge
 work on gitlab.com and on a [self-managed GitLab](#self-managed-gitlab). Bitbucket
-and Azure DevOps still open in the browser for review.
+still opens in the browser for review.
+
+Azure DevOps differences: approving casts your vote (*Approved*); **request
+changes** votes *Waiting for author*. Completing the PR takes merge, squash or
+rebase. Azure lists a PR's changed files but sends no diff, so the app fetches
+both versions of each file and diffs them itself — for the first 200 files; a
+binary file, or a change too large to diff here, links to the host. People show
+as initials, because Azure's profile pictures need a signed-in browser.
 
 ## Self-managed GitLab
 

@@ -98,8 +98,16 @@ de "enviar revisão", então **aprovar** usa o endpoint de aprovação dele e
 fast-forward pelas configurações do projeto, então o menu de merge mostra só
 merge e squash. Threads inline mostram o arquivo e a linha, mas não o hunk de
 diff ao redor, que a API do GitLab não retorna. Revisar e fazer merge funciona
-no gitlab.com e num [GitLab self-managed](#gitlab-self-managed). Bitbucket e
-Azure DevOps ainda abrem no navegador para revisão.
+no gitlab.com e num [GitLab self-managed](#gitlab-self-managed). O Bitbucket
+ainda abre no navegador para revisão.
+
+Diferenças do Azure DevOps: aprovar registra o seu voto (*Approved*); **pedir
+mudanças** vota *Waiting for author*. Concluir o PR aceita merge, squash ou
+rebase. O Azure lista os arquivos alterados mas não manda o diff, então o app
+busca as duas versões de cada arquivo e calcula o diff — para os primeiros 200
+arquivos; um arquivo binário, ou uma mudança grande demais para calcular aqui,
+tem link para o host. As pessoas aparecem com as iniciais, porque as fotos de
+perfil do Azure exigem um navegador com login.
 
 ## GitLab self-managed
 

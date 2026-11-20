@@ -16,30 +16,15 @@ import {
 } from '../../../shared/types'
 import { APP_THEMES, applyAppTheme, findAppTheme } from '../theme/themes'
 import { settingsApi, shellApi } from '../infrastructure/api'
+import { hasSettingsSecrets, stripSettingsSecrets } from '../../../shared/secrets'
 import { AIPage, IntegrationsPage } from './SettingsPanel'
 import gitcitoLaunch from '../assets/gitcito-launch.png'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function detectSecrets(s: AppSettings): boolean {
-  return (s.profiles ?? []).some(
-    (p) => !!p.githubToken || !!p.azureToken || !!p.gitlabToken || !!p.bitbucketToken || !!p.forgejoToken || !!p.ai?.apiKey
-  )
-}
+/** Shared with main: also sees AI account keys, which a hand-kept list here missed. */
+const detectSecrets = (s: AppSettings): boolean => hasSettingsSecrets(s)
 
-function stripSecrets(s: AppSettings): AppSettings {
-  return {
-    ...s,
-    profiles: (s.profiles ?? []).map((p) => ({
-      ...p,
-      githubToken: '',
-      azureToken: '',
-      gitlabToken: '',
-      bitbucketToken: '',
-      ai: p.ai ? { ...p.ai, apiKey: '' } : p.ai
-    }))
-  }
-}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -54,6 +39,9 @@ interface WizardData {
   gitlabToken: string
   azureToken: string
   bitbucketToken: string
+  gitlabUrl?: string
+  forgejoUrl?: string
+  forgejoToken?: string
   defaultOpenApp?: { name: string; path: string }
   importData: AppSettings | null
   importHasSecrets: boolean
@@ -80,6 +68,9 @@ function buildProfile(data: WizardData): Profile {
     gitlabToken: data.gitlabToken,
     azureToken: data.azureToken,
     bitbucketToken: data.bitbucketToken,
+    gitlabUrl: data.gitlabUrl,
+    forgejoUrl: data.forgejoUrl,
+    forgejoToken: data.forgejoToken,
     ai: data.ai
   }
 }
@@ -319,7 +310,12 @@ function IntegrationsStep({
               ...(p.githubToken !== undefined && { githubToken: p.githubToken }),
               ...(p.azureToken !== undefined && { azureToken: p.azureToken }),
               ...(p.gitlabToken !== undefined && { gitlabToken: p.gitlabToken }),
-              ...(p.bitbucketToken !== undefined && { bitbucketToken: p.bitbucketToken })
+              ...(p.bitbucketToken !== undefined && { bitbucketToken: p.bitbucketToken }),
+              // Fields the page grew after the wizard was written: dropping them made
+              // the inputs look dead and left a self-managed token pointed at gitlab.com.
+              ...(p.gitlabUrl !== undefined && { gitlabUrl: p.gitlabUrl }),
+              ...(p.forgejoUrl !== undefined && { forgejoUrl: p.forgejoUrl }),
+              ...(p.forgejoToken !== undefined && { forgejoToken: p.forgejoToken })
             })
           }}
         />
@@ -377,6 +373,9 @@ export function OnboardingWizard(): React.JSX.Element {
     gitlabToken: profile.gitlabToken,
     azureToken: profile.azureToken,
     bitbucketToken: profile.bitbucketToken,
+    gitlabUrl: profile.gitlabUrl,
+    forgejoUrl: profile.forgejoUrl,
+    forgejoToken: profile.forgejoToken,
     defaultOpenApp: settings.defaultOpenApp,
     importData: null,
     importHasSecrets: false,
@@ -418,7 +417,8 @@ export function OnboardingWizard(): React.JSX.Element {
 
   const applyImport = (): void => {
     const raw = data.importData!
-    const toApply = data.importIncludeSecrets ? raw : stripSecrets(raw)
+    // The shared strip: a hand-kept list here missed newer secrets (Forgejo, AI account keys).
+    const toApply = data.importIncludeSecrets ? raw : stripSettingsSecrets(raw)
     update((s) => ({ ...s, ...toApply, onboardingCompleted: true }))
     toast('success', t('onboarding.imported'))
   }
@@ -441,6 +441,9 @@ export function OnboardingWizard(): React.JSX.Element {
               gitlabToken: data.gitlabToken,
               azureToken: data.azureToken,
               bitbucketToken: data.bitbucketToken,
+              gitlabUrl: data.gitlabUrl,
+              forgejoUrl: data.forgejoUrl,
+              forgejoToken: data.forgejoToken,
               ai: { ...p.ai, ...data.ai }
             }
           : p

@@ -165,8 +165,8 @@ import { semanticCompare } from './semantic'
 import { recordEvent } from './analytics'
 import { searchFileMatches, supersedeSearch, type FileSearchOptions } from './fileSearch'
 import { recordLog } from './log'
-import { activeProfileAuth, boundProfileAuth, profileGitlabInstance, readSettings } from './settings'
-import { remoteIsOnGitlab } from '../shared/gitlabInstance'
+import { activeProfileAuth, boundProfileAuth, profileForgejoInstance, profileGitlabInstance, readSettings } from './settings'
+import { remoteIsOnForgejo, remoteIsOnGitlab } from '../shared/gitlabInstance'
 import { apiToken, providerOfHost } from './credentials'
 import { pickHostAuth } from '../shared/hostToken'
 import { gitCredentialEnv, gitSupportsCredentialEnv, MIN_GIT_FOR_CREDENTIAL_ENV, type BasicCredential } from './gitCredentialEnv'
@@ -946,13 +946,14 @@ function urlUsername(url: string | undefined): string {
  * process list nor the new repository's `.git/config` — not even for the
  * duration of the clone, which a crash or a kill would otherwise leave behind.
  */
-async function cloneCredentialEnv(url: string, host?: string, token?: string): Promise<NodeJS.ProcessEnv | null> {
+export async function cloneCredentialEnv(url: string, host?: string, token?: string): Promise<NodeJS.ProcessEnv | null> {
   if (!token || !token.trim() || !/^https:\/\//i.test(url)) return null
   // The caller names the provider; the URL must really be on it.
   if (!host || hostFromUrl(url) !== host) return null
-  // The renderer sends the active profile's token. A GitLab token only goes to
-  // the instance that issued it, never to another GitLab.
+  // The renderer sends the active profile's token. A GitLab or Forgejo token
+  // only goes to the instance that issued it — never to another profile's server.
   if (host === 'gitlab' && !remoteIsOnGitlab(url, await profileGitlabInstance())) return null
+  if (host === 'forgejo' && !remoteIsOnForgejo(url, await profileForgejoInstance())) return null
   const auth = basicAuthFor(host as RepoHost | undefined, token, url)
   return auth ? gitCredentialEnv(url, auth) : null
 }

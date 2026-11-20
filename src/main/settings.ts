@@ -174,30 +174,10 @@ const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketTo
 }
 
 /**
- * The personal access token for a given host, or undefined when none is
- * configured. Used by network git operations (push/pull/fetch) to authenticate
- * non-interactively, mirroring how clone resolves its token.
- *
- * A repository explicitly bound to a profile uses that profile's token, even
- * when a different one is active — otherwise a background fetch on one repo
- * would authenticate as whichever repo the user happens to be looking at.
- */
-export async function activeProfileToken(host: RepoHost, repoPath?: string): Promise<string | undefined> {
-  const settings = await readSettingsWithSecrets('tokens')
-  const boundId = repoPath ? settings.repoProfiles?.[repoPath] : undefined
-  const profile =
-    (boundId ? settings.profiles.find((p) => p.id === boundId) : undefined) ??
-    settings.profiles.find((p) => p.id === settings.activeProfileId) ??
-    settings.profiles[0]
-  const token = profile?.[TOKEN_FIELD[host]]
-  return token && token.trim() ? token.trim() : undefined
-}
-
-/**
  * What one profile brings to a host's API: its PAT and its link to a machine
  * login (git's credential helper or the GitHub CLI). The link is plain settings,
  * but the PAT outranks it, so the secrets are always read — through the same
- * consent gate as `activeProfileToken`, which skips the keychain entirely when
+ * consent gate as `readSettingsWithSecrets`, which skips the keychain entirely when
  * no secrets file exists.
  */
 async function profileAuth(
@@ -296,7 +276,7 @@ export async function boundProfileAuth(
  * The renderer only ever sees these keys after the user opens Settings (that is
  * the one call that unlocks). Every other AI action starts from a store that
  * was hydrated with `settings:get`, whose keys are still encrypted on disk — so
- * the main process resolves them here instead, exactly like `activeProfileToken`
+ * the main process resolves them here instead, exactly like `profileAuth`
  * does for git. Without this, AI features fail on every fresh launch until
  * Settings has been opened once.
  *

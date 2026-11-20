@@ -6,7 +6,7 @@ import { app } from 'electron'
 import { activeProfileAuth, readSettings } from '../src/main/settings'
 import { providerOfHost } from '../src/main/credentials'
 import { parseRemoteUrl } from '../src/main/hosting'
-import { basicAuthFor } from '../src/main/git'
+import { basicAuthFor, cloneCredentialEnv } from '../src/main/git'
 import { forgejoCompareUrl, mapForgejoPull } from '../src/main/forgejo'
 import { extractSecrets, stripSettingsSecrets } from '../src/shared/secrets'
 import { forgejoInstanceOf, forgejoTokenUrl, remoteIsOnForgejo } from '../src/shared/gitlabInstance'
@@ -48,7 +48,7 @@ describe('Forgejo API mapping', () => {
   })
 
   it('builds the compare page and sends the token as the password', () => {
-    expect(forgejoCompareUrl(FJ, 'me', 'app', 'main', 'feat/x')).toBe(`${FJ}/me/app/compare/main...feat%2Fx`)
+    expect(forgejoCompareUrl(FJ, 'me', 'app', 'main', 'feat/x #2')).toBe(`${FJ}/me/app/compare/main...feat/x%20%232`)
     expect(basicAuthFor('forgejo', ' tok ')).toEqual({ username: 'oauth2', password: 'tok' })
   })
 })
@@ -91,5 +91,30 @@ describe('Forgejo credentials stay on their own instance', () => {
     await withProfile(undefined)
     expect(await activeProfileAuth('forgejo')).toEqual({})
     expect(providerOfHost('git.example.org')).toBeUndefined()
+  })
+})
+
+describe('clone credentials across two Forgejo servers', () => {
+  const dirs: string[] = []
+  afterEach(() => {
+    vi.restoreAllMocks()
+    for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true })
+  })
+
+  it("never hands the active profile's token to another profile's server", async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'gitcito-fj2-'))
+    dirs.push(dir)
+    vi.spyOn(app, 'getPath').mockReturnValue(dir)
+    const s = defaultSettings()
+    const work = { ...s.profiles[0], id: 'work', name: 'work', forgejoUrl: 'git.work.example' }
+    const home = { ...s.profiles[0], id: 'home', name: 'home', forgejoUrl: 'git.home.example' }
+    writeFileSync(
+      join(dir, 'gitcito-settings.json'),
+      JSON.stringify({ ...s, onboardingCompleted: true, activeProfileId: 'work', profiles: [work, home] })
+    )
+    await readSettings()
+    // Both servers are known — so both are "forgejo" — but the token is work's.
+    expect(await cloneCredentialEnv('https://git.home.example/me/app.git', 'forgejo', 'fj_work')).toBeNull()
+    expect(await cloneCredentialEnv('https://git.work.example/me/app.git', 'forgejo', 'fj_work')).not.toBeNull()
   })
 })

@@ -334,7 +334,16 @@ async function tokenForProvider(
   token: string,
   org?: string
 ): Promise<ApiAuth | null> {
-  return apiToken(await providerBase(provider, org), await profileAuth(provider, token))
+  const base = await providerBase(provider, org)
+  // The token here is the active profile's (sent, or resolved without a remote).
+  // `org` comes from the renderer: it may only name that same profile's instance.
+  if (provider === 'gitlab' && base !== (await profileGitlabInstance())) {
+    throw new Error("This GitLab address is not the active profile's. Switch to that profile first.")
+  }
+  if (provider === 'forgejo' && base !== (await profileForgejoInstance())) {
+    throw new Error("This Forgejo address is not the active profile's. Switch to that profile first.")
+  }
+  return apiToken(base, await profileAuth(provider, token))
 }
 
 /**

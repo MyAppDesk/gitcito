@@ -92,7 +92,10 @@ export async function createForgejoPull(
 
 /** The page that opens a new pull request in the browser. */
 export function forgejoCompareUrl(base: string, owner: string, repo: string, target: string, source: string): string {
-  return `${base}/${owner}/${repo}/compare/${encodeURIComponent(target)}...${encodeURIComponent(source)}`
+  // Branch names keep their slashes (`feat/x`), like the GitHub compare link;
+  // only each segment is escaped.
+  const ref = (name: string): string => name.split('/').map(encodeURIComponent).join('/')
+  return `${base}/${owner}/${repo}/compare/${ref(target)}...${ref(source)}`
 }
 
 interface FjRepo {

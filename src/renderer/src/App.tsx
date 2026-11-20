@@ -52,6 +52,7 @@ import { RepositoriesPage } from './components/RepositoriesPage'
 import { ReleasePage } from './components/ReleasePage'
 import { IssueDetailPage } from './components/IssueDetailPage'
 import { MilestoneDetailPage } from './components/MilestoneDetailPage'
+import { PrDetailPage } from './components/PrDetailPage'
 import { ResizeHandle } from './components/ResizeHandle'
 import { ZoomControl } from './components/ZoomControl'
 import { RepoChatPanel } from './components/RepoChatPanel'
@@ -240,6 +241,8 @@ function PageBody({ page }: { page: PageContent }): React.JSX.Element | null {
       return <WikiPageView repoPath={page.repoPath} />
     case 'devtools':
       return <DevToolsPage launchId={page.launchId} url={page.url} label={page.label} tool={page.tool} />
+    case 'pr':
+      return <PrDetailPage key={JSON.stringify([page.repoPath, page.remoteUrl, page.number])} page={page} />
     default:
       return null
   }
@@ -282,6 +285,8 @@ function PageView({ tab }: { tab: PageTab }): React.JSX.Element {
       return <IssueDetailPage page={tab.page} />
     case 'milestone':
       return <MilestoneDetailPage page={tab.page} />
+    case 'pr':
+      return <PrDetailPage key={JSON.stringify([tab.page.repoPath, tab.page.remoteUrl, tab.page.number])} page={tab.page} />
     default:
       return <Welcome />
   }

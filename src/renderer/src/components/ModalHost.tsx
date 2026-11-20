@@ -45,7 +45,6 @@ import { LfsModal } from './LfsModal'
 import { SparseCheckoutModal } from './SparseCheckoutModal'
 import { CreatePRModal } from './CreatePRModal'
 import { IgnoreModal } from './IgnoreModal'
-import { PRDetailModal } from './PRDetailModal'
 import { PrPreviewModal } from './PrPreviewModal'
 import { CodeSearchModal } from './CodeSearchModal'
 import { StackModal } from './StackModal'
@@ -2190,7 +2189,6 @@ export function ModalHost(): React.JSX.Element {
                       modal.kind === 'hooks' ||
                       modal.kind === 'lfs' ||
                       modal.kind === 'sparse' ||
-                      modal.kind === 'pr-detail' ||
                       modal.kind === 'code-search' ||
                       modal.kind === 'clean' ||
                       modal.kind === 'maintenance' ||
@@ -2320,9 +2318,6 @@ export function ModalHost(): React.JSX.Element {
               {modal.kind === 'sparse' && <SparseCheckoutModal repoPath={modal.repoPath} />}
               {modal.kind === 'create-pr' && <CreatePRModal spec={modal} />}
               {modal.kind === 'ignore' && <IgnoreModal spec={modal} />}
-              {modal.kind === 'pr-detail' && (
-                <PRDetailModal repoPath={modal.repoPath} remoteUrl={modal.remoteUrl} number={modal.number} />
-              )}
               </ErrorBoundary>
             </motion.div>
           </motion.div>

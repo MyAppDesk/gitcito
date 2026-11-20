@@ -132,3 +132,15 @@ it('keeps credentials out of saved PR tab identities', () => {
   expect(prRemoteIdentity('https://user:fixture@gitlab.com/group/repo.git?extra=value')).toBe('https://gitlab.com/group/repo.git')
   expect(prRemoteIdentity('git@github.com:team/repo.git')).toBe('git@github.com:team/repo.git')
 })
+
+describe('markAwaitingYou', () => {
+  it('marks the PRs where you are a pending reviewer, case-insensitively', async () => {
+    const { markAwaitingYou } = await import('../src/main/hosting')
+    const pr = (id: number, requestedReviewers?: string[]): never =>
+      ({ id, title: '', author: 'x', sourceBranch: '', targetBranch: '', url: '', isDraft: false, requestedReviewers }) as never
+    const out = markAwaitingYou([pr(1, ['Ana', 'bob']), pr(2, ['bob']), pr(3)], 'ana')
+    expect(out.map((p) => !!p.awaitingYou)).toEqual([true, false, false])
+    // Without a known login nothing is marked.
+    expect(markAwaitingYou([pr(1, ['ana'])], null)[0].awaitingYou).toBeUndefined()
+  })
+})

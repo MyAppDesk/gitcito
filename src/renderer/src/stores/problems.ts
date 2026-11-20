@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AnalyzeResult, CodeTodo, Problem, ProblemSeverity, TodoScanResult } from '../../../shared/types'
+import type { AnalyzeResult, CodeTodo, Problem, ProblemSeverity, TestRunner, TestRunResult, TodoScanResult } from '../../../shared/types'
 import type { TodoGroupBy } from '../lib/codeTodos'
 import { useUIStore } from './ui'
 import { t, interp } from '../i18n'
@@ -19,7 +19,7 @@ import { t, interp } from '../i18n'
  */
 
 /** Which half of the dock is showing. */
-export type ProblemsMode = 'problems' | 'todos'
+export type ProblemsMode = 'problems' | 'todos' | 'tests'
 
 export interface ProblemsState {
   resultByRepo: Record<string, AnalyzeResult>
@@ -43,6 +43,12 @@ export interface ProblemsState {
   todoQuery: string
   groupBy: TodoGroupBy
 
+  /** The Tests half: the suite's last run per repo, the runner it has, and one filter. */
+  testByRepo: Record<string, TestRunResult>
+  testRunningByRepo: Record<string, boolean>
+  testRunnerByRepo: Record<string, { runner: TestRunner | null; installed: boolean }>
+  failedOnly: boolean
+
   detect(repoPath: string): Promise<void>
   run(repoPath: string): Promise<void>
   cancel(repoPath: string): void
@@ -59,6 +65,11 @@ export interface ProblemsState {
   setTodoQuery(query: string): void
   setGroupBy(groupBy: TodoGroupBy): void
   todosFor(repoPath: string): CodeTodo[]
+
+  detectTests(repoPath: string): Promise<void>
+  runTests(repoPath: string): Promise<void>
+  cancelTests(repoPath: string): void
+  setFailedOnly(on: boolean): void
 }
 
 export const useProblemsStore = create<ProblemsState>((set, get) => ({
@@ -75,6 +86,10 @@ export const useProblemsStore = create<ProblemsState>((set, get) => ({
   owners: [],
   todoQuery: '',
   groupBy: 'tag',
+  testByRepo: {},
+  testRunningByRepo: {},
+  testRunnerByRepo: {},
+  failedOnly: false,
 
   detect: async (repoPath) => {
     try {
@@ -150,5 +165,34 @@ export const useProblemsStore = create<ProblemsState>((set, get) => ({
   setTodoQuery: (todoQuery) => set({ todoQuery }),
   setGroupBy: (groupBy) => set({ groupBy }),
 
-  todosFor: (repoPath) => get().todoByRepo[repoPath]?.todos ?? []
+  todosFor: (repoPath) => get().todoByRepo[repoPath]?.todos ?? [],
+
+  detectTests: async (repoPath) => {
+    const found = await window.api.tests.detect(repoPath).catch(() => ({ runner: null, installed: false }))
+    set((s) => ({ testRunnerByRepo: { ...s.testRunnerByRepo, [repoPath]: found } }))
+  },
+
+  runTests: async (repoPath) => {
+    if (get().testRunningByRepo[repoPath]) return
+    // Ask again: dependencies may have been installed since the panel opened.
+    await get().detectTests(repoPath)
+    if (!get().testRunnerByRepo[repoPath]?.installed) return // the panel says why, translated
+    set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: true } }))
+    try {
+      const result = await window.api.tests.run(repoPath)
+      // A stopped run has nothing to show; keep what the last real run said.
+      if (!result.cancelled && !result.unavailable) set((s) => ({ testByRepo: { ...s.testByRepo, [repoPath]: result } }))
+    } catch (e) {
+      useUIStore.getState().toast('error', e instanceof Error ? e.message : String(e))
+    } finally {
+      set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: false } }))
+    }
+  },
+
+  cancelTests: (repoPath) => {
+    window.api.tests.cancel(repoPath)
+    set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: false } }))
+  },
+
+  setFailedOnly: (failedOnly) => set({ failedOnly })
 }))

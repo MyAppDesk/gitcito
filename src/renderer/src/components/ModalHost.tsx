@@ -2177,7 +2177,9 @@ export function ModalHost(): React.JSX.Element {
           >
             <motion.div
               className={`modal ${
-                modal.kind === 'settings' || modal.kind === 'ai-config-wizard'
+                modal.kind === 'settings'
+                  ? 'modal-wide modal-settings'
+                  : modal.kind === 'ai-config-wizard'
                   ? 'modal-wide'
                   : modal.kind === 'interactive-rebase' ||
                       modal.kind === 'branch-compare' ||
@@ -2270,7 +2272,7 @@ export function ModalHost(): React.JSX.Element {
                 <ConflictRadar repoPath={modal.repoPath} initialBase={modal.base} />
               )}
               {modal.kind === 'ai-pr-review' && (
-                <AIPRReview repoPath={modal.repoPath} prTitle={modal.prTitle} sourceBranch={modal.sourceBranch} targetBranch={modal.targetBranch} />
+                <AIPRReview repoPath={modal.repoPath} prTitle={modal.prTitle} sourceBranch={modal.sourceBranch} targetBranch={modal.targetBranch} diff={modal.diff} />
               )}
               {modal.kind === 'group-color' && <GroupColorModal spec={modal} />}
               {modal.kind === 'new-group' && <NewGroupModal spec={modal} />}

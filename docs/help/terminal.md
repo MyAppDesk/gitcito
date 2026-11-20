@@ -3,7 +3,7 @@ title: Integrated terminal
 category: Workspace tools
 order: 90
 summary: A real PTY docked under the repo, with tabs per repository.
-keywords: terminal shell pty xterm console tabs docked
+keywords: terminal shell pty xterm console tabs docked autocomplete npm run scripts make makefile composer branch checkout
 ---
 
 # Integrated terminal
@@ -45,6 +45,39 @@ your aliases.
 The last two are scoped to the terminal on purpose: away from it, they still
 open and close [workspace tabs](workspaces.md). On macOS the Edit menu's
 Copy/Paste work the same way.
+
+## Script suggestions
+
+Type `npm run ` (or `pnpm`, `yarn`, `bun run`) and a list of the project's
+scripts appears at the cursor, filtered as you type: `npm run loc` finds
+`LOCAL_SERVER`. Each name shows the command it runs.
+
+| Key | Does |
+|-----|------|
+| **Tab** | Completes the selected script |
+| **↑ / ↓** | Choose another |
+| **Esc** | Closes the list until you type again |
+
+Other commands get a list of their own:
+
+| Typed | Lists | Read from |
+|-------|-------|-----------|
+| `composer run ` | Composer scripts | the nearest `composer.json` |
+| `make ` | Makefile targets, with the `## text` after a target as its description | the `Makefile` of the current directory, as `make` reads it |
+| `git checkout `, `switch`, `merge`, `rebase` | Local branches, then remote ones by their short name | the repository the shell is in |
+
+A Makefile target built from variables or a pattern (`%.o`) is not listed, and
+`git checkout -b` gets no list: it names a new branch.
+
+The scripts come from the `package.json` nearest the shell's **current**
+directory, so after `cd frontend` you get the frontend's. Names starting with
+what you typed come first, then names containing it.
+
+The list only knows the keys you typed since the last Enter. Recalling a command
+with ↑, moving the cursor or using the shell's own Tab completion changes the
+line out of its sight, so it stays quiet until the next Enter rather than
+complete the wrong thing. On Windows the current directory cannot be read, so
+the list follows the folder the terminal opened in.
 
 ## Your PATH
 

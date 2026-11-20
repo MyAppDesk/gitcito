@@ -2445,6 +2445,43 @@ export const repoActions = {
           redo: () => gitApi.cherryPick(path, hash)
         }),
 
+  // A commit dropped on another branch's badge: check that branch out, then
+  // pick the commit onto it. Undo drops the picked commit, like a plain pick.
+  checkoutAndCherryPick: (path: string, branch: string, hash: string) =>
+    useRepoStore.getState().run(
+      path,
+      interp(t('act.cherryPickedOnto'), { sha: hash.slice(0, 7), branch }),
+      async () => {
+        await gitApi.checkout(path, branch)
+        await gitApi.cherryPick(path, hash)
+      },
+      {
+        label: t('undoLabel.cherryPick'),
+        undo: () => gitApi.reset(path, 'HEAD~1', 'hard'),
+        redo: () => gitApi.cherryPick(path, hash)
+      }
+    ),
+
+  // Point a branch that is not checked out at a commit (`git branch -f`); undo
+  // puts it back where it was.
+  moveBranchTo: (path: string, branch: string, hash: string) => {
+    let before = ''
+    return useRepoStore.getState().run(
+      path,
+      interp(t('act.branchMoved'), { branch, sha: hash.slice(0, 7) }),
+      async () => {
+        before = await gitApi.moveBranchTo(path, branch, hash)
+      },
+      {
+        label: interp(t('undoLabel.moveBranch'), { branch }),
+        undo: () => gitApi.setBranchRef(path, branch, before),
+        redo: async () => {
+          before = await gitApi.moveBranchTo(path, branch, hash)
+        }
+      }
+    )
+  },
+
   // Squash a contiguous run of the newest commits into one.
   squashCommits: (path: string, oldestSha: string, message: string, count: number) =>
     useRepoStore.getState().run(path, interp(t('act.squashed'), { count }), () => gitApi.squashCommits(path, oldestSha, message), {

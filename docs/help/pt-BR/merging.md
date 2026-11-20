@@ -51,6 +51,21 @@ pergunta: todo mundo que fizer pull do alvo recebe os commits dele, e um push n�
 pode ser desfeito pelo Gitcito. O merge não pergunta — ele só acrescenta. Merge e
 rebase voltam com um **Desfazer**.
 
+## Arraste um commit sobre uma branch
+
+Arraste a linha de um commit no grafo sobre o selo de uma **branch local**:
+
+| Solto sobre | Oferece |
+|-------------|---------|
+| A branch em checkout | **Cherry-pick** do commit aqui; **Reset** da branch para ele (o diálogo de reset, que diz o que cada modo mantém) |
+| Outra branch local | **Checkout dela e cherry-pick**; **Mover a branch** para o commit (`git branch -f`) |
+
+Mover uma branch pede confirmação: commits que só ela alcançava deixam de estar
+em alguma branch. Desfazer devolve a branch para onde estava. Branches remotas e
+tags não aceitam o drop, porque o git não as move assim, e uma branch que já
+aponta para o commit não oferece nada. O mesmo arraste sobre o chat de IA
+continua adicionando o commit como contexto.
+
 ## Merge
 
 Fast-forward quando possível, ou forçar um commit de merge quando você quer a

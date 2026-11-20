@@ -23,10 +23,28 @@ sur un seul écran, ordonnés selon ce qui réclame réellement votre attention 
 
 ## Ce que dit une ligne
 
-La branche et son amont · ↑en avance / ↓en retard · les compteurs de fichiers non
-validés et non suivis · les remisages · les pull requests ouvertes (quand le
-dépôt est déjà chargé) · un **graphique de commits sur 14 jours** · le temps
-écoulé depuis le dernier commit.
+Chaque ligne se lit de gauche à droite, et les colonnes s’alignent sur toute la
+liste : les compteurs se comparent comme dans un tableau.
+
+| Colonne | Ce qu’elle montre |
+|---|---|
+| **Dépôt** | Nom, groupe, la branche et son upstream — ou **sans upstream** en ambre : une telle branche ne part jamais par erreur, mais ne se synchronise jamais non plus |
+| **Dernier commit** | Sujet et auteur : ce que faisait le dépôt, sans l’ouvrir |
+| **Compteurs** | Conflits · ↓ à tirer · ↑ à pousser · indexés · modifiés · non suivis · remises · PR ouvertes (si le dépôt est déjà chargé). Survolez-les pour savoir ce qu’ils comptent |
+| **Activité** | Un sparkline des commits sur 14 jours, et leur nombre |
+| **Âges** | Depuis quand date le dernier commit, et le dernier **fetch** |
+
+Survolez l’icône d’état pour savoir pourquoi la ligne est classée là —
+« 2 à pousser · 1 non commité ».
+
+L’âge du fetch est là parce que lire cette page ne fait jamais de fetch : le
+compteur « à tirer » n’est pas plus frais que le dernier fetch. Quand une branche
+suivie n’a pas fetché depuis un jour ou plus, ou jamais, l’âge passe en ambre —
+faites un fetch avant de croire un 0. L’heure vient de git lui-même : un
+`git fetch` dans un terminal compte aussi.
+
+Dans une fenêtre étroite, la colonne du dernier commit s’efface en premier ; les
+compteurs restent.
 
 Dépliez une ligne (le chevron, ou <kbd>espace</kbd>) pour voir exactement quels
 commits attendent d'être poussés et quels fichiers sont sales.

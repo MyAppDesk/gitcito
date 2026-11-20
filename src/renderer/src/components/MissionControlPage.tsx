@@ -8,6 +8,7 @@ import {
   ChevronRight,
   CircleCheck,
   Download,
+  FileCheck,
   FileEdit,
   FilePlus,
   FolderGit2,
@@ -15,7 +16,8 @@ import {
   GitCommitHorizontal,
   GitPullRequest,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Unlink
 } from 'lucide-react'
 import type { RepoDetail, RepoPulse } from '../../../shared/types'
 import { tabRepos } from '../../../shared/types'
@@ -26,14 +28,17 @@ import { useUIStore } from '../stores/ui'
 import {
   activityTotal,
   bulkTargets,
+  isFetchStale,
   orderPulses,
   pulseTotals,
   pulseVerdict,
   sparklinePoints,
   type PulseLevel,
+  type PulseReason,
   type PulseSort
 } from '../lib/missionControl'
-import { useT, interp } from '../i18n'
+import { timeAgo } from '../lib/timeAgo'
+import { useT, interp, type TranslationKey } from '../i18n'
 import { emojifyGitmoji } from '../../../shared/gitmoji'
 
 /** How often the dashboard re-reads the repos while it is on screen. */
@@ -46,14 +51,18 @@ interface Row {
   tabId: string
 }
 
-function timeAgo(unix: number): string {
-  if (!unix) return '—'
-  const d = Date.now() / 1000 - unix
-  if (d < 60) return 'now'
-  if (d < 3600) return `${Math.max(1, Math.floor(d / 60))}m`
-  if (d < 86400) return `${Math.floor(d / 3600)}h`
-  if (d < 86400 * 30) return `${Math.floor(d / 86400)}d`
-  return `${Math.floor(d / 86400 / 30)}mo`
+type Translate = (key: TranslationKey) => string
+
+/** "3h ago", in the active language; null when there is no timestamp. */
+function agoLabel(t: Translate, at: number | null): string | null {
+  const ago = timeAgo(at, Date.now())
+  return ago ? interp(t(ago.key), { n: String(ago.n) }) : null
+}
+
+/** A row's reasons as one line — the level icon's tooltip. */
+function reasonsLabel(t: Translate, reasons: PulseReason[]): string {
+  if (!reasons.length) return t('mission.reason.clean')
+  return reasons.map((r) => interp(t(r.key), { n: String(r.n ?? ''), op: r.op ?? '' })).join(' · ')
 }
 
 const LEVEL_ICON: Record<PulseLevel, typeof CircleCheck> = {
@@ -74,6 +83,32 @@ function Sparkline({ values }: { values: number[] }): React.JSX.Element | null {
       <polyline points={points} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinejoin="round" />
     </svg>
   )
+}
+
+interface Badge {
+  cls: string
+  Icon: typeof CircleCheck
+  n: number
+  /** Tooltip, with `{n}` — the bare number says how many, this says of what. */
+  title: TranslationKey
+}
+
+/**
+ * The row's counts, in a fixed order so a column of rows reads like a table:
+ * what blocks, then sync, then the working tree, then the extras.
+ */
+function rowBadges(p: RepoPulse, prs: number): Badge[] {
+  const all: Badge[] = [
+    { cls: 'blocked', Icon: AlertTriangle, n: p.conflicted, title: 'mission.badge.conflicted' },
+    { cls: 'behind', Icon: ArrowDownToLine, n: p.behind, title: 'mission.badge.behind' },
+    { cls: 'ahead', Icon: ArrowUpFromLine, n: p.ahead, title: 'mission.badge.ahead' },
+    { cls: 'staged', Icon: FileCheck, n: p.staged, title: 'mission.badge.staged' },
+    { cls: 'dirty', Icon: FileEdit, n: p.unstaged, title: 'mission.badge.modified' },
+    { cls: 'untracked', Icon: FilePlus, n: p.untracked, title: 'mission.badge.untracked' },
+    { cls: 'stash', Icon: Archive, n: p.stashes, title: 'mission.badge.stashes' },
+    { cls: 'pr', Icon: GitPullRequest, n: prs, title: 'mission.badge.prs' }
+  ]
+  return all.filter((b) => b.n > 0)
 }
 
 /**
@@ -147,6 +182,8 @@ export function MissionControlPage(): React.JSX.Element {
               conflicted: 0,
               stashes: 0,
               lastCommitAt: 0,
+              lastCommit: null,
+              lastFetchAt: null,
               operation: null,
               activity: [],
               error: err instanceof Error ? err.message : String(err)
@@ -354,7 +391,7 @@ export function MissionControlPage(): React.JSX.Element {
           <GitCommitHorizontal size={11} /> {interp(t('mission.totalCommits'), { n: String(grand.commits) })}
         </span>
         <span className="mc-stat mc-stat-right">
-          {refreshedAt ? interp(t('mission.updated'), { t: timeAgo(refreshedAt / 1000) }) : ''}
+          {refreshedAt ? interp(t('mission.updated'), { t: agoLabel(t, refreshedAt) ?? '' }) : ''}
         </span>
       </div>
 
@@ -392,6 +429,8 @@ export function MissionControlPage(): React.JSX.Element {
             const prs = repos[p.path]?.prs?.length ?? 0
             const isOpen = expanded === p.path
             const detail = details[p.path]
+            const stale = isFetchStale(p, Date.now())
+            const badges = rowBadges(p, prs)
             return (
               <div key={p.path} className={`mc-row-wrap ${i === cursor ? 'cursor' : ''}`}>
                 <div
@@ -416,17 +455,27 @@ export function MissionControlPage(): React.JSX.Element {
                   >
                     {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                   </button>
-                  <span className={`mc-level ${verdict.level}`}>
+                  <span className={`mc-level ${verdict.level}`} title={reasonsLabel(t, verdict.reasons)}>
                     <Icon size={14} />
                   </span>
                   <div className="mc-ident">
-                    <span className="mc-name" title={p.path}>
-                      {p.name}
+                    <span className="mc-line">
+                      <span className="mc-name" title={p.path}>
+                        {p.name}
+                      </span>
+                      {row?.group && <span className="mc-group">{row.group}</span>}
                     </span>
                     <span className="mc-where">
-                      {row?.group && <span className="mc-group">{row.group}</span>}
                       <span className="mc-branch">{p.branch || t('mission.detached')}</span>
-                      {p.upstream && <span className="mc-upstream">→ {p.upstream}</span>}
+                      {p.upstream ? (
+                        <span className="mc-upstream">→ {p.upstream}</span>
+                      ) : (
+                        p.branch && (
+                          <span className="mc-noupstream">
+                            <Unlink size={10} /> {t('mission.noUpstream')}
+                          </span>
+                        )
+                      )}
                     </span>
                   </div>
 
@@ -435,51 +484,51 @@ export function MissionControlPage(): React.JSX.Element {
                       {p.error}
                     </span>
                   ) : (
-                    <div className="mc-badges">
-                      {p.operation && <span className="mc-badge blocked">{p.operation}</span>}
-                      {p.conflicted > 0 && (
-                        <span className="mc-badge blocked">
-                          <AlertTriangle size={11} /> {p.conflicted}
-                        </span>
-                      )}
-                      {p.behind > 0 && (
-                        <span className="mc-badge behind">
-                          <ArrowDownToLine size={11} /> {p.behind}
-                        </span>
-                      )}
-                      {p.ahead > 0 && (
-                        <span className="mc-badge ahead">
-                          <ArrowUpFromLine size={11} /> {p.ahead}
-                        </span>
-                      )}
-                      {p.staged + p.unstaged > 0 && (
-                        <span className="mc-badge dirty">
-                          <FileEdit size={11} /> {p.staged + p.unstaged}
-                        </span>
-                      )}
-                      {p.untracked > 0 && (
-                        <span className="mc-badge untracked">
-                          <FilePlus size={11} /> {p.untracked}
-                        </span>
-                      )}
-                      {p.stashes > 0 && (
-                        <span className="mc-badge stash">
-                          <Archive size={11} /> {p.stashes}
-                        </span>
-                      )}
-                      {prs > 0 && (
-                        <span className="mc-badge pr">
-                          <GitPullRequest size={11} /> {prs}
-                        </span>
-                      )}
-                    </div>
+                    <>
+                      {/* What the repo was last doing: the column that used to be empty space. */}
+                      <div className="mc-commit">
+                        {p.lastCommit ? (
+                          <>
+                            <span className="mc-subject" title={emojifyGitmoji(p.lastCommit.subject)}>
+                              {emojifyGitmoji(p.lastCommit.subject)}
+                            </span>
+                            <span className="mc-author">{p.lastCommit.author}</span>
+                          </>
+                        ) : (
+                          <span className="mc-author">{t('mission.noCommits')}</span>
+                        )}
+                      </div>
+                      <div className="mc-badges">
+                        {p.operation && <span className="mc-badge blocked">{p.operation}</span>}
+                        {badges.map((b) => (
+                          <span key={b.cls} className={`mc-badge ${b.cls}`} title={interp(t(b.title), { n: String(b.n) })}>
+                            <b.Icon size={11} /> {b.n}
+                          </span>
+                        ))}
+                      </div>
+                    </>
                   )}
 
-                  <span className={`mc-sparkwrap ${verdict.level}`} title={t('mission.activity')}>
+                  <span className={`mc-activity ${verdict.level}`} title={t('mission.activity')}>
                     <Sparkline values={p.activity} />
+                    <span className="mc-activity-n">
+                      {interp(t('mission.commits14d'), { n: String(activityTotal(p)) })}
+                    </span>
                   </span>
-                  <span className="mc-age" title={t('mission.lastCommit')}>
-                    {timeAgo(p.lastCommitAt)}
+                  <span className="mc-times">
+                    <span className="mc-age" title={t('mission.lastCommit')}>
+                      {agoLabel(t, p.lastCommitAt * 1000) ?? '—'}
+                    </span>
+                    {p.upstream && !p.error && (
+                      <span
+                        className={`mc-fetched ${stale ? 'stale' : ''}`}
+                        title={stale ? t('mission.fetchStale') : undefined}
+                      >
+                        {p.lastFetchAt
+                          ? interp(t('mission.fetched'), { t: agoLabel(t, p.lastFetchAt) ?? '' })
+                          : t('mission.neverFetched')}
+                      </span>
+                    )}
                   </span>
                   <div className="mc-actions">
                     <button

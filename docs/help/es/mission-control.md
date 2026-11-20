@@ -23,10 +23,28 @@ trabajo activo** en una pantalla, ordenados por lo que de verdad te reclama:
 
 ## Qué te dice una fila
 
-Rama y su upstream · ↑por delante / ↓por detrás · cuentas de cambios sin
-commitear y de archivos sin seguimiento · stashes · PRs abiertos (cuando el
-repositorio ya está cargado) · una **sparkline de commits de 14 días** · cuánto
-hace del último commit.
+Cada fila se lee de izquierda a derecha, y las columnas se alinean a lo largo de
+la lista, así que los recuentos se comparan como en una tabla:
+
+| Columna | Qué muestra |
+|---|---|
+| **Repositorio** | Nombre, grupo, la rama y su upstream — o **sin upstream** en ámbar: esa rama nunca se sube por error, pero tampoco se sincroniza |
+| **Último commit** | Asunto y autor: lo último que hizo el repositorio, sin abrirlo |
+| **Recuentos** | Conflictos · ↓ por bajar · ↑ por subir · preparados · modificados · sin seguimiento · stashes · PR abiertos (si el repo ya está cargado). Pasa el ratón para ver qué cuenta cada uno |
+| **Actividad** | Un sparkline de commits de 14 días, y cuántos son |
+| **Edades** | Cuánto hace del último commit y del último **fetch** |
+
+Pasa el ratón por el icono de estado para ver por qué la fila está ahí —
+"2 por subir · 1 sin commit".
+
+La edad del fetch está porque leer esta página nunca hace fetch: el recuento "por
+bajar" es tan reciente como el último fetch. Si una rama con upstream lleva un día
+o más sin fetch, o nunca lo hizo, la edad se pone ámbar — haz fetch antes de fiarte
+de un 0. La hora sale del propio git, así que un `git fetch` en la terminal también
+cuenta.
+
+En una ventana estrecha, la columna del último commit es la primera en irse; los
+recuentos se quedan.
 
 Despliega una fila (el chevrón, o <kbd>espacio</kbd>) para ver exactamente qué
 commits esperan a ser publicados y qué archivos están sucios.

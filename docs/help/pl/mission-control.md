@@ -25,9 +25,27 @@ potrzebuje:
 
 ## Co mówi ci wiersz
 
-Gałąź i jej upstream · ↑przed / ↓za · liczniki zmian niezacommitowanych
-i nieśledzonych · stashe · otwarte PR-y (gdy repozytorium jest już wczytane) ·
-**14-dniowa iskierka commitów** · czas od ostatniego commita.
+Każdy wiersz czyta się od lewej do prawej, a kolumny są wyrównane w całej liście,
+więc liczniki porównuje się jak w tabeli:
+
+| Kolumna | Co pokazuje |
+|---|---|
+| **Repozytorium** | Nazwa, grupa, gałąź i jej upstream — albo **brak upstreamu** na bursztynowo: taka gałąź nigdy nie zostanie wypchnięta przez pomyłkę, ale też nigdy się nie synchronizuje |
+| **Ostatni commit** | Temat i autor: czym repozytorium ostatnio się zajmowało, bez otwierania go |
+| **Liczniki** | Konflikty · ↓ do pobrania · ↑ do wypchnięcia · w stage · zmienione · nieśledzone · stashe · otwarte PR-y (gdy repo jest już wczytane). Najedź, by zobaczyć, co liczy każdy |
+| **Aktywność** | Sparkline commitów z 14 dni i ich liczba |
+| **Wiek** | Ile czasu minęło od ostatniego commita i od ostatniego **fetcha** |
+
+Najedź na ikonę stanu, by zobaczyć, dlaczego wiersz jest w tym miejscu —
+„2 do wypchnięcia · 1 bez commita”.
+
+Wiek fetcha jest tu, bo czytanie tej strony nigdy nie robi fetcha: licznik „do
+pobrania” jest tak świeży jak ostatni fetch. Gdy gałąź z upstreamem nie robiła
+fetcha od dnia lub dłużej, albo nigdy, wiek robi się bursztynowy — zrób fetch,
+zanim uwierzysz w 0. Czas odczytuje sam git, więc `git fetch` w terminalu też się
+liczy.
+
+W wąskim oknie jako pierwsza znika kolumna ostatniego commita; liczniki zostają.
 
 Rozwiń wiersz (strzałką albo <kbd>spacją</kbd>), żeby zobaczyć dokładnie, które
 commity czekają na pusha i które pliki są brudne.

@@ -23,9 +23,27 @@ ekranda, gerçekten sizi bekleyene göre sıralanmış hâlde:
 
 ## Bir satır size ne anlatır
 
-Dal ve upstream'i · ↑ileride / ↓geride · commit'lenmemiş ve izlenmeyen dosya
-sayıları · stash'ler · açık PR'lar (depo zaten yüklendiyse) · **14 günlük commit
-sparkline'ı** · son commit'in üzerinden geçen süre.
+Her satır soldan sağa okunur ve sütunlar liste boyunca hizalanır; sayılar bir
+tablodaki gibi karşılaştırılır:
+
+| Sütun | Ne gösterir |
+|---|---|
+| **Depo** | Ad, grup, dal ve upstream’i — ya da kehribar renkte **upstream yok**: böyle bir dal yanlışlıkla push’lanmaz ama hiç eşitlenmez de |
+| **Son commit** | Konu ve yazar: deponun en son ne yaptığı, açmadan |
+| **Sayılar** | Çakışmalar · ↓ çekilecek · ↑ push’lanacak · stage’de · değişmiş · izlenmeyen · stash’ler · açık PR’lar (depo zaten yüklüyse). Neyi saydığını görmek için üzerine gelin |
+| **Etkinlik** | 14 günlük commit sparkline’ı ve kaç commit olduğu |
+| **Yaşlar** | Son commit’ten ve son **fetch**’ten bu yana geçen süre |
+
+Satırın neden orada olduğunu görmek için durum simgesinin üzerine gelin —
+"2 push’lanacak · 1 commit’lenmemiş".
+
+Fetch yaşı orada, çünkü bu sayfayı okumak asla fetch yapmaz: "çekilecek" sayısı en
+fazla son fetch kadar tazedir. Upstream’i olan bir dal bir gün veya daha uzun
+süredir fetch yapmadıysa, ya da hiç yapmadıysa, yaş kehribar olur — bir 0’a
+güvenmeden önce fetch yapın. Zamanı git’in kendisi verir; terminalde bir
+`git fetch` de sayılır.
+
+Dar bir pencerede önce son commit sütunu çekilir; sayılar kalır.
 
 Bir satırı genişletin (şevron veya <kbd>space</kbd>) ve hangi commit'lerin push
 edilmeyi beklediğini, hangi dosyaların kirli olduğunu tam olarak görün.

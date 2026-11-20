@@ -58,6 +58,11 @@ describe('gitlabInstanceOf', () => {
 })
 
 describe('remoteIsOnGitlab', () => {
+  it('compares the HTTPS port before selecting a profile token', () => {
+    expect(remoteIsOnGitlab('https://git.example.org:8443/g/r.git', SELF)).toBe(false)
+    expect(remoteIsOnGitlab('https://git.example.org:8443/g/r.git', SELF + ':8443')).toBe(true)
+  })
+
   it('only lets a token reach the instance that issued it', () => {
     expect(remoteIsOnGitlab('https://gitlab.com/g/r.git', GITLAB_COM)).toBe(true)
     expect(remoteIsOnGitlab('https://git.example.org/g/r.git', GITLAB_COM)).toBe(false)

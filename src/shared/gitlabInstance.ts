@@ -47,7 +47,7 @@ function remoteParts(url: string): { scheme: 'https' | 'ssh'; host: string; path
     const u = new URL(url)
     const scheme = u.protocol === 'https:' ? 'https' : u.protocol === 'ssh:' ? 'ssh' : null
     if (!scheme) return null
-    return { scheme, host: u.hostname.toLowerCase(), path: decodeURIComponent(u.pathname).replace(/^\/+/, '') }
+    return { scheme, host: (scheme === 'https' ? u.host : u.hostname).toLowerCase(), path: decodeURIComponent(u.pathname).replace(/^\/+/, '') }
   } catch {
     return null
   }
@@ -68,7 +68,7 @@ export function instanceOf(remoteUrl: string, bases: readonly string[]): { base:
   const sorted = [...new Set(bases)].sort((a, b) => b.length - a.length)
   for (const base of sorted) {
     const b = new URL(base)
-    if (b.hostname.toLowerCase() !== r.host) continue
+    if ((r.scheme === 'https' ? b.host : b.hostname).toLowerCase() !== r.host) continue
     let path = r.path
     if (r.scheme === 'https') {
       const prefix = b.pathname.replace(/^\/+/, '')

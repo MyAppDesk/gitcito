@@ -83,19 +83,30 @@ interface ParsedRemote {
 }
 
 export function parseRemoteUrl(url: string): ParsedRemote | null {
-  // Each provider's name must start the host or follow a dot (`(?:^|[/@.])`):
-  // `mygitlab.com` and `notgithub.com` are someone else's servers. Same rule as
-  // `providerOfHost`.
-  let m = /(?:^|[/@.])github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/.exec(url)
+  // Match the authority separately so a provider name inside a project path cannot select it.
+  const scp = /^(?:[\w.-]+@)?([\w.-]+):([^/].*)$/.exec(url)
+  let target: string
+  if (scp) {
+    target = scp[1].toLowerCase() + '/' + scp[2]
+  } else {
+    try {
+      const parsed = new URL(url)
+      if (!['https:', 'http:', 'ssh:', 'git:'].includes(parsed.protocol)) return null
+      target = parsed.hostname.toLowerCase() + parsed.pathname
+    } catch {
+      return null
+    }
+  }
+  let m = /^(?:[\w-]+\.)*github\.com\/([^/]+)\/([^/]+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'github', owner: m[1], project: '', repo: m[2] }
 
-  m = /(?:^|[/@.])dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
+  m = /^dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'azure', owner: m[1], project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) }
 
-  m = /(?:^|[/@.])ssh\.dev\.azure\.com[/:]v3\/([^/]+)\/([^/]+)\/(.+?)(\.git)?$/.exec(url)
+  m = /^ssh\.dev\.azure\.com[/:]v3\/([^/]+)\/([^/]+)\/(.+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'azure', owner: m[1], project: m[2], repo: m[3] }
 
-  m = /([^/@:]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
+  m = /^([^/@:]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(target)
   if (m) return { provider: 'azure', owner: m[1], project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) }
 
   // GitLab: namespace may be multi-level (group/subgroup/repo) — owner holds the
@@ -114,7 +125,7 @@ export function parseRemoteUrl(url: string): ParsedRemote | null {
     return { provider: 'forgejo', owner, project: '', repo, base: fj.base }
   }
 
-  m = /(?:^|[/@.])bitbucket\.org[/:]([^/]+)\/(.+?)(?:\.git)?$/.exec(url)
+  m = /^(?:[\w-]+\.)*bitbucket\.org[/:]([^/]+)\/(.+?)(?:\.git)?$/.exec(target)
   if (m) return { provider: 'bitbucket', owner: m[1], project: '', repo: m[2] }
 
   return null
@@ -469,7 +480,7 @@ async function listPullRequests(
     const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
     const res = await fetch(
       `${glApi(parsed.base)}/projects/${pid}/merge_requests?state=opened&per_page=30`,
-      { headers: gitlabAuth(auth) }
+      { redirect: 'error', headers: gitlabAuth(auth) }
     )
     if (!res.ok) throw new Error(`GitLab API error (${res.status})`)
     const data = (await res.json()) as Array<{
@@ -764,6 +775,7 @@ async function createPullRequest(
     const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
     const res = await fetch(`${glApi(parsed.base)}/projects/${pid}/merge_requests`, {
       method: 'POST',
+      redirect: 'error',
       headers: { ...gitlabAuth(auth), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         source_branch: opts.source,
@@ -880,6 +892,7 @@ export async function glJson<T>(
 ): Promise<T> {
   const res = await fetch(url, {
     ...init,
+    redirect: 'error',
     headers: {
       ...gitlabAuth(auth),
       ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
@@ -1731,7 +1744,7 @@ async function listRepositories(provider: RepoHost, token: string, org?: string)
   if (provider === 'gitlab') {
     const res = await fetch(
       `${glApi(await providerBase(provider, org))}/projects?membership=true&per_page=100&order_by=last_activity_at&simple=true`,
-      { headers: gitlabAuth(auth) }
+      { redirect: 'error', headers: gitlabAuth(auth) }
     )
     if (!res.ok) throw new Error(`GitLab API error (${res.status})`)
     const data = (await res.json()) as Array<{
@@ -1993,7 +2006,7 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
   if (provider === 'gitlab') {
     const headers = gitlabAuth(auth)
     const api = glApi(providerBaseUrl('gitlab', org))
-    const userRes = await fetch(`${api}/user`, { headers })
+    const userRes = await fetch(`${api}/user`, { headers, redirect: 'error' })
     if (!userRes.ok) throw new Error(`GitLab API error (${userRes.status})`)
     const user = (await userRes.json()) as {
       id: number
@@ -2002,7 +2015,7 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
       avatar_url: string | null
       web_url: string
     }
-    const groupsRes = await fetch(`${api}/groups?min_access_level=10&per_page=100`, { headers })
+    const groupsRes = await fetch(`${api}/groups?min_access_level=10&per_page=100`, { headers, redirect: 'error' })
     const groups = groupsRes.ok
       ? ((await groupsRes.json()) as Array<{ full_path: string; avatar_url: string | null; web_url: string }>)
       : []
@@ -2122,6 +2135,7 @@ async function createRepository(
   if (provider === 'gitlab') {
     const res = await fetch(`${glApi(await providerBase(provider, org))}/projects`, {
       method: 'POST',
+      redirect: 'error',
       headers: { ...gitlabAuth(auth), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: opts.name,

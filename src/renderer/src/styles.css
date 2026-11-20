@@ -249,13 +249,27 @@ textarea:focus {
   flex: 0 1 auto;
   min-width: 0;
 }
-/* Groups and folders get no floor of their own: their automatic minimum is the
-   sum of their children's, so the repo tabs inside shrink to 84px each and
-   stop there. A fixed floor here clipped a whole group down to one tab. */
+/* Groups and folders compress like any tab, but instead of clipping their
+   tabs away they scroll them inside themselves — every repo stays reachable
+   and the chip stays pinned to the leading edge. The 84px floor matches a
+   plain tab's so squeeze is shared evenly across the strip. */
 .tabs.fit .tab-group-wrap,
 .tabs.fit .tab-folder {
   flex: 0 1 auto;
-  min-width: auto;
+  min-width: 84px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.tabs.fit .tab-group-wrap::-webkit-scrollbar,
+.tabs.fit .tab-folder::-webkit-scrollbar {
+  display: none;
+}
+.tabs.fit .tab-group-chip,
+.tabs.fit .tab-folder-chip {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
 }
 .tabs.fit .tab-add {
   flex: none;
@@ -6570,6 +6584,18 @@ body.col-resizing .node-ava {
   font-size: 11px;
   color: var(--accent) !important;
   background: none;
+}
+/* Git's own text behind an explained error — kept, readable, out of the way. */
+.toast-detail {
+  margin: 6px 0 0;
+  max-height: 160px;
+  overflow: auto;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--bg-1);
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .toast-more:hover {
   text-decoration: underline;

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, GitPullRequest, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2, Scale, Wrench, Ungroup } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { colorMenuItems } from './colorMenu'
@@ -137,6 +137,43 @@ export function TitleBar(): React.JSX.Element {
   // for this: Chromium routinely reports clientX/clientY as 0 there, so asking
   // "was it released over the strip?" from its coordinates always said no.
   const lastOverAt = useRef(0)
+
+  // The strip and — in fit mode — each squeezed group/folder scroll only
+  // horizontally, and their scrollbars are hidden. Point the wheel at the
+  // innermost of them that has room in the wheel's direction so far tabs stay
+  // reachable: nothing scrolls by default without this, because Chromium maps
+  // a vertical wheel to horizontal scroll for no container but the document.
+  useEffect(() => {
+    const strip = tabsRef.current
+    if (!strip) return
+    const room = (el: HTMLElement, dir: number): number =>
+      dir > 0 ? el.scrollWidth - el.clientWidth - Math.abs(el.scrollLeft) : Math.abs(el.scrollLeft)
+    const onWheel = (e: WheelEvent): void => {
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+      if (!delta) return
+      const d = delta * (e.deltaMode === 1 ? 33 : 1)
+      let node = e.target as HTMLElement | null
+      let target: HTMLElement | null = null
+      while (node && node !== strip) {
+        if (
+          node instanceof HTMLElement &&
+          (node.classList.contains('tab-group-wrap') || node.classList.contains('tab-folder')) &&
+          room(node, d) > 1
+        ) {
+          target = node
+          break
+        }
+        node = node.parentElement
+      }
+      target ??= room(strip, d) > 1 ? strip : null
+      if (!target) return
+      e.preventDefault()
+      // Chrome reports scrollLeft ≤ 0 in RTL containers — extend leftward.
+      target.scrollLeft += getComputedStyle(target).direction === 'rtl' ? -d : d
+    }
+    strip.addEventListener('wheel', onWheel, { passive: false })
+    return () => strip.removeEventListener('wheel', onWheel)
+  }, [])
 
   const setDrop = (t: DropTarget | null): void => {
     if (JSON.stringify(t) !== JSON.stringify(dropRef.current)) dnd('target', t)

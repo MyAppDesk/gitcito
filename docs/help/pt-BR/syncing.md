@@ -43,6 +43,27 @@ protegida** pede confirmação (a lista fica na engrenagem de configurações do
 
 ![A confirmação que uma branch protegida exige antes de um force-push](../../screenshots/force-push-guard.webp)
 
+### Quando o host recusa
+
+O texto de erro do git é escrito para o terminal. Nas recusas que têm uma causa
+clara, o toast de erro diz o que aconteceu e o que fazer, no seu idioma, e fica
+mais tempo na tela. **Detalhes** mostra o texto original do git, e copiar,
+reportar e corrigir com IA continuam usando o texto original.
+
+| Erro | O que o toast diz |
+|------|-------------------|
+| Workflow enviado sem o escopo `workflow` | O arquivo que causou o erro, e a correção. Ela é diferente para um login do GitHub CLI / OAuth (`gh auth refresh -h github.com -s workflow`) e para um token de acesso pessoal (adicionar o escopo). |
+| Arquivo acima do limite de 100 MB do GitHub | Qual é o arquivo, e que é preciso tirá-lo dos commits ou usar o Git LFS. |
+| Branch protegida | Enviar para uma branch nova e abrir um pull request. |
+| Sem credencial para o host | Qual é o host, e onde conectar uma conta. |
+| 403 / permissão negada | A conta do perfil ativo não pode escrever aqui, ou o token dela expirou. |
+| Repositório não encontrado | A URL está errada, ou a conta não vê o repositório. |
+| Chave SSH recusada | Conferir a chave do agente e a sua conta. |
+
+O reconhecimento é pelo texto da mensagem. Se um host escrever o erro de outro
+jeito, aparece a mensagem crua, como antes. Rejeição non-fast-forward e arquivo
+`.lock` esquecido não entram aqui, porque já abrem um diálogo próprio.
+
 ### Sem remotes
 
 Push, pull e fetch precisam de um destino. Um repositório sem nenhum — um

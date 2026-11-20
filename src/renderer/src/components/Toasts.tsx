@@ -5,6 +5,7 @@ import { useUIStore, type Toast } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { repoChatAvailable } from '../lib/repoChatUI'
 import { reportIssueUrl } from '../lib/issueReport'
+import { explainGitError, readableError, withoutIpcPrefix } from '../lib/gitErrorHint'
 import { useT, interp } from '../i18n'
 
 const icons = {
@@ -18,6 +19,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   const [expanded, setExpanded] = useState(false)
   const [overflowing, setOverflowing] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
   const msgRef = useRef<HTMLSpanElement>(null)
   const aiChat = useSettingsStore((state) => repoChatAvailable(state.activeProfile().ai))
   const openChatPanelWith = useUIStore((state) => state.openChatPanelWith)
@@ -36,6 +38,12 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
       setTimeout(() => setCopied(false), 1500)
     })
   }
+
+  // A recognised git/host error reads as what it means and what to do; git's own
+  // text moves to the details. Copy, report and "fix with AI" keep using the raw
+  // message — it is what names the failing call.
+  const hint = toast.kind === 'error' ? explainGitError(toast.message) : null
+  const text = readableError(toast.message, t, interp)
 
   return (
     <motion.div
@@ -56,12 +64,20 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
           onClick={() => overflowing && setExpanded((v) => !v)}
           // The keyboard path to expanding is the "show more" button below.
         >
-          {toast.message}
+          {text}
         </span>
         {overflowing && (
           <button className="toast-more" onClick={() => setExpanded((v) => !v)}>
             {expanded ? t('toast.showLess') : t('toast.showMore')}
           </button>
+        )}
+        {hint && (
+          <>
+            <button className="toast-more" onClick={() => setShowDetail((v) => !v)}>
+              {showDetail ? t('toast.hideDetails') : t('toast.details')}
+            </button>
+            {showDetail && <pre className="toast-detail">{withoutIpcPrefix(toast.message)}</pre>}
+          </>
         )}
       </div>
       <div className="toast-actions">

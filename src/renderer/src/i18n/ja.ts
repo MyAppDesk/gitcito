@@ -874,6 +874,7 @@ export const ja: Dict = {
   'env.terminal.ok': 'ネイティブターミナルが読み込まれています。システムのシェル、色、サイズ変更が使えます。',
   'env.terminal.warn': 'ネイティブターミナルを読み込めなかったため、ターミナルは基本モードで動作しています（色なし、サイズ変更なし）。Gitcito を再インストールしてください。ソースのチェックアウトでは下のコマンドを実行してください。',
   'env.credentialHelper.ok': 'git は HTTPS のパスワードを「{actual}」で保存しています。',
+  'env.credentialHelper.perHost': 'git の helper は {actual} 専用です。ほかの HTTPS ホストでは、Gitcito の外で毎回パスワードを尋ねられます。',
   'env.credentialHelper.none': 'helper が設定されていないため、Gitcito の外の git は毎回 HTTPS のパスワードを尋ねます。Gitcito 内のプロファイルは引き続き自動でサインインします。',
   'env.credentialHelper.plain': '「store」helper はパスワードを ~/.git-credentials に平文で保存します。システムのキーチェーンの helper の方が安全です。',
   'env.gh.ok': 'サインイン済み。トークンのスコープ: {actual}。',

@@ -889,6 +889,7 @@ export const ko: Dict = {
   'env.terminal.ok': '네이티브 터미널이 로드되었습니다. 시스템 셸, 색상, 크기 조정이 모두 동작합니다.',
   'env.terminal.warn': '네이티브 터미널을 로드하지 못해 터미널이 기본 모드로 동작합니다. 색상과 크기 조정이 없습니다. Gitcito를 다시 설치하세요. 소스 체크아웃에서는 아래 명령을 실행하세요.',
   'env.credentialHelper.ok': 'git은 HTTPS 비밀번호를 “{actual}”(으)로 저장합니다.',
+  'env.credentialHelper.perHost': 'git에는 {actual} 전용 helper만 있습니다. 다른 HTTPS 호스트는 Gitcito 밖에서 매번 비밀번호를 묻습니다.',
   'env.credentialHelper.none': 'helper가 설정되지 않아 Gitcito 밖의 git은 매번 HTTPS 비밀번호를 묻습니다. Gitcito 안의 프로필은 여전히 스스로 로그인합니다.',
   'env.credentialHelper.plain': '“store” helper는 비밀번호를 ~/.git-credentials에 평문으로 보관합니다. 시스템 키체인 helper가 더 안전합니다.',
   'env.gh.ok': '로그인됨. 토큰 범위: {actual}.',

@@ -889,6 +889,7 @@ export const zhCN: Dict = {
   'env.terminal.ok': '原生终端已加载：系统 shell、颜色和调整大小均可用。',
   'env.terminal.warn': '原生终端加载失败，因此终端以基础模式运行——没有颜色，不能调整大小。请重新安装 Gitcito；在源码检出中，运行下面的命令。',
   'env.credentialHelper.ok': 'git 使用“{actual}”保存 HTTPS 密码。',
+  'env.credentialHelper.perHost': 'git 只为 {actual} 设置了 helper。其他 HTTPS 主机在 Gitcito 之外每次都会询问密码。',
   'env.credentialHelper.none': '未设置 helper，因此 Gitcito 之外的 git 每次都会询问 HTTPS 密码。Gitcito 内的配置文件仍会自行登录。',
   'env.credentialHelper.plain': '“store” helper 会把密码以明文保存在 ~/.git-credentials 中。使用系统钥匙串的 helper 更安全。',
   'env.gh.ok': '已登录。令牌范围：{actual}。',

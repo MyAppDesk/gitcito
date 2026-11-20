@@ -222,6 +222,7 @@ interface PreloadApi {
   }
   env: {
     check(): Promise<unknown>
+    checkNetwork(): Promise<unknown>
   }
   log: {
     get(): Promise<unknown>

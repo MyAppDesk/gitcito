@@ -26,7 +26,7 @@ environment check covers the app itself and is the same for every repository.
 | **Git** | git 2.31 or newer is on `PATH` | Older than 2.31: a [profile](profiles.md)'s account cannot sign in for fetch and push. Missing: nothing works until git is installed |
 | **Git LFS** | `git lfs` is installed | Not installed. Only repositories that keep files in LFS need it |
 | **Terminal** | The native terminal loaded | The [terminal](terminal.md) runs in basic mode: no colors, no resizing, no full-screen programs |
-| **Credential helper** | git has a helper for HTTPS passwords | No helper, so git outside Gitcito asks every time. Or `store`, which keeps them in plain text. See [Credential helper](credentials.md) |
+| **Credential helper** | git has a helper for HTTPS passwords — globally, or for specific hosts (what `gh auth setup-git` sets up) | No helper, so git outside Gitcito asks every time. Or `store`, which keeps them in plain text. See [Credential helper](credentials.md) |
 | **GitHub CLI** | `gh` is signed in with the `workflow` scope | Signed in without it: GitHub refuses any push that changes `.github/workflows` |
 | **File watches** (Linux) | The inotify limit is at least 65,536 | A lower limit runs out with a few large repositories open, and new folders stop refreshing the status |
 

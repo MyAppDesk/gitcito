@@ -874,6 +874,7 @@ export const tr: Dict = {
   'env.terminal.ok': 'Yerel terminal yüklendi: sistem kabuğu, renkler ve yeniden boyutlandırma çalışıyor.',
   'env.terminal.warn': "Yerel terminal yüklenemedi, bu yüzden terminaller temel modda çalışıyor — renk yok, yeniden boyutlandırma yok. Gitcito'yu yeniden kurun; kaynak kod kopyasında aşağıdaki komutu çalıştırın.",
   'env.credentialHelper.ok': 'git HTTPS parolalarını “{actual}” ile saklıyor.',
+  'env.credentialHelper.perHost': "git yalnızca {actual} için bir helper'a sahip. Diğer HTTPS sunucuları Gitcito dışında her seferinde parola sorar.",
   'env.credentialHelper.none': 'Hiç helper ayarlı değil, bu yüzden Gitcito dışındaki git her seferinde HTTPS parolasını soruyor. Gitcito içindeki profiller yine kendi başına oturum açar.',
   'env.credentialHelper.plain': "“store” helper'ı parolaları ~/.git-credentials içinde düz metin olarak tutar. Sistem anahtar zinciri helper'ı daha güvenlidir.",
   'env.gh.ok': 'Oturum açık. Belirteç kapsamları: {actual}.',

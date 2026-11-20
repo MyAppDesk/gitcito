@@ -270,7 +270,8 @@ const api = {
   },
 
   env: {
-    check: (): Promise<unknown> => ipcRenderer.invoke('env:check')
+    check: (): Promise<unknown> => ipcRenderer.invoke('env:check'),
+    checkNetwork: (): Promise<unknown> => ipcRenderer.invoke('env:checkNetwork')
   },
 
   log: {

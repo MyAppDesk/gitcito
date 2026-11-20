@@ -889,6 +889,7 @@ export const he: Dict = {
   'env.terminal.ok': 'המסוף המקורי נטען: מעטפת המערכת, צבעים ושינוי גודל עובדים.',
   'env.terminal.warn': 'המסוף המקורי לא נטען, ולכן המסופים רצים במצב בסיסי — בלי צבעים ובלי שינוי גודל. התקינו מחדש את Gitcito; בעותק של קוד המקור הריצו את הפקודה למטה.',
   'env.credentialHelper.ok': 'git שומר סיסמאות HTTPS באמצעות “{actual}”.',
+  'env.credentialHelper.perHost': 'ל-git יש helper רק עבור {actual}. שרתי HTTPS אחרים מבקשים סיסמה בכל פעם מחוץ ל-Gitcito.',
   'env.credentialHelper.none': 'לא הוגדר helper, ולכן git מחוץ ל-Gitcito מבקש את סיסמת ה-HTTPS בכל פעם. הפרופילים בתוך Gitcito עדיין מתחברים לבד.',
   'env.credentialHelper.plain': 'ה-helper “store” שומר סיסמאות כטקסט גלוי ב-~/.git-credentials. helper של מחזיק המפתחות של המערכת בטוח יותר.',
   'env.gh.ok': 'מחובר. הרשאות האסימון: {actual}.',

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   credentialHelperCheck,
+  parsePerUrlHelpers,
   ghCheck,
   ghTokenScopes,
   gitVersionCheck,
@@ -36,6 +37,29 @@ describe('environment check — credential helper', () => {
   it('warns about the plain-text store helper, even with options', () => {
     expect(credentialHelperCheck('store --file ~/.my-credentials\0\n')).toEqual({
       id: 'credentialHelper',
+      status: 'warn',
+      actual: 'store'
+    })
+  })
+})
+
+describe('environment check — per-host credential helpers', () => {
+  // What `gh auth setup-git` writes, as `git config -z --get-regexp` prints it.
+  const GH = 'credential.https://github.com.helper\n\0credential.https://github.com.helper\n!/usr/bin/gh auth git-credential\0'
+
+  it('reads key/value entries and honours the per-URL reset', () => {
+    expect(parsePerUrlHelpers(GH)).toEqual([{ url: 'https://github.com', helper: '!/usr/bin/gh auth git-credential' }])
+    expect(parsePerUrlHelpers('')).toEqual([])
+  })
+
+  it('a host-only helper is not "no helper"', () => {
+    expect(credentialHelperCheck('', GH)).toEqual({ id: 'credentialHelper', status: 'ok', actual: 'github.com', perHost: true })
+    // A global helper still wins the summary.
+    expect(credentialHelperCheck('libsecret\0', GH)).toMatchObject({ status: 'ok', actual: 'libsecret' })
+  })
+
+  it('a per-host store helper is still plain text', () => {
+    expect(credentialHelperCheck('', 'credential.https://git.example.org.helper\nstore\0')).toMatchObject({
       status: 'warn',
       actual: 'store'
     })

@@ -890,6 +890,7 @@ export const ptBR: Dict = {
   'env.terminal.ok': 'O terminal nativo está carregado: shell do sistema, cores e redimensionamento funcionam.',
   'env.terminal.warn': 'O terminal nativo não carregou, então os terminais rodam no modo básico — sem cores, sem redimensionar. Reinstale o Gitcito; num checkout do código-fonte, rode o comando abaixo.',
   'env.credentialHelper.ok': 'O git guarda as senhas HTTPS com “{actual}”.',
+  'env.credentialHelper.perHost': 'O git tem helper só para {actual}. Outros hosts HTTPS pedem a senha toda vez fora do Gitcito.',
   'env.credentialHelper.none': 'Nenhum helper configurado, então o git fora do Gitcito pede a senha HTTPS toda vez. Os perfis dentro do Gitcito continuam entrando sozinhos.',
   'env.credentialHelper.plain': 'O helper “store” guarda as senhas em texto puro em ~/.git-credentials. Um helper do chaveiro do sistema é mais seguro.',
   'env.gh.ok': 'Conectado. Escopos do token: {actual}.',

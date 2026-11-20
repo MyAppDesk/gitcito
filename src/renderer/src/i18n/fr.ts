@@ -874,6 +874,7 @@ export const fr: Dict = {
   'env.terminal.ok': 'Le terminal natif est chargé : le shell du système, les couleurs et le redimensionnement fonctionnent.',
   'env.terminal.warn': "Le terminal natif n'a pas pu se charger, les terminaux tournent donc en mode basique — sans couleurs ni redimensionnement. Réinstallez Gitcito ; dans une copie des sources, lancez la commande ci-dessous.",
   'env.credentialHelper.ok': 'Git enregistre les mots de passe HTTPS avec « {actual} ».',
+  'env.credentialHelper.perHost': 'Git a un helper pour {actual} uniquement. Les autres hôtes HTTPS demandent le mot de passe à chaque fois hors de Gitcito.',
   'env.credentialHelper.none': "Aucun helper n'est configuré, donc git hors de Gitcito demande le mot de passe HTTPS à chaque fois. Les profils dans Gitcito se connectent toujours seuls.",
   'env.credentialHelper.plain': 'Le helper « store » garde les mots de passe en clair dans ~/.git-credentials. Un helper du trousseau du système est plus sûr.',
   'env.gh.ok': 'Connecté. Scopes du jeton : {actual}.',

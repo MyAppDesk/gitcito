@@ -883,6 +883,7 @@ export const en = {
   'env.terminal.ok': 'The native terminal is loaded: the system shell, colors and resizing all work.',
   'env.terminal.warn': 'The native terminal failed to load, so terminals run in basic mode — no colors, no resizing. Reinstall Gitcito; in a source checkout, run the command below.',
   'env.credentialHelper.ok': 'Git stores HTTPS passwords with “{actual}”.',
+  'env.credentialHelper.perHost': 'Git has a helper for {actual} only. Other HTTPS hosts ask for a password every time outside Gitcito.',
   'env.credentialHelper.none': 'No helper is set, so git outside Gitcito asks for an HTTPS password every time. Profiles inside Gitcito still sign in on their own.',
   'env.credentialHelper.plain': 'The “store” helper keeps passwords in plain text in ~/.git-credentials. A system keychain helper is safer.',
   'env.gh.ok': 'Signed in. Token scopes: {actual}.',

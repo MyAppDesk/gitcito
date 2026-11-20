@@ -45,21 +45,61 @@ export function gitVersionCheck(versionOutput: string): EnvCheck {
   return { id: 'git', status: v.ok ? 'ok' : 'warn', ...(actual ? { actual } : {}) }
 }
 
+/** The helpers that count, in config order: an empty value resets the list. */
+function effectiveHelpers(values: string[]): string[] {
+  const trimmed = values.map((v) => v.trim())
+  return trimmed.slice(trimmed.lastIndexOf('') + 1)
+}
+
 /**
- * `credential.helper` values, in config order, from `git config -z` — each value
- * ends in a NUL, so an empty value (which resets the list: only the helpers
- * after the last one count) cannot be mistaken for a trailing newline.
+ * Per-URL helpers from `git config -z --get-regexp '^credential\..+\.helper$'`:
+ * each entry is `key\nvalue\0`, the key `credential.<url>.helper`. This is where
+ * `gh auth setup-git` and many Git Credential Manager setups write theirs.
  */
-export function credentialHelperCheck(configOutput: string): EnvCheck {
+export function parsePerUrlHelpers(output: string): Array<{ url: string; helper: string }> {
+  const byUrl = new Map<string, string[]>()
+  for (const entry of output.split('\0').slice(0, -1)) {
+    const nl = entry.indexOf('\n')
+    const key = (nl < 0 ? entry : entry.slice(0, nl)).trim()
+    const value = nl < 0 ? '' : entry.slice(nl + 1)
+    const m = /^credential\.(.+)\.helper$/i.exec(key)
+    if (!m) continue
+    byUrl.set(m[1], [...(byUrl.get(m[1]) ?? []), value])
+  }
+  const out: Array<{ url: string; helper: string }> = []
+  for (const [url, values] of byUrl) for (const helper of effectiveHelpers(values)) out.push({ url, helper })
+  return out
+}
+
+const hostOf = (url: string): string => {
+  try {
+    return new URL(url).host
+  } catch {
+    return url
+  }
+}
+
+/**
+ * The credential helper verdict, from the global list (`git config -z --get-all
+ * credential.helper`) and the per-URL ones. Each value ends in a NUL, so an
+ * empty value (a reset) cannot be mistaken for a trailing newline.
+ */
+export function credentialHelperCheck(globalOutput: string, perUrlOutput = ''): EnvCheck {
   // What follows the last NUL is not a value (a newline, stderr).
-  const values = configOutput.split('\0').slice(0, -1).map((v) => v.trim())
-  const reset = values.lastIndexOf('')
-  const helpers = values.slice(reset + 1)
-  if (!helpers.length) return { id: 'credentialHelper', status: 'warn' }
-  // `store` keeps passwords in plain text in ~/.git-credentials.
-  const plain = helpers.find((h) => h.split(/\s+/)[0] === 'store')
-  if (plain) return { id: 'credentialHelper', status: 'warn', actual: 'store' }
-  return { id: 'credentialHelper', status: 'ok', actual: helpers[helpers.length - 1] }
+  const global = effectiveHelpers(globalOutput.split('\0').slice(0, -1))
+  const perUrl = parsePerUrlHelpers(perUrlOutput)
+  // `store` keeps passwords in plain text in ~/.git-credentials, wherever it is set.
+  const isStore = (h: string): boolean => h.split(/\s+/)[0] === 'store'
+  if (global.some(isStore) || perUrl.some((p) => isStore(p.helper))) {
+    return { id: 'credentialHelper', status: 'warn', actual: 'store' }
+  }
+  if (global.length) return { id: 'credentialHelper', status: 'ok', actual: global[global.length - 1] }
+  // Only per-host helpers (e.g. `gh auth setup-git`): those hosts are covered.
+  if (perUrl.length) {
+    const hosts = [...new Set(perUrl.map((p) => hostOf(p.url)))]
+    return { id: 'credentialHelper', status: 'ok', actual: hosts.join(', '), perHost: true }
+  }
+  return { id: 'credentialHelper', status: 'warn' }
 }
 
 /** The token scopes `gh auth status` reports, or null when it names none (signed out, fine-grained token). */
@@ -128,8 +168,11 @@ function probeTerminal(): EnvCheck {
 }
 
 async function probeCredentialHelper(): Promise<EnvCheck> {
-  const out = await capture('git', ['config', '-z', '--get-all', 'credential.helper']).catch(() => '')
-  return credentialHelperCheck(out)
+  const [global, perUrl] = await Promise.all([
+    capture('git', ['config', '-z', '--get-all', 'credential.helper']).catch(() => ''),
+    capture('git', ['config', '-z', '--get-regexp', '^credential\\..+\\.helper$']).catch(() => '')
+  ])
+  return credentialHelperCheck(global, perUrl)
 }
 
 async function probeGh(): Promise<EnvCheck | null> {
@@ -144,13 +187,13 @@ async function probeInotify(): Promise<EnvCheck | null> {
   return inotifyCheck(raw)
 }
 
+/** The local checks: no network, back in well under a second. */
 export async function checkEnvironment(): Promise<EnvCheck[]> {
   const probes: Promise<EnvCheck | null>[] = [
     probeGit(),
     probeLfs(),
     Promise.resolve(probeTerminal()),
     probeCredentialHelper(),
-    probeGh(),
     probeInotify()
   ]
   // One probe that throws must not take the page down with it.
@@ -158,6 +201,16 @@ export async function checkEnvironment(): Promise<EnvCheck[]> {
   return settled.filter((c): c is EnvCheck => c !== null)
 }
 
+/**
+ * The GitHub CLI row on its own: `gh auth status` asks the GitHub API, and
+ * offline it would hold every other row back for the whole timeout.
+ */
+export async function checkEnvironmentNetwork(): Promise<EnvCheck[]> {
+  const gh = await probeGh().catch(() => null)
+  return gh ? [gh] : []
+}
+
 export function registerEnvironmentHandlers(): void {
   ipcMain.handle('env:check', () => checkEnvironment())
+  ipcMain.handle('env:checkNetwork', () => checkEnvironmentNetwork())
 }

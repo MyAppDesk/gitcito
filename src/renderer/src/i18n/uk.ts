@@ -889,6 +889,7 @@ export const uk: Dict = {
   'env.terminal.ok': 'Нативний термінал завантажено: системна оболонка, кольори та зміна розміру працюють.',
   'env.terminal.warn': 'Нативний термінал не завантажився, тож термінали працюють у базовому режимі — без кольорів і зміни розміру. Перевстановіть Gitcito; у копії вихідного коду виконайте команду нижче.',
   'env.credentialHelper.ok': 'Git зберігає паролі HTTPS через «{actual}».',
+  'env.credentialHelper.perHost': 'У git є helper лише для {actual}. Інші хости HTTPS поза Gitcito щоразу питають пароль.',
   'env.credentialHelper.none': 'Helper не задано, тож git поза Gitcito щоразу питає пароль HTTPS. Профілі в Gitcito і далі входять самі.',
   'env.credentialHelper.plain': "Helper «store» зберігає паролі відкритим текстом у ~/.git-credentials. Helper системної в'язки ключів безпечніший.",
   'env.gh.ok': 'Вхід виконано. Області токена: {actual}.',

@@ -841,7 +841,8 @@ export const secureShareApi = {
 
 /** Settings → Environment: what the app relies on outside its bundle. */
 export const envApi = {
-  check: () => window.api.env.check() as Promise<EnvCheck[]>
+  check: () => window.api.env.check() as Promise<EnvCheck[]>,
+  checkNetwork: () => window.api.env.checkNetwork() as Promise<EnvCheck[]>
 }
 
 export const infoApi = {

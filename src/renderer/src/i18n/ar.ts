@@ -889,6 +889,7 @@ export const ar: Dict = {
   'env.terminal.ok': 'الطرفية الأصلية محمّلة: صدفة النظام والألوان وتغيير الحجم تعمل.',
   'env.terminal.warn': 'تعذّر تحميل الطرفية الأصلية، لذا تعمل الطرفيات في الوضع الأساسي — بلا ألوان ولا تغيير حجم. أعد تثبيت Gitcito؛ وفي نسخة من الشيفرة المصدرية شغّل الأمر أدناه.',
   'env.credentialHelper.ok': 'يحفظ git كلمات مرور HTTPS باستخدام “{actual}”.',
+  'env.credentialHelper.perHost': 'لدى git helper لـ{actual} فقط. تطلب خوادم HTTPS الأخرى كلمة المرور في كل مرة خارج Gitcito.',
   'env.credentialHelper.none': 'لا يوجد helper مضبوط، لذا يسأل git خارج Gitcito عن كلمة مرور HTTPS في كل مرة. الملفات الشخصية داخل Gitcito ما زالت تسجّل الدخول بنفسها.',
   'env.credentialHelper.plain': 'يحفظ helper “store” كلمات المرور نصًا صريحًا في ~/.git-credentials. helper سلسلة مفاتيح النظام أكثر أمانًا.',
   'env.gh.ok': 'تم تسجيل الدخول. نطاقات الرمز: {actual}.',

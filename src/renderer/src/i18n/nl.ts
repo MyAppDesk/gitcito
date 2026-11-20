@@ -890,6 +890,7 @@ export const nl: Dict = {
   'env.terminal.ok': 'De native terminal is geladen: systeemshell, kleuren en formaat wijzigen werken.',
   'env.terminal.warn': 'De native terminal kon niet laden, dus terminals draaien in basismodus — zonder kleuren, zonder formaat wijzigen. Installeer Gitcito opnieuw; in een broncode-checkout voer je het commando hieronder uit.',
   'env.credentialHelper.ok': 'Git bewaart HTTPS-wachtwoorden met “{actual}”.',
+  'env.credentialHelper.perHost': 'Git heeft alleen een helper voor {actual}. Andere HTTPS-hosts vragen buiten Gitcito elke keer om het wachtwoord.',
   'env.credentialHelper.none': 'Er is geen helper ingesteld, dus git buiten Gitcito vraagt elke keer om het HTTPS-wachtwoord. Profielen in Gitcito loggen nog steeds zelf in.',
   'env.credentialHelper.plain': 'De helper “store” bewaart wachtwoorden als platte tekst in ~/.git-credentials. Een helper voor de sleutelhanger van het systeem is veiliger.',
   'env.gh.ok': 'Ingelogd. Token-scopes: {actual}.',

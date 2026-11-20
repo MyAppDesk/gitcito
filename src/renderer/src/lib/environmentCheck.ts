@@ -25,7 +25,7 @@ export function envCheckDetailKey(c: EnvCheck): TranslationKey {
       return c.status === 'ok' ? 'env.terminal.ok' : 'env.terminal.warn'
     case 'credentialHelper':
       // Two different warnings: no helper at all, or the plain-text one.
-      if (c.status === 'ok') return 'env.credentialHelper.ok'
+      if (c.status === 'ok') return c.perHost ? 'env.credentialHelper.perHost' : 'env.credentialHelper.ok'
       return c.actual === 'store' ? 'env.credentialHelper.plain' : 'env.credentialHelper.none'
     case 'gh':
       return c.status === 'ok' ? 'env.gh.ok' : 'env.gh.warn'

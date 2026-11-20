@@ -3610,6 +3610,8 @@ export interface EnvCheck {
   actual?: string
   /** A shell command that repairs it, shown for the user to copy and run. */
   fix?: string
+  /** Credential helper only: set for helpers that cover just some hosts (`gh auth setup-git`). */
+  perHost?: boolean
 }
 
 /**

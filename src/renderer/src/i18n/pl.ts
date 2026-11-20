@@ -889,6 +889,7 @@ export const pl: Dict = {
   'env.terminal.ok': 'Natywny terminal jest załadowany: powłoka systemowa, kolory i zmiana rozmiaru działają.',
   'env.terminal.warn': 'Natywny terminal nie załadował się, więc terminale działają w trybie podstawowym — bez kolorów i zmiany rozmiaru. Zainstaluj Gitcito ponownie; w kopii kodu źródłowego uruchom polecenie poniżej.',
   'env.credentialHelper.ok': 'Git zapisuje hasła HTTPS przez „{actual}”.',
+  'env.credentialHelper.perHost': 'Git ma helper tylko dla {actual}. Inne hosty HTTPS poza Gitcito pytają o hasło za każdym razem.',
   'env.credentialHelper.none': 'Nie ustawiono helpera, więc git poza Gitcito za każdym razem pyta o hasło HTTPS. Profile w Gitcito nadal logują się same.',
   'env.credentialHelper.plain': 'Helper „store” trzyma hasła otwartym tekstem w ~/.git-credentials. Helper systemowego pęku kluczy jest bezpieczniejszy.',
   'env.gh.ok': 'Zalogowano. Zakresy tokenu: {actual}.',

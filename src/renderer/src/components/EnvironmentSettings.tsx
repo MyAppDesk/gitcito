@@ -20,13 +20,17 @@ export function EnvironmentPage(): React.JSX.Element {
 
   const runChecks = useCallback(async () => {
     setBusy(true)
+    // The local rows show as soon as they are in; the GitHub CLI row goes to the
+    // network and joins them when it answers.
+    const network = envApi.checkNetwork().catch((): EnvCheck[] => [])
     try {
       setChecks(await envApi.check())
     } catch {
       setChecks([])
-    } finally {
-      setBusy(false)
     }
+    const extra = await network
+    setChecks((cur) => [...(cur ?? []).filter((c) => !extra.some((e) => e.id === c.id)), ...extra])
+    setBusy(false)
   }, [])
 
   useEffect(() => {

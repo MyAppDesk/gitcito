@@ -413,7 +413,11 @@ function ProblemsStatusChip({ path }: { path: string }): React.JSX.Element | nul
             })
           : t('problems.chipUnswept')
       }
-      onClick={() => toggleProblems(path)}
+      onClick={() => {
+        // The dock remembers its last tab; the error chip means the errors.
+        if (!useUIStore.getState().problemsOpenByRepo[path]) useProblemsStore.getState().setMode('problems')
+        toggleProblems(path)
+      }}
     >
       <CircleX size={12} className="prob-icon-error" />
       <span>{shown(counts.error)}</span>

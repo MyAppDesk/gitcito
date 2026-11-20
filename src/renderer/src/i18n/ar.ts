@@ -62,6 +62,7 @@ export const ar: Dict = {
   'tests.notInstalled': '‏{runner} موجود في package.json لكنه غير مثبّت — شغّل أمر install لمدير الحزم أولًا.',
   'tests.idle': 'شغّل المجموعة لترى نتائجها هنا.',
   'tests.noReport': 'انتهى المشغّل دون تقرير. ما طبعه:',
+  'tests.timedOut': 'تجاوز التشغيل عشر دقائق فأُوقف. ما طبعه:',
   'tests.noneShown': 'لا يطابق أي اختبار عامل التصفية.',
   'tests.search': 'تصفية الاختبارات',
   'tests.failedOnly': 'الفاشلة فقط',

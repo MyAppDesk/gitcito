@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { detectTestRunner, failureLine, installedRunner, parseTestReport, runTests, stripAnsi } from '../src/main/testRunner'
+import { cancelTests, detectTestRunner, failureLine, installedRunner, parseTestReport, runTests, stripAnsi } from '../src/main/testRunner'
 import { filterTestFiles } from '../src/renderer/src/lib/testResults'
 
 const temp: string[] = []
@@ -29,6 +29,9 @@ describe('failureLine', () => {
     expect(failureLine('no frames here', abs, 'src/cache.test.ts')).toBeUndefined()
     // Another file's frame is not this test's line.
     expect(failureLine('at /repo/src/other.test.ts:5:1', abs, 'src/cache.test.ts')).toBeUndefined()
+    // …not even one whose path ends the same way (a root test vs lib/ of the same name).
+    expect(failureLine('Error\n    at /repo/lib/math.test.mjs:88:3', '/repo/math.test.mjs', 'math.test.mjs')).toBeUndefined()
+    expect(failureLine('Error\n ❯ math.test.mjs:9:3', '/repo/math.test.mjs', 'math.test.mjs')).toBe(9)
   })
 })
 
@@ -93,14 +96,15 @@ describe('filterTestFiles', () => {
 })
 
 describe('runTests — a real vitest run', () => {
-  it('runs the installed vitest and reads its JSON report', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
-    temp.push(dir)
+  it('runs the installed vitest and reads its JSON report, from a path with a space and an &', async () => {
+    // No shell in between: a space or an `&` in the path must reach vitest as plain characters.
+    const root = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
+    temp.push(root)
+    const dir = join(root, 'my app & co')
+    mkdirSync(join(dir, 'node_modules'), { recursive: true })
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'demo', type: 'module', devDependencies: { vitest: '*' } }))
-    // The runner this repository already has — nothing is downloaded.
-    mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true })
-    symlinkSync(resolve('node_modules', 'vitest'), join(dir, 'node_modules', 'vitest'), 'dir')
-    symlinkSync(resolve('node_modules', '.bin', 'vitest'), join(dir, 'node_modules', '.bin', 'vitest'))
+    // The runner this repository already has — nothing is downloaded. A junction needs no admin on Windows.
+    symlinkSync(resolve('node_modules', 'vitest'), join(dir, 'node_modules', 'vitest'), 'junction')
     writeFileSync(join(dir, 'vitest.config.mjs'), 'export default {}\n')
     writeFileSync(
       join(dir, 'math.test.mjs'),
@@ -128,11 +132,26 @@ describe('runTests — a real vitest run', () => {
     expect(r.files[0].file).toBe('math.test.mjs')
   }, 60_000)
 
-  it('refuses a runner that is declared but not installed', async () => {
+  it('answers "unavailable" for a runner declared but not installed, instead of an English error', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
     temp.push(dir)
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ devDependencies: { jest: '*' } }))
     expect(installedRunner(dir)).toEqual({ runner: 'jest', installed: false })
-    await expect(runTests(dir)).rejects.toThrow(/not installed/)
+    expect(await runTests(dir)).toMatchObject({ unavailable: true, files: [] })
   })
+
+  it('reports a stopped run as cancelled, not as a runner that wrote no report', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
+    temp.push(dir)
+    // A stand-in "vitest" whose entry just waits, so there is time to stop it.
+    mkdirSync(join(dir, 'node_modules', 'vitest'), { recursive: true })
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ devDependencies: { vitest: '*' } }))
+    writeFileSync(join(dir, 'node_modules', 'vitest', 'package.json'), JSON.stringify({ bin: { vitest: 'wait.cjs' } }))
+    writeFileSync(join(dir, 'node_modules', 'vitest', 'wait.cjs'), 'setTimeout(() => {}, 30000)\n')
+    const run = runTests(dir)
+    setTimeout(() => cancelTests(dir), 300)
+    const r = await run
+    expect(r.cancelled).toBe(true)
+    expect(r.error).toBeUndefined()
+  }, 20_000)
 })

@@ -61,6 +61,7 @@ export const tr: Dict = {
   'tests.notInstalled': '{runner} package.json’da var ama kurulu değil — önce paket yöneticisinin install komutunu çalıştırın.',
   'tests.idle': 'Sonuçlarını burada görmek için paketi çalıştırın.',
   'tests.noReport': 'Çalıştırıcı rapor olmadan bitti. Yazdırdıkları:',
+  'tests.timedOut': 'Çalıştırma on dakikayı aştı ve durduruldu. Yazdırdıkları:',
   'tests.noneShown': 'Filtreyle eşleşen test yok.',
   'tests.search': 'Testleri filtrele',
   'tests.failedOnly': 'Yalnızca başarısızlar',

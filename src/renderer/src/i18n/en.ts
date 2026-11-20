@@ -63,6 +63,7 @@ export const en = {
   'tests.notInstalled': "{runner} is in package.json but not installed — run the package manager's install first.",
   'tests.idle': 'Run the suite to see its results here.',
   'tests.noReport': 'The runner finished without a report. What it printed:',
+  'tests.timedOut': 'The run took longer than ten minutes and was stopped. What it printed:',
   'tests.noneShown': 'No test matches the filter.',
   'tests.search': 'Filter tests',
   'tests.failedOnly': 'Failed only',

@@ -174,10 +174,14 @@ export const useProblemsStore = create<ProblemsState>((set, get) => ({
 
   runTests: async (repoPath) => {
     if (get().testRunningByRepo[repoPath]) return
+    // Ask again: dependencies may have been installed since the panel opened.
+    await get().detectTests(repoPath)
+    if (!get().testRunnerByRepo[repoPath]?.installed) return // the panel says why, translated
     set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: true } }))
     try {
       const result = await window.api.tests.run(repoPath)
-      set((s) => ({ testByRepo: { ...s.testByRepo, [repoPath]: result } }))
+      // A stopped run has nothing to show; keep what the last real run said.
+      if (!result.cancelled && !result.unavailable) set((s) => ({ testByRepo: { ...s.testByRepo, [repoPath]: result } }))
     } catch (e) {
       useUIStore.getState().toast('error', e instanceof Error ? e.message : String(e))
     } finally {

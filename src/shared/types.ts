@@ -1829,8 +1829,14 @@ export interface TestRunResult {
   failed: number
   skipped: number
   ms: number
-  /** Set when the runner produced no report — what it printed instead. */
+  /** Set when the runner produced no report — what it printed instead (may be empty). */
   error?: string
+  /** The run hit its time limit and was stopped. */
+  timedOut?: boolean
+  /** The user stopped it: nothing to show, keep the previous result. */
+  cancelled?: boolean
+  /** No runner to run: the panel already explains why. */
+  unavailable?: boolean
 }
 
 /**

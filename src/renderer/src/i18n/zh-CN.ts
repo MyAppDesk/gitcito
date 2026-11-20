@@ -62,6 +62,7 @@ export const zhCN: Dict = {
   'tests.notInstalled': 'package.json 中有 {runner}，但尚未安装——请先运行包管理器的 install。',
   'tests.idle': '运行测试套件后，结果会显示在这里。',
   'tests.noReport': '运行器结束时没有生成报告。它的输出：',
+  'tests.timedOut': '运行超过十分钟，已被停止。它的输出：',
   'tests.noneShown': '没有测试匹配筛选条件。',
   'tests.search': '筛选测试',
   'tests.failedOnly': '仅失败',

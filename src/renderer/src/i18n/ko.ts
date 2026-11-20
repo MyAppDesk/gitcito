@@ -62,6 +62,7 @@ export const ko: Dict = {
   'tests.notInstalled': '{runner}가 package.json에 있지만 설치되지 않았습니다 — 먼저 패키지 매니저의 install을 실행하세요.',
   'tests.idle': '스위트를 실행하면 여기에 결과가 표시됩니다.',
   'tests.noReport': '러너가 보고서 없이 끝났습니다. 출력 내용:',
+  'tests.timedOut': '실행이 10분을 넘어 중지되었습니다. 출력 내용:',
   'tests.noneShown': '필터에 맞는 테스트가 없습니다.',
   'tests.search': '테스트 필터',
   'tests.failedOnly': '실패만',

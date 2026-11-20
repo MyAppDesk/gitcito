@@ -31,14 +31,19 @@ export function TestsView({ repoPath }: { repoPath: string }): React.JSX.Element
   const [query, setQuery] = useState('')
   const [openMsg, setOpenMsg] = useState<string | null>(null)
 
+  // Detect on open and whenever the window comes back: an install in another
+  // window (or the terminal below) should enable the run button without a reopen.
   useEffect(() => {
     void detectTests(repoPath)
+    const again = (): void => void detectTests(repoPath)
+    window.addEventListener('focus', again)
+    return () => window.removeEventListener('focus', again)
   }, [repoPath, detectTests])
 
   const files = useMemo(() => filterTestFiles(result?.files ?? [], { failedOnly, query }), [result, failedOnly, query])
 
-  const open = (file: string, test: TestCase): void => {
-    if (test.message) setOpenMsg(openMsg === `${file}#${test.name}` ? null : `${file}#${test.name}`)
+  const open = (file: string, test: TestCase, key: string): void => {
+    if (test.message) setOpenMsg(openMsg === key ? null : key)
     setFileView({ repoPath, file, source: { type: 'tree' }, mode: 'file', ...(test.line ? { line: test.line } : {}) })
   }
 
@@ -52,15 +57,17 @@ export function TestsView({ repoPath }: { repoPath: string }): React.JSX.Element
           ? interp(t('tests.notInstalled'), { runner: runner.runner })
           : !result
             ? t('tests.idle')
-            : result.error
-              ? t('tests.noReport')
+            : result.timedOut
+              ? t('tests.timedOut')
+              : result.error !== undefined
+                ? t('tests.noReport')
               : t('tests.noneShown')
 
   return (
     <section className="problems-panel" aria-label={t('tests.title')}>
       <header className="problems-head">
         <DockTabs />
-        {result && !result.error && (
+        {result && result.error === undefined && (
           <span className="problems-counts test-counts">
             <span className="prob-count">{statusIcon('passed')}<span>{result.passed}</span></span>
             <span className="prob-count">{statusIcon('failed')}<span>{result.failed}</span></span>
@@ -111,10 +118,11 @@ export function TestsView({ repoPath }: { repoPath: string }): React.JSX.Element
                 <span className="prob-file-count">{f.tests.length}</span>
               </div>
               {f.tests.map((test, i) => {
-                const key = `${f.file}#${test.name}`
+                // By position: two tests may share a name (it.each without %s).
+                const key = `${f.file}#${i}`
                 return (
                   <div key={`${test.name}:${i}`}>
-                    <button className="prob-row" title={test.message ?? test.name} onClick={() => open(f.file, test)}>
+                    <button className="prob-row" title={test.message ?? test.name} onClick={() => open(f.file, test, key)}>
                       {statusIcon(test.status)}
                       <span className="prob-msg">{test.name || t('tests.fileFailed')}</span>
                       {test.ms > 0 && <span className="prob-src">{interp(t('tests.ms'), { ms: String(test.ms) })}</span>}

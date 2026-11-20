@@ -62,6 +62,7 @@ export const ptBR: Dict = {
   'tests.notInstalled': '{runner} está no package.json mas não está instalado — rode o install do gerenciador de pacotes antes.',
   'tests.idle': 'Rode a suíte para ver os resultados aqui.',
   'tests.noReport': 'O runner terminou sem relatório. O que ele imprimiu:',
+  'tests.timedOut': 'A execução passou de dez minutos e foi interrompida. O que ela imprimiu:',
   'tests.noneShown': 'Nenhum teste combina com o filtro.',
   'tests.search': 'Filtrar testes',
   'tests.failedOnly': 'Só falhas',

@@ -62,6 +62,7 @@ export const he: Dict = {
   'tests.notInstalled': '‏{runner} מופיע ב-package.json אבל אינו מותקן — הריצו קודם את ה-install של מנהל החבילות.',
   'tests.idle': 'הריצו את החבילה כדי לראות כאן את התוצאות.',
   'tests.noReport': 'המריץ הסתיים בלי דוח. מה שהוא הדפיס:',
+  'tests.timedOut': 'ההרצה ארכה יותר מעשר דקות ונעצרה. מה שהיא הדפיסה:',
   'tests.noneShown': 'אף בדיקה לא מתאימה לסינון.',
   'tests.search': 'סינון בדיקות',
   'tests.failedOnly': 'רק כישלונות',

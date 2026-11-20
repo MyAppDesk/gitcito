@@ -100,8 +100,10 @@ Limits, plainly:
 - **vitest and jest only**, found in the repository root's `package.json`;
   vitest wins when both are listed. A monorepo's per-package suites are not
   run one by one.
-- **Only the installed runner runs** — `node_modules/.bin`. If it is listed but
-  not installed, the tab says so; nothing is downloaded on your behalf.
+- **Only the installed runner runs** — the package in `node_modules`, started
+  with Node directly (no shell, so no path is ever read as a command). If it is
+  listed but not installed, the tab says so; nothing is downloaded on your
+  behalf.
 - **The whole suite, every time.** There is no "only what I changed" yet, and a
   slow suite takes as long here as in a terminal. It stops after ten minutes.
 - If the runner crashes before writing its report, the tab shows what it

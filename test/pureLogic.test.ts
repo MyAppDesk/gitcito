@@ -340,6 +340,17 @@ describe('parseRemoteUrl', () => {
   it('returns null for unknown hosts', () => {
     expect(parseRemoteUrl('https://example.com/x/y.git')).toBeNull()
   })
+
+  it('matches a provider only at a host boundary, never inside another name', () => {
+    expect(parseRemoteUrl('https://mygitlab.com/group/repo.git')).toBeNull()
+    expect(parseRemoteUrl('git@notgithub.com:o/r.git')).toBeNull()
+    expect(parseRemoteUrl('https://evilbitbucket.org/team/repo.git')).toBeNull()
+    expect(parseRemoteUrl('https://notdev.azure.com/org/proj/_git/repo')).toBeNull()
+    // A real subdomain and a user@ prefix still count.
+    expect(parseRemoteUrl('https://www.github.com/o/r.git')).toMatchObject({ provider: 'github' })
+    expect(parseRemoteUrl('https://org@dev.azure.com/org/proj/_git/repo')).toMatchObject({ provider: 'azure', owner: 'org' })
+    expect(parseRemoteUrl('ssh://git@gitlab.com/group/repo.git')).toMatchObject({ provider: 'gitlab', owner: 'group' })
+  })
 })
 
 const GH = 'https://github.com/acme/app.git'

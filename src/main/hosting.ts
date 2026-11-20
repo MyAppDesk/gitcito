@@ -61,13 +61,16 @@ interface ParsedRemote {
 }
 
 export function parseRemoteUrl(url: string): ParsedRemote | null {
-  let m = /github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/.exec(url)
+  // Each provider's name must start the host or follow a dot (`(?:^|[/@.])`):
+  // `mygitlab.com` and `notgithub.com` are someone else's servers. Same rule as
+  // `providerOfHost`.
+  let m = /(?:^|[/@.])github\.com[/:]([^/]+)\/([^/]+?)(\.git)?$/.exec(url)
   if (m) return { provider: 'github', owner: m[1], project: '', repo: m[2] }
 
-  m = /dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
+  m = /(?:^|[/@.])dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
   if (m) return { provider: 'azure', owner: m[1], project: decodeURIComponent(m[2]), repo: decodeURIComponent(m[3]) }
 
-  m = /ssh\.dev\.azure\.com[/:]v3\/([^/]+)\/([^/]+)\/(.+?)(\.git)?$/.exec(url)
+  m = /(?:^|[/@.])ssh\.dev\.azure\.com[/:]v3\/([^/]+)\/([^/]+)\/(.+?)(\.git)?$/.exec(url)
   if (m) return { provider: 'azure', owner: m[1], project: m[2], repo: m[3] }
 
   m = /([^/@:]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/]+?)(\.git)?$/.exec(url)
@@ -75,14 +78,14 @@ export function parseRemoteUrl(url: string): ParsedRemote | null {
 
   // GitLab: namespace may be multi-level (group/subgroup/repo) — owner holds the
   // full namespace path, repo the last segment.
-  m = /gitlab\.com[/:](.+?)(?:\.git)?$/.exec(url)
+  m = /(?:^|[/@.])gitlab\.com[/:](.+?)(?:\.git)?$/.exec(url)
   if (m) {
     const full = m[1]
     const i = full.lastIndexOf('/')
     if (i > 0) return { provider: 'gitlab', owner: full.slice(0, i), project: '', repo: full.slice(i + 1) }
   }
 
-  m = /bitbucket\.org[/:]([^/]+)\/(.+?)(?:\.git)?$/.exec(url)
+  m = /(?:^|[/@.])bitbucket\.org[/:]([^/]+)\/(.+?)(?:\.git)?$/.exec(url)
   if (m) return { provider: 'bitbucket', owner: m[1], project: '', repo: m[2] }
 
   return null
@@ -1719,15 +1722,16 @@ async function listOwners(provider: RepoHost, token: string, org?: string): Prom
   }
 
   if (provider === 'gitlab') {
-    const headers = gitlabAuth(auth)
-    const user = (await (await fetch('https://gitlab.com/api/v4/user', { headers })).json()) as {
-      id: number
-      username: string
-      avatar_url: string | null
-      namespace_id?: number
-    }
-    const groupsRes = await fetch('https://gitlab.com/api/v4/groups?min_access_level=30&per_page=100', { headers })
-    const groups = (await groupsRes.json()) as Array<{ id: number; full_path: string; avatar_url: string | null }>
+    // glJson checks the status: a revoked token used to come back as a 401 body
+    // and fail later as "groups.map is not a function".
+    const user = await glJson<{ id: number; username: string; avatar_url: string | null; namespace_id?: number }>(
+      'https://gitlab.com/api/v4/user',
+      auth
+    )
+    const groups = await glJson<Array<{ id: number; full_path: string; avatar_url: string | null }>>(
+      'https://gitlab.com/api/v4/groups?min_access_level=30&per_page=100',
+      auth
+    )
     return [
       { id: String(user.id), login: user.username, avatarUrl: user.avatar_url ?? undefined, type: 'user' },
       ...groups.map((g) => ({

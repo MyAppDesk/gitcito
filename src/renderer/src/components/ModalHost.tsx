@@ -2270,7 +2270,7 @@ export function ModalHost(): React.JSX.Element {
                 <ConflictRadar repoPath={modal.repoPath} initialBase={modal.base} />
               )}
               {modal.kind === 'ai-pr-review' && (
-                <AIPRReview repoPath={modal.repoPath} prTitle={modal.prTitle} sourceBranch={modal.sourceBranch} targetBranch={modal.targetBranch} />
+                <AIPRReview repoPath={modal.repoPath} prTitle={modal.prTitle} sourceBranch={modal.sourceBranch} targetBranch={modal.targetBranch} diff={modal.diff} />
               )}
               {modal.kind === 'group-color' && <GroupColorModal spec={modal} />}
               {modal.kind === 'new-group' && <NewGroupModal spec={modal} />}

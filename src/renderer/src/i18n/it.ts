@@ -3353,6 +3353,7 @@ export const it: Dict = {
   'sidebar.openTagOnRemote': 'Apri {name} sul remoto',
   'sidebar.openRemoteOnWeb': 'Apri {name} sul web',
   'sidebar.aiPrReview': 'Revisione della PR con l’AI',
+  'aiReview.noDiff': 'Nessuna differenza tra questi branch: niente da revisionare.',
   'sidebar.newIssue': 'Nuova issue',
   'common.expand': 'Espandi',
   'common.collapse': 'Comprimi',

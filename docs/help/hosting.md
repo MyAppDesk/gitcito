@@ -76,7 +76,9 @@ top-level tab instead. If the repository is not open anywhere, the PR opens in a
 tab of its own.
 
 The work happens in the main column, and the sidebar says what the PR *is*, so
-you do not have to scroll through it.
+you do not have to scroll through it. With AI on, the ✨ button in the header
+reviews the PR's diff as the host reports it, so it works even for a branch you
+have never fetched (a fork, someone else's).
 
 The main column has three sections:
 

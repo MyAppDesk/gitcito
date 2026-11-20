@@ -3413,6 +3413,7 @@ export const ptBR: Dict = {
   'sidebar.openTagOnRemote': 'Abrir {name} no remoto',
   'sidebar.openRemoteOnWeb': 'Abrir {name} na web',
   'sidebar.aiPrReview': 'Review de PR com IA',
+  'aiReview.noDiff': 'Nenhuma diferença entre essas branches — nada para revisar.',
   'sidebar.newIssue': 'Nova issue',
   'common.expand': 'Expandir',
   'common.collapse': 'Recolher',

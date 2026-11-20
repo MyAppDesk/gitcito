@@ -3407,6 +3407,7 @@ export const he: Dict = {
   'sidebar.openTagOnRemote': 'פתיחת {name} ברימוט',
   'sidebar.openRemoteOnWeb': 'פתיחת {name} באתר',
   'sidebar.aiPrReview': 'ביקורת AI לבקשת משיכה',
+  'aiReview.noDiff': 'אין הבדלים בין הענפים האלה — אין מה לסקור.',
   'sidebar.newIssue': 'בעיה חדשה',
   'common.expand': 'הרחבה',
   'common.collapse': 'כיווץ',

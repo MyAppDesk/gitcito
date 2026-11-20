@@ -2731,7 +2731,6 @@ export const uk: Dict = {
   'mission.pull': 'Стягнути',
   'mission.open.row': 'Відкрити',
   'mission.reason.unreadable': 'не читається',
-  'mission.reason.operation': '{op}: триває',
   'mission.reason.conflicted': 'конфліктів: {n}',
   'mission.reason.behind': 'до отримання: {n}',
   'mission.reason.ahead': 'до надсилання: {n}',
@@ -2753,6 +2752,8 @@ export const uk: Dict = {
   'mission.fetched': 'fetch {t}',
   'mission.neverFetched': 'fetch не виконувався',
   'mission.fetchStale': 'Fetch не виконувався день або довше: кількість до отримання може бути застарілою. Виконайте fetch, щоб переконатися.',
+  'mission.fetchStaleButton': 'Fetch застарілих: {n}',
+  'mission.fetchStaleHint': 'Виконує fetch лише для репозиторіїв без fetch день або довше, де кількість до отримання може бути застарілою',
   'mission.noUpstream': 'немає upstream',
 
   // Вікно часткової видачі

@@ -2685,7 +2685,6 @@ export const fr: Dict = {
   'mission.pull': 'Tirer',
   'mission.open.row': 'Ouvrir',
   'mission.reason.unreadable': 'illisible',
-  'mission.reason.operation': '{op} en cours',
   'mission.reason.conflicted': '{n} en conflit',
   'mission.reason.behind': '{n} à tirer',
   'mission.reason.ahead': '{n} à pousser',
@@ -2707,6 +2706,8 @@ export const fr: Dict = {
   'mission.fetched': 'fetch {t}',
   'mission.neverFetched': 'jamais fetché',
   'mission.fetchStale': 'Pas de fetch depuis un jour ou plus : le nombre à tirer est peut-être dépassé. Faites un fetch pour en être sûr.',
+  'mission.fetchStaleButton': 'Fetch des {n} périmés',
+  'mission.fetchStaleHint': 'Ne fetche que les dépôts sans fetch depuis un jour ou plus, dont le nombre à tirer peut être dépassé',
   'mission.noUpstream': 'sans upstream',
 
   'sparse.title': 'Extraction partielle',

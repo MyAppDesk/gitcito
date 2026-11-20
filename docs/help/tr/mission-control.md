@@ -55,6 +55,8 @@ edilmeyi beklediğini, hangi dosyaların kirli olduğunu tam olarak görün.
 - **Aciliyete**, **ada** veya **etkinliğe** göre sıralayın.
 - **Birkaç depoyu işaretleyip** fetch edin ya da yalnızca geride kalanları pull
   edin (düğme sizin için sayar).
+- **N eskiyi fetch et**, upstream’i olan dallar bir gün veya daha uzun süredir fetch
+  yapmadığında görünür ve yalnızca onları fetch eder — "çekilecek" sayısı yanlış olabilenleri.
 - Açık olduğu sürece kendini 30 saniyede bir yeniler.
 
 | Tuş | Eylem |

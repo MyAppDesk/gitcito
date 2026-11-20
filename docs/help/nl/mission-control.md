@@ -56,6 +56,8 @@ commits op pushen wachten en welke bestanden vuil zijn.
 - Sorteer op **urgentie**, **naam** of **activiteit**.
 - **Vink meerdere repo's aan** om ze te fetchen, of pull alleen degene die achter
   liggen (de knop telt ze voor je).
+- **N verouderde fetchen** verschijnt als branches met een upstream een dag of langer
+  niet gefetcht hebben, en fetcht alleen die — die waarvan "te pullen" fout kan zijn.
 - Zolang het open staat ververst het zichzelf elke 30 seconden.
 
 | Toets | Actie |

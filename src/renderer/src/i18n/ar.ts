@@ -2734,7 +2734,6 @@ export const ar: Dict = {
   'mission.pull': 'سحب',
   'mission.open.row': 'فتح',
   'mission.reason.unreadable': 'تتعذّر قراءته',
-  'mission.reason.operation': '{op} قيد التنفيذ',
   'mission.reason.conflicted': '{n} في تعارض',
   'mission.reason.behind': '{n} للسحب',
   'mission.reason.ahead': '{n} للإرسال',
@@ -2756,6 +2755,8 @@ export const ar: Dict = {
   'mission.fetched': 'جُلب {t}',
   'mission.neverFetched': 'لم يُجلب قط',
   'mission.fetchStale': 'لم يُجلب منذ يوم أو أكثر: قد يكون عدد ما يجب سحبه قديمًا. اجلب للتأكد.',
+  'mission.fetchStaleButton': 'اجلب {n} قديمة',
+  'mission.fetchStaleHint': 'يجلب فقط المستودعات التي لم تُجلب منذ يوم أو أكثر وقد يكون عدد ما يجب سحبه فيها قديمًا',
   'mission.noUpstream': 'بلا فرع upstream',
 
   // Sparse checkout modal

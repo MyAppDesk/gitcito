@@ -2739,7 +2739,6 @@ export const nl: Dict = {
   'mission.pull': 'Pullen',
   'mission.open.row': 'Openen',
   'mission.reason.unreadable': 'onleesbaar',
-  'mission.reason.operation': '{op} bezig',
   'mission.reason.conflicted': '{n} met conflict',
   'mission.reason.behind': '{n} te pullen',
   'mission.reason.ahead': '{n} te pushen',
@@ -2761,6 +2760,8 @@ export const nl: Dict = {
   'mission.fetched': 'fetch {t}',
   'mission.neverFetched': 'nooit gefetcht',
   'mission.fetchStale': 'Een dag of langer niet gefetcht: het aantal te pullen kan verouderd zijn. Fetch om zeker te zijn.',
+  'mission.fetchStaleButton': '{n} verouderde fetchen',
+  'mission.fetchStaleHint': 'Fetcht alleen de repository’s die een dag of langer niet gefetcht zijn en waarvan het aantal te pullen verouderd kan zijn',
   'mission.noUpstream': 'geen upstream',
 
   // Sparse-checkout-venster

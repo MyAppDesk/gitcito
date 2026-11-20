@@ -2730,7 +2730,6 @@ export const en = {
   'mission.pull': 'Pull',
   'mission.open.row': 'Open',
   'mission.reason.unreadable': 'cannot be read',
-  'mission.reason.operation': '{op} in progress',
   'mission.reason.conflicted': '{n} conflicted',
   'mission.reason.behind': '{n} to pull',
   'mission.reason.ahead': '{n} to push',
@@ -2752,6 +2751,8 @@ export const en = {
   'mission.fetched': 'fetched {t}',
   'mission.neverFetched': 'never fetched',
   'mission.fetchStale': 'Not fetched for a day or more: the to-pull count may be out of date. Fetch to be sure.',
+  'mission.fetchStaleButton': 'Fetch {n} stale',
+  'mission.fetchStaleHint': 'Fetch only the repositories not fetched for a day or more, whose to-pull count may be out of date',
   'mission.noUpstream': 'no upstream',
 
   // Sparse checkout modal

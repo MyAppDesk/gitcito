@@ -2739,7 +2739,6 @@ export const ptBR: Dict = {
   'mission.pull': 'Pull',
   'mission.open.row': 'Abrir',
   'mission.reason.unreadable': 'não pode ser lido',
-  'mission.reason.operation': '{op} em andamento',
   'mission.reason.conflicted': '{n} em conflito',
   'mission.reason.behind': '{n} para baixar',
   'mission.reason.ahead': '{n} para enviar',
@@ -2761,6 +2760,8 @@ export const ptBR: Dict = {
   'mission.fetched': 'fetch {t}',
   'mission.neverFetched': 'nunca fez fetch',
   'mission.fetchStale': 'Sem fetch há um dia ou mais: a contagem para baixar pode estar desatualizada. Faça fetch para ter certeza.',
+  'mission.fetchStaleButton': 'Fetch em {n} desatualizados',
+  'mission.fetchStaleHint': 'Faz fetch só nos repositórios sem fetch há um dia ou mais, cuja contagem para baixar pode estar velha',
   'mission.noUpstream': 'sem upstream',
 
   // Modal do sparse-checkout

@@ -56,6 +56,8 @@ sehen, welche Commits auf ihren Push warten und welche Dateien schmutzig sind.
 - Sortieren nach **Dringlichkeit**, **Name** oder **Aktivität**.
 - **Häkchen bei mehreren Repos** setzen, um sie zu fetchen — oder nur die zu
   pullen, die zurückhängen (der Knopf zählt sie für dich).
+- **N veraltete fetchen** erscheint, wenn Branches mit Upstream seit einem Tag oder
+  länger nicht gefetcht haben, und fetcht nur diese — die, deren „zu pullen“ falsch sein kann.
 - Solange sie offen ist, aktualisiert sie sich alle 30 Sekunden selbst.
 
 | Taste | Aktion |

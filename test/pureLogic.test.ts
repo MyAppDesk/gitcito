@@ -203,6 +203,7 @@ import {
   pulseTotals,
   pulseVerdict,
   isFetchStale,
+  staleFetchTargets,
   sortPulses,
   sparklinePoints
 } from '../src/renderer/src/lib/missionControl'
@@ -3827,11 +3828,18 @@ describe('mission control ranking', () => {
     expect(v.level).toBe('action')
   })
 
-  it('names an interrupted operation in its reason', () => {
-    expect(pulseVerdict(pulse({ operation: 'rebase' })).reasons[0]).toEqual({
-      key: 'mission.reason.operation',
-      op: 'rebase'
-    })
+  it('names an interrupted operation with its own sentence, not an interpolated noun', () => {
+    expect(pulseVerdict(pulse({ operation: 'rebase' })).reasons[0]).toEqual({ key: 'mood.opRebase' })
+    expect(pulseVerdict(pulse({ operation: 'cherry-pick' })).reasons[0]).toEqual({ key: 'mood.opCherryPick' })
+  })
+
+  it('lists for "fetch stale" exactly the repos whose fetch is stale', () => {
+    const now = 10 * 86400 * 1000
+    const fresh = pulse({ name: 'fresh', path: '/r/fresh', lastFetchAt: now - 60_000 })
+    const old = pulse({ name: 'old', path: '/r/old', lastFetchAt: now - 3 * 86400 * 1000 })
+    const never = pulse({ name: 'never', path: '/r/never', lastFetchAt: null })
+    const local = pulse({ name: 'local', path: '/r/local', upstream: null, lastFetchAt: null })
+    expect(staleFetchTargets([fresh, old, never, local], now)).toEqual(['/r/old', '/r/never'])
   })
 
   it('warns that the behind count is stale only for a tracking branch fetched long ago', () => {

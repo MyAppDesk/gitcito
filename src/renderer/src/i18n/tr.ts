@@ -2681,7 +2681,6 @@ export const tr: Dict = {
   'mission.pull': 'Pull',
   'mission.open.row': 'Aç',
   'mission.reason.unreadable': 'okunamıyor',
-  'mission.reason.operation': '{op} sürüyor',
   'mission.reason.conflicted': '{n} çakışmalı',
   'mission.reason.behind': '{n} çekilecek',
   'mission.reason.ahead': '{n} push’lanacak',
@@ -2703,6 +2702,8 @@ export const tr: Dict = {
   'mission.fetched': 'fetch {t}',
   'mission.neverFetched': 'hiç fetch yapılmadı',
   'mission.fetchStale': 'Bir gün veya daha uzun süredir fetch yapılmadı: çekilecek sayısı eski olabilir. Emin olmak için fetch yapın.',
+  'mission.fetchStaleButton': '{n} eskiyi fetch et',
+  'mission.fetchStaleHint': 'Yalnızca bir gün veya daha uzun süredir fetch yapılmamış, çekilecek sayısı eski olabilecek depoları fetch eder',
   'mission.noUpstream': 'upstream yok',
 
   'sparse.title': 'Seyrek checkout',

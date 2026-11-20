@@ -56,6 +56,8 @@ commits attendent d'être poussés et quels fichiers sont sales.
 - Triez par **urgence**, par **nom** ou par **activité**.
 - **Cochez plusieurs dépôts** pour les récupérer, ou tirez seulement ceux qui
   sont en retard (le bouton les compte pour vous).
+- **Fetch des N périmés** apparaît quand des branches suivies n’ont pas fetché depuis
+  un jour ou plus, et ne fetche que celles-là — celles dont le « à tirer » peut être faux.
 - Il se rafraîchit tout seul toutes les 30 secondes tant qu'il est ouvert.
 
 | Touche | Action |

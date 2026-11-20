@@ -2731,7 +2731,6 @@ export const ru: Dict = {
   'mission.pull': 'Пул',
   'mission.open.row': 'Открыть',
   'mission.reason.unreadable': 'не читается',
-  'mission.reason.operation': '{op}: в процессе',
   'mission.reason.conflicted': 'конфликтов: {n}',
   'mission.reason.behind': 'к загрузке: {n}',
   'mission.reason.ahead': 'к отправке: {n}',
@@ -2753,6 +2752,8 @@ export const ru: Dict = {
   'mission.fetched': 'fetch {t}',
   'mission.neverFetched': 'fetch не выполнялся',
   'mission.fetchStale': 'Fetch не выполнялся день или больше: число к загрузке может быть устаревшим. Выполните fetch, чтобы убедиться.',
+  'mission.fetchStaleButton': 'Fetch устаревших: {n}',
+  'mission.fetchStaleHint': 'Выполняет fetch только для репозиториев без fetch день или больше, где число к загрузке может быть устаревшим',
   'mission.noUpstream': 'нет upstream',
 
   // Модальное окно частичной выгрузки

@@ -55,6 +55,8 @@ waiting to be pushed and which files are dirty.
 - Sort by **urgency**, **name** or **activity**.
 - **Tick several repos** to fetch them, or pull just the ones that are behind
   (the button counts them for you).
+- **Fetch N stale** shows up when some tracking branches have not fetched for a
+  day or more, and fetches only those — the ones whose "to pull" may be wrong.
 - It refreshes itself every 30 seconds while it is open.
 
 | Key | Action |

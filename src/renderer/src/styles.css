@@ -4581,6 +4581,23 @@ body.col-resizing .node-ava {
 .prob-icon-error { color: var(--red, #ff5c7a); }
 .prob-icon-warning { color: var(--yellow, #ff7a1a); }
 .prob-icon-info { color: var(--text-2); }
+.test-icon-pass { color: var(--green, #2ea043); flex: none; }
+.test-message,
+.test-error {
+  margin: 2px 12px 8px 34px;
+  padding: 8px 10px;
+  max-height: 260px;
+  overflow: auto;
+  border-radius: 6px;
+  background: var(--bg-1);
+  color: var(--text-1);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.test-error { margin-left: 12px; }
 .problems-search {
   display: inline-flex;
   align-items: center;

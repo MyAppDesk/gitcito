@@ -268,6 +268,11 @@ interface PreloadApi {
     detect(repoPath: string): Promise<string[]>
     cancel(repoPath: string): void
   }
+  tests: {
+    run(repoPath: string): Promise<import('../../shared/types').TestRunResult>
+    detect(repoPath: string): Promise<{ runner: import('../../shared/types').TestRunner | null; installed: boolean }>
+    cancel(repoPath: string): void
+  }
   todoScan: {
     run(repoPath: string): Promise<import('../../shared/types').TodoScanResult>
     cancel(repoPath: string): void

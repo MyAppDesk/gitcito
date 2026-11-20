@@ -406,6 +406,12 @@ const api = {
     detect: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('analyze:detect', repoPath),
     cancel: (repoPath: string): void => ipcRenderer.send('analyze:cancel', repoPath)
   },
+  // Tests: the project's own suite (vitest / jest), run on demand.
+  tests: {
+    run: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('tests:run', repoPath),
+    detect: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('tests:detect', repoPath),
+    cancel: (repoPath: string): void => ipcRenderer.send('tests:cancel', repoPath)
+  },
 
   // TODO markers carried by the repository's own source, scanned on demand.
   todoScan: {

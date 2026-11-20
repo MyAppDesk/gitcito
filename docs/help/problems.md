@@ -3,7 +3,7 @@ title: Problems
 category: Workspace tools
 order: 92
 summary: What your project's own analyzers say, and which of it your diff caused.
-keywords: problems analyzer analyzers diagnostics errors warnings lint tsc typescript eslint dart analyze clippy cargo go vet ruff panel dock changed files
+keywords: problems analyzer analyzers diagnostics errors warnings lint tsc typescript eslint dart analyze clippy cargo go vet ruff panel dock changed files tests test suite vitest jest unit failing run tests
 ---
 
 # Problems
@@ -73,6 +73,40 @@ worth answering before you commit.
 
 The severity chips filter too. Unlit means *show everything* — lighting one up
 narrows to it.
+
+## Tests
+
+The dock's third tab runs the project's test suite and shows the result as a
+tree: each test file, then its tests, failures first. **Run tests** in the
+command palette opens it and starts the run; the ▶ button in the tab does the
+same, and ↻ runs it again.
+
+| Row | Click it to |
+|---|---|
+| A failed test | Open the test file at the line the failure points to, and unfold the failure message under the row |
+| A passed or skipped test | Open the test file |
+| A file that failed before any test ran (a syntax error, a bad import) | Open the file; its message says what stopped it |
+
+**Failed only** keeps the failures; the search box filters by test name, or by
+path to keep a whole file.
+
+It reads the runner's own machine report — `vitest run --reporter=json`, or
+`jest --json` — rather than its scrollback, so names, durations and messages are
+exact. The line is taken from the failure's stack, so it is the assertion that
+failed, not the start of the test.
+
+Limits, plainly:
+
+- **vitest and jest only**, found in the repository root's `package.json`;
+  vitest wins when both are listed. A monorepo's per-package suites are not
+  run one by one.
+- **Only the installed runner runs** — `node_modules/.bin`. If it is listed but
+  not installed, the tab says so; nothing is downloaded on your behalf.
+- **The whole suite, every time.** There is no "only what I changed" yet, and a
+  slow suite takes as long here as in a terminal. It stops after ten minutes.
+- If the runner crashes before writing its report, the tab shows what it
+  printed instead.
+- It runs the project's code, as `npm test` would — on demand, never on its own.
 
 ## The limits
 

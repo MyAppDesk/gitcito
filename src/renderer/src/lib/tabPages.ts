@@ -10,14 +10,18 @@ import type { PageContent, TabState } from '../../../shared/types'
  * open something.
  */
 
-/** Page kinds that ride on their repository's tab. Everything else stands alone. */
-export const ATTACHED_PAGES = new Set(['devtools', 'wiki', 'insights'])
+/** Page kinds that ride on their repository's tab. Everything else stands alone.
+ *  A pull request rides too — on the repo's tab, or its chip inside a group —
+ *  unless it is explicitly opened in a tab of its own. */
+export const ATTACHED_PAGES = new Set(['devtools', 'wiki', 'insights', 'pr'])
 
 /** Two attached pages are "the same" when they address the same thing: one wiki
  *  per repo, one DevTools per launch session. */
 export function samePage(a: PageContent, b: PageContent): boolean {
   if (a.type !== b.type) return false
   if (a.type === 'devtools' && b.type === 'devtools') return a.launchId === b.launchId
+  // Several pull requests can be open on one repository: each is its own page.
+  if (a.type === 'pr' && b.type === 'pr') return a.number === b.number && a.remoteUrl === b.remoteUrl
   return 'repoPath' in a && 'repoPath' in b ? a.repoPath === b.repoPath : true
 }
 

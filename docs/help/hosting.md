@@ -66,13 +66,42 @@ parent costs one more request per refresh.
 
 ## Reviewing — GitHub and GitLab
 
-| | |
+![Pull request page with conversation and reviewer sidebar](../screenshots/pull-request-page.webp)
+
+Clicking a pull request opens it as a **page of its own**. It rides on its
+repository like the wiki does: an icon with the PR number on the repository's
+tab, or on its chip inside a group. Click the icon again, or the repository's
+name, to go back. **Open in a new tab** in the PR's right-click menu gives it a
+top-level tab instead. If the repository is not open anywhere, the PR opens in a
+tab of its own.
+
+The work happens in the main column, and the sidebar says what the PR *is*, so
+you do not have to scroll through it.
+
+The main column has three sections:
+
+| Section | What it holds |
 |---|---|
-| **Conversation** | Comments and review state |
-| **Checks** | CI check-runs (GitHub) or pipeline jobs (GitLab) with pass/fail/pending and view-logs links |
-| **Files viewed** | A per-file ✓ checklist with progress |
-| **Inline threads** | Line comments grouped by `file:line`, and replies |
-| **Actions** | Comment, approve, request changes, and merge / squash |
+| **Conversation** | The description, comments and inline review threads (`file:line`, with replies). Then the comment box with comment / approve / request changes, and the merge box (merge, squash or rebase) |
+| **Files** | Every changed file, and the selected one's diff beside the list, with syntax highlighting and word-level changes (secret-looking files masked when that setting is on). A ✓ "viewed" checklist remembers your progress. A file the host sends no diff for (a binary, or one too large) links to it on the host |
+| **Checks** | CI check-runs (GitHub) or pipeline jobs (GitLab), with pass/fail/pending and links to the logs |
+
+The sidebar shows:
+
+| Row | Shows |
+|---|---|
+| **Author** | Who opened it, and when |
+| **Status** | Open, draft, merged (by whom, when) or closed; conflicts with the target |
+| **Reviewers** | Each reviewer's latest decision (approved, changes requested, commented) and who is still awaiting review, teams included |
+| **Assignees, labels, milestone** | As set on the host, labels in their own colours |
+| **Branches** | Source → target, and the fork it comes from |
+| **Changes** | Files changed, commits, lines added and removed, with a bar |
+| **Checks** | Passed / failing / running, a click away from the Checks section |
+| **Participants** | Everyone who took part |
+| **Activity** | When it was opened and last updated |
+
+GitLab does not report line totals for a merge request; they are summed from
+the file list once it loads. A row the host does not report is left out.
 
 If someone force-pushes mid-review, [what changed since](range-diff.md) shows
 you exactly what moved.

@@ -39,6 +39,8 @@ export function pageTabLabel(page: PageContent, t: (key: TranslationKey) => stri
       return `#${page.issue.number} ${page.issue.title}`
     case 'milestone':
       return `🏁 ${page.milestone.title}`
+    case 'pr':
+      return `#${page.number} ${page.title}`
     case 'release':
       return `${basename(page.repoPath)} - ${page.release.tag || page.release.name || `#${page.release.id}`}`
   }

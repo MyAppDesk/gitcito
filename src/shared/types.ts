@@ -688,6 +688,11 @@ export interface PrFile {
   status: string
   additions: number
   deletions: number
+  /** The file's unified diff hunks. Absent when the host sends none — a binary
+   *  file, or one too large for the API to include. */
+  patch?: string
+  /** The path before a rename. */
+  previousFilename?: string
 }
 
 /** Full detail for one pull request (conversation + review state). */
@@ -706,6 +711,41 @@ export interface PrDetail {
   comments: PrComment[]
   reviews: PrReview[]
   reviewThreads: PrReviewThread[]
+  // What the PR page's sidebar shows. Optional: a host that does not report a
+  // field simply leaves that row out.
+  createdAt?: string
+  updatedAt?: string
+  closedAt?: string | null
+  mergedAt?: string | null
+  mergedBy?: string | null
+  assignees?: PrPerson[]
+  /** Asked to review and not yet answered. A team is `org/team`, flagged `team`. */
+  requestedReviewers?: PrPerson[]
+  labels?: PrLabel[]
+  milestone?: string | null
+  /** Lines added / removed across the PR (GitHub; GitLab does not report them). */
+  additions?: number
+  deletions?: number
+  changedFiles?: number
+  commits?: number
+  /** `commits` is a floor: the host was asked for one page and it was full. */
+  commitsCapped?: boolean
+  /** owner/repo the head branch lives in, when it differs from the base (a fork). */
+  sourceRepo?: string | null
+  /** Avatar URL per login, for everyone the host named in this PR. */
+  avatars?: Record<string, string>
+}
+
+/** Someone named on a pull request — an assignee or a requested reviewer. */
+export interface PrPerson {
+  login: string
+  team?: boolean
+}
+
+export interface PrLabel {
+  name: string
+  /** Hex without `#` (GitHub) or with it (GitLab); absent when the host gives none. */
+  color?: string
 }
 
 /** A repository issue (not a PR). */
@@ -2814,6 +2854,9 @@ export type PageContent =
   | { type: 'release'; release: ReleaseInfo; repoPath: string }
   | { type: 'issue'; issue: IssueInfo; repoPath: string; remoteUrl: string }
   | { type: 'milestone'; milestone: MilestoneInfo; repoPath: string; remoteUrl: string }
+  // `title` is what the list knew when it was opened — the tab's label until the
+  // page has loaded the real one.
+  | { type: 'pr'; repoPath: string; remoteUrl: string; number: number; title: string }
 
 /** One dependency's licence, collected at build time by scripts/gen-licenses.mjs.
  *  `text` is null when the package ships an SPDX id but no licence file. */

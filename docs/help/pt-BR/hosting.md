@@ -48,13 +48,43 @@ atualizada.
 
 ## Revisando — GitHub e GitLab
 
-| | |
+![Página do pull request com conversa e revisores](../../screenshots/pull-request-page.webp)
+
+Clicar num pull request abre ele como uma **página própria**. Ela fica presa ao
+repositório, como o wiki: um ícone com o número do PR na aba do repositório, ou
+no chip dele dentro de um grupo. Clique no ícone de novo, ou no nome do
+repositório, para voltar. **Abrir em nova aba**, no menu de botão direito do PR,
+abre como aba separada. Se o repositório não estiver aberto em nenhuma aba, o PR
+abre numa aba própria.
+
+O trabalho fica na coluna principal, e a barra lateral diz o que o PR *é*, sem
+precisar rolar a tela.
+
+A coluna principal tem três seções:
+
+| Seção | O que tem |
 |---|---|
-| **Conversa** | Comentários e estado da revisão |
-| **Checks** | Execuções de CI (GitHub) ou jobs de pipeline (GitLab) com aprovado/falhou/pendente e links para os logs |
-| **Arquivos vistos** | Um checklist de ✓ por arquivo, com progresso |
-| **Threads inline** | Comentários de linha agrupados por `file:line`, e as respostas |
-| **Ações** | Comentar, aprovar, pedir mudanças, e merge / squash |
+| **Conversa** | A descrição, os comentários e as threads de revisão inline (`file:line`, com respostas). Depois a caixa de comentário com comentar / aprovar / pedir mudanças, e a caixa de merge (merge, squash ou rebase) |
+| **Arquivos** | Cada arquivo alterado e, ao lado da lista, o diff do selecionado, com destaque de sintaxe e mudança por palavra (arquivos com cara de segredo mascarados quando a opção está ligada). Um checklist ✓ de "visto" lembra o seu progresso. Um arquivo sem diff enviado pelo host (binário, ou grande demais) tem link para vê-lo no host |
+| **Checks** | Execuções de CI (GitHub) ou jobs de pipeline (GitLab), com aprovado/falhou/pendente e links para os logs |
+
+A barra lateral mostra:
+
+| Linha | Mostra |
+|---|---|
+| **Autor** | Quem abriu, e quando |
+| **Status** | Aberto, rascunho, mesclado (por quem, quando) ou fechado; conflitos com o destino |
+| **Revisores** | A decisão mais recente de cada revisor (aprovou, pediu mudanças, comentou) e quem ainda falta revisar, times incluídos |
+| **Responsáveis, labels, milestone** | Como estão no host, labels nas próprias cores |
+| **Branches** | Origem → destino, e o fork de onde vem |
+| **Alterações** | Arquivos alterados, commits, linhas adicionadas e removidas, com uma barra |
+| **Checks** | Passaram / falhando / rodando, a um clique da seção Checks |
+| **Participantes** | Todo mundo que participou |
+| **Atividade** | Quando foi aberto e atualizado pela última vez |
+
+O GitLab não informa o total de linhas de um merge request; ele é somado da
+lista de arquivos quando ela carrega. Uma linha que o host não informa fica de
+fora.
 
 Se alguém der force-push no meio da revisão, [o que mudou desde](range-diff.md)
 mostra exatamente o que se mexeu.

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2, Scale, Wrench, Ungroup } from 'lucide-react'
+import { Plus, FolderGit2, X, Minus, Square, Settings, Sparkles, LifeBuoy, FileText, Bell, BarChart3, BookOpen, ScrollText, CircleDot, Flag, GitPullRequest, Tag, Download, ArrowDownToLine, KeyRound, LayoutGrid, Folder, FolderOpen, FolderPlus, FolderTree, Trash2, Scale, Wrench, Ungroup } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { colorMenuItems } from './colorMenu'
 import { useSettingsStore } from '../stores/settings'
@@ -68,6 +68,8 @@ function pageTabIcon(type: string): React.JSX.Element {
       return <CircleDot size={13} />
     case 'milestone':
       return <Flag size={13} />
+    case 'pr':
+      return <GitPullRequest size={13} />
     case 'release':
       return <Tag size={13} />
     case 'help':
@@ -900,7 +902,7 @@ export function TitleBar(): React.JSX.Element {
     pagesForRepo(pages, repoPath).map(({ page, index }) => (
       <span
         key={`${page.type}-${index}`}
-        className={`tab-page-chip ${activePage === index ? 'active' : ''}`}
+        className={`tab-page-chip ${page.type === 'pr' ? 'tab-page-chip-pr' : ''} ${activePage === index ? 'active' : ''}`}
         role="button"
         tabIndex={0}
         title={pageTabLabel(page, t)}
@@ -913,6 +915,8 @@ export function TitleBar(): React.JSX.Element {
         }}
       >
         {pageTabIcon(page.type)}
+        {/* Several PRs can sit on one repository: the number tells them apart. */}
+        {page.type === 'pr' && <span className="tab-page-num">#{page.number}</span>}
         <span
           className="tab-page-close"
           role="button"

@@ -1,5 +1,21 @@
 import type { RemoteInfo } from '../../../shared/types'
 
+// PR tabs are saved to settings. Keep credentials and URL parameters out of that file.
+export function prRemoteIdentity(raw: string): string {
+  if (/^[\w.-]+@[\w.-]+:[^/]/.test(raw)) return raw
+  try {
+    const url = new URL(raw)
+    if (!['https:', 'http:', 'ssh:', 'git:'].includes(url.protocol)) return ''
+    url.username = ''
+    url.password = ''
+    url.search = ''
+    url.hash = ''
+    return url.href
+  } catch {
+    return ''
+  }
+}
+
 /** True if a remote URL points at github.com (SSH or HTTPS). */
 export function isGitHubRemote(url: string | undefined | null): boolean {
   return !!url && /github\.com[/:]/i.test(url)

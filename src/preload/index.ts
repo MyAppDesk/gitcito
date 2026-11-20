@@ -269,6 +269,10 @@ const api = {
     importAll: (data: unknown): Promise<unknown> => ipcRenderer.invoke('info:importAll', data)
   },
 
+  env: {
+    check: (): Promise<unknown> => ipcRenderer.invoke('env:check')
+  },
+
   log: {
     get: (): Promise<unknown> => ipcRenderer.invoke('log:get'),
     clear: (): Promise<unknown> => ipcRenderer.invoke('log:clear')

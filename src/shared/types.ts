@@ -3600,6 +3600,18 @@ export interface RepoConfigResult {
 
 export type DoctorStatus = 'ok' | 'warn' | 'fail'
 
+/** One row of the machine-wide environment check (Settings → Environment). */
+export type EnvCheckId = 'git' | 'lfs' | 'terminal' | 'credentialHelper' | 'gh' | 'inotify'
+
+export interface EnvCheck {
+  id: EnvCheckId
+  status: DoctorStatus
+  /** What was found — a version, a helper name, a number. Untranslated. */
+  actual?: string
+  /** A shell command that repairs it, shown for the user to copy and run. */
+  fix?: string
+}
+
 /**
  * A repair the doctor can perform. Deliberately a closed union: the config
  * supplies *data* (a path, a config value), never a command. Nothing a

@@ -2,6 +2,7 @@ import type { LaunchInput, LaunchInputResolution } from '../../../shared/types'
 import type {
   AskPlan,
   DoctorCheck,
+  EnvCheck,
   DoctorFix,
   RepoConfig,
   RepoConfigResult,
@@ -836,6 +837,11 @@ export const secureShareApi = {
     window.api.secureShare.previewNotesV2(bundlePath, password, sectionIndex, repoPath) as Promise<
       { notes: import('../../../shared/types').SecureNotePreviewEntry[] } | { error: SecureShareError }
     >
+}
+
+/** Settings → Environment: what the app relies on outside its bundle. */
+export const envApi = {
+  check: () => window.api.env.check() as Promise<EnvCheck[]>
 }
 
 export const infoApi = {

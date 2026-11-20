@@ -96,8 +96,74 @@ de "enviar revisão", então **aprovar** usa o endpoint de aprovação dele e
 fast-forward pelas configurações do projeto, então o menu de merge mostra só
 merge e squash. Threads inline mostram o arquivo e a linha, mas não o hunk de
 diff ao redor, que a API do GitLab não retorna. Revisar e fazer merge funciona
-para projetos no **gitlab.com**; instâncias self-hosted ainda não são
-suportadas. Bitbucket e Azure DevOps ainda abrem no navegador para revisão.
+no gitlab.com e num [GitLab self-managed](#gitlab-self-managed). Bitbucket e
+Azure DevOps ainda abrem no navegador para revisão.
+
+## GitLab self-managed
+
+O GitLab de uma empresa fica num endereço próprio. Informe esse endereço a um
+perfil em **Configurações → Integrações → GitLab → Endereço do GitLab**, por
+exemplo `git.example.org`, ou `https://example.net/gitlab` para um servido
+dentro de um caminho. A partir daí, os remotes nesse host são GitLab: os merge
+requests são listados, abertos, revisados e mesclados, o navegador de clone e o
+*criar repositório* falam com ele, e push e fetch entram com o token desse
+perfil.
+
+**Um token do GitLab pertence a uma instância.** O token de um perfil só é
+enviado ao endereço que o perfil informa. Endereço vazio quer dizer gitlab.com.
+Um token do gitlab.com nunca chega ao servidor da empresa, e um token da empresa
+nunca chega ao gitlab.com. Se a conta do trabalho e a pessoal estão em
+instâncias diferentes, cada uma precisa de um perfil. Um repositório vinculado a
+um perfil usa a instância desse perfil.
+
+**Criar token** abre a página de tokens da sua instância com `api` e
+`write_repository` já marcados. Um token só de leitura conecta normalmente e
+depois falha no primeiro push.
+
+Limites:
+
+- **Só https.** Um endereço `http://` é recusado, porque o token passaria pela
+  rede em texto puro.
+- **Uma instância de GitLab por perfil.** Crie outro perfil para outra
+  instância.
+- No ssh compara-se o host, não o caminho. Duas instâncias no mesmo host, em
+  caminhos diferentes, não se distinguem num remote ssh.
+- Avatares de remote só são desenhados para gitlab.com e github.com. Um remote
+  self-managed recebe o ícone simples, para que nomes de grupos nunca sejam
+  enviados a um host público.
+
+## Forgejo
+
+Defina o endereço da instância antes de inserir o token. Alterar o endereço remove a credencial anterior.
+
+![Configurações de integração do Forgejo](../../screenshots/forgejo-integration.webp)
+
+O Forgejo, e o Gitea, que usa a mesma API, sempre roda num endereço escolhido
+pelo dono: o seu próprio servidor ou um público, como o codeberg.org. Informe
+esse endereço a um perfil em **Configurações → Integrações → Forgejo**, junto
+com um token de acesso. **Criar token** abre a página de tokens desse servidor.
+Dê ao token permissão de leitura e escrita em *repository*, e de leitura em
+*user* e *organization*.
+
+A partir daí, os remotes nesse servidor são Forgejo:
+
+| Funciona | Como |
+|----------|------|
+| Push e fetch | Login com o token do perfil |
+| Pull requests abertos | Listados na sidebar, como em qualquer host |
+| Criar pull request | Pelo app; um rascunho leva o prefixo `WIP:` que o Forgejo usa |
+| Navegador de clone, criar repositório | Nesse servidor, na sua conta ou numa organização |
+
+Como no GitLab, **um token do Forgejo só vai para o servidor que o emitiu**. Um
+perfil sem endereço do Forgejo não tem credencial do Forgejo, e não existe
+servidor padrão para onde cair.
+
+Limites:
+
+- Revisar, comentar e fazer merge de um pull request ainda abre no navegador.
+  Por enquanto, essa tela de revisão é só do GitHub e do GitLab.
+- Só https, um servidor Forgejo por perfil.
+- As listas mostram os primeiros 50 pull requests e repositórios.
 
 ## Issues, milestones, releases — GitHub
 

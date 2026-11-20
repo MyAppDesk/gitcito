@@ -29,7 +29,7 @@ export interface HostAuthInput {
  * Which profile's credentials a hosting API call should use.
  *
  * - A repository bound to a profile uses that profile — its PAT, else its link,
- *   else nothing. The same rule `activeProfileToken` applies to fetch and push,
+ *   else nothing. The same rule `withRemoteAuth` (git.ts) applies to fetch and push,
  *   so one repository never authenticates as two accounts. This holds for
  *   background refreshes of tabs that are not active, where the renderer only
  *   knows the active profile.

@@ -4,6 +4,8 @@ import { existsSync } from 'fs'
 import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
 import { defaultSettings, type AccountLink, type AppSettings, type RepoHost } from '../shared/types'
 import { validAccountLink } from '../shared/hostToken'
+import { profileForgejoBase, profileGitlabBase, instanceOf, tokenInstance, GITLAB_COM } from '../shared/gitlabInstance'
+import { setKnownForgejoInstances, setKnownGitlabInstances } from './gitlabInstances'
 import {
   applySecrets,
   extractSecrets,
@@ -110,7 +112,10 @@ export async function readSettings(): Promise<AppSettings> {
   } catch {
     return defaultSettings()
   }
-  return withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
+  const out = withMigratedAI(applySecrets(settings, { ...(secretCache ?? {}), ...sessionSecrets }))
+  setKnownGitlabInstances(out.profiles.map((p) => p.gitlabUrl))
+  setKnownForgejoInstances(out.profiles.map((p) => p.forgejoUrl))
+  return out
 }
 
 /**
@@ -160,57 +165,77 @@ async function readSettingsWithSecrets(reason: 'tokens' | 'settings' = 'tokens')
   return withMigratedAI(applySecrets(settings, { ...stored, ...sessionSecrets }))
 }
 
-const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken'> = {
+const TOKEN_FIELD: Record<RepoHost, 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken' | 'forgejoToken'> = {
   github: 'githubToken',
   gitlab: 'gitlabToken',
   bitbucket: 'bitbucketToken',
+  forgejo: 'forgejoToken',
   azure: 'azureToken'
-}
-
-/**
- * The personal access token for a given host, or undefined when none is
- * configured. Used by network git operations (push/pull/fetch) to authenticate
- * non-interactively, mirroring how clone resolves its token.
- *
- * A repository explicitly bound to a profile uses that profile's token, even
- * when a different one is active — otherwise a background fetch on one repo
- * would authenticate as whichever repo the user happens to be looking at.
- */
-export async function activeProfileToken(host: RepoHost, repoPath?: string): Promise<string | undefined> {
-  const settings = await readSettingsWithSecrets('tokens')
-  const boundId = repoPath ? settings.repoProfiles?.[repoPath] : undefined
-  const profile =
-    (boundId ? settings.profiles.find((p) => p.id === boundId) : undefined) ??
-    settings.profiles.find((p) => p.id === settings.activeProfileId) ??
-    settings.profiles[0]
-  const token = profile?.[TOKEN_FIELD[host]]
-  return token && token.trim() ? token.trim() : undefined
 }
 
 /**
  * What one profile brings to a host's API: its PAT and its link to a machine
  * login (git's credential helper or the GitHub CLI). The link is plain settings,
  * but the PAT outranks it, so the secrets are always read — through the same
- * consent gate as `activeProfileToken`, which skips the keychain entirely when
+ * consent gate as `readSettingsWithSecrets`, which skips the keychain entirely when
  * no secrets file exists.
  */
-async function profileAuth(host: RepoHost, profileId: string | undefined): Promise<{ token?: string; link?: AccountLink }> {
+async function profileAuth(
+  host: RepoHost,
+  profileId: string | undefined,
+  remoteUrl?: string,
+  expectedBase?: string
+): Promise<{ token?: string; link?: AccountLink }> {
+  const plain = await readSettings()
+  const id = profileId ?? plain.activeProfileId
+  const candidate = plain.profiles.find((p) => p.id === id) ?? (profileId ? undefined : plain.profiles[0])
+  if (!candidate) return {}
+  if (host === 'gitlab' || host === 'forgejo') {
+    const base = tokenInstance(host, candidate[`${host}Url`])
+    if (!base || (expectedBase && base !== expectedBase)) return {}
+    if (remoteUrl && instanceOf(remoteUrl, [base])?.base !== base) return {}
+  }
+  const settings = await readSettingsWithSecrets('tokens')
+  const profile = settings.profiles.find((p) => p.id === id) ?? (profileId ? undefined : settings.profiles[0])
+  if (!profile) return {}
+  if (host === 'gitlab' || host === 'forgejo') {
+    const base = tokenInstance(host, profile[`${host}Url`])
+    if (!base || (expectedBase && base !== expectedBase)) return {}
+    if (remoteUrl) {
+      const bases = [GITLAB_COM, ...settings.profiles.flatMap((p) =>
+        [profileForgejoBase(p.forgejoUrl), profileGitlabBase(p.gitlabUrl)].filter((b): b is string => !!b)
+      )]
+      if (instanceOf(remoteUrl, bases)?.base !== base) return {}
+    }
+  }
+  const link = validAccountLink(profile.links?.[host])
+  const token = profile[TOKEN_FIELD[host]]?.trim() || undefined
+  return { token, link }
+}
+
+/** The active profile's PAT and link for a host. */
+export function activeProfileAuth(host: RepoHost, remoteUrl?: string, expectedBase?: string): Promise<{ token?: string; link?: AccountLink }> {
+  return profileAuth(host, undefined, remoteUrl, expectedBase)
+}
+
+/** The Forgejo instance a profile (the active one by default) points at, or null. */
+export async function profileForgejoInstance(profileId?: string): Promise<string | null> {
   const plain = await readSettings()
   const profile =
     (profileId ? plain.profiles.find((p) => p.id === profileId) : undefined) ??
     plain.profiles.find((p) => p.id === plain.activeProfileId) ??
     plain.profiles[0]
-  if (!profile) return {}
-  // Links are plain settings and arrive with imports too: a malformed one is no link.
-  const link = validAccountLink(profile.links?.[host])
-  const settings = await readSettingsWithSecrets('tokens')
-  const token = settings.profiles.find((p) => p.id === profile.id)?.[TOKEN_FIELD[host]]?.trim() || undefined
-  return { token, link }
+  return profileForgejoBase(profile?.forgejoUrl)
 }
 
-/** The active profile's PAT and link for a host. */
-export function activeProfileAuth(host: RepoHost): Promise<{ token?: string; link?: AccountLink }> {
-  return profileAuth(host, undefined)
+/** The GitLab instance a profile (the active one by default) is connected to. */
+export async function profileGitlabInstance(profileId?: string): Promise<string> {
+  const plain = await readSettings()
+  const profile =
+    (profileId ? plain.profiles.find((p) => p.id === profileId) : undefined) ??
+    plain.profiles.find((p) => p.id === plain.activeProfileId) ??
+    plain.profiles[0]
+  return profileGitlabBase(profile?.gitlabUrl)
 }
 
 /**
@@ -220,14 +245,16 @@ export function activeProfileAuth(host: RepoHost): Promise<{ token?: string; lin
  */
 export async function allProfileAuth(
   host: RepoHost
-): Promise<Array<{ id: string; name: string; token?: string; link?: AccountLink; azureOrg?: string }>> {
+): Promise<Array<{ id: string; name: string; token?: string; link?: AccountLink; azureOrg?: string; gitlabUrl?: string; forgejoUrl?: string }>> {
   const settings = await readSettingsWithSecrets('tokens')
   return settings.profiles.map((p) => ({
     id: p.id,
     name: p.name,
     token: p[TOKEN_FIELD[host]]?.trim() || undefined,
     link: validAccountLink(p.links?.[host]),
-    azureOrg: p.azureOrg?.trim() || undefined
+    azureOrg: p.azureOrg?.trim() || undefined,
+    gitlabUrl: p.gitlabUrl?.trim() || undefined,
+    forgejoUrl: p.forgejoUrl?.trim() || undefined
   }))
 }
 
@@ -238,12 +265,13 @@ export async function allProfileAuth(
  */
 export async function boundProfileAuth(
   host: RepoHost,
-  repoPath: string
+  repoPath: string,
+  remoteUrl?: string
 ): Promise<{ token?: string; link?: AccountLink } | undefined> {
   const plain = await readSettings()
   const boundId = plain.repoProfiles?.[repoPath]
   if (!boundId || !plain.profiles.some((p) => p.id === boundId)) return undefined
-  return profileAuth(host, boundId)
+  return profileAuth(host, boundId, remoteUrl)
 }
 
 /**
@@ -253,7 +281,7 @@ export async function boundProfileAuth(
  * The renderer only ever sees these keys after the user opens Settings (that is
  * the one call that unlocks). Every other AI action starts from a store that
  * was hydrated with `settings:get`, whose keys are still encrypted on disk — so
- * the main process resolves them here instead, exactly like `activeProfileToken`
+ * the main process resolves them here instead, exactly like `profileAuth`
  * does for git. Without this, AI features fail on every fresh launch until
  * Settings has been opened once.
  *
@@ -300,6 +328,8 @@ onSessionOnlyProbe(hasSessionOnlySecrets)
 
 async function writeSettings(settings: AppSettings): Promise<void> {
   await mkdir(app.getPath('userData'), { recursive: true })
+  setKnownGitlabInstances(settings.profiles.map((p) => p.gitlabUrl))
+  setKnownForgejoInstances(settings.profiles.map((p) => p.forgejoUrl))
   const secrets = extractSecrets(settings)
   const hasSecrets = Object.keys(secrets).length > 0
   const stripped = JSON.stringify(stripSettingsSecrets(settings), null, 2)

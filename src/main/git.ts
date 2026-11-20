@@ -910,6 +910,8 @@ export function basicAuthFor(
   switch (host) {
     case 'github':
     case 'gitlab':
+    // Forgejo/Gitea read an access token from the password field whatever the username.
+    case 'forgejo':
       return { username: 'oauth2', password: t }
     case 'bitbucket': {
       if (!t.includes(':')) return { username: 'x-token-auth', password: t }
@@ -943,10 +945,16 @@ function urlUsername(url: string | undefined): string {
  * process list nor the new repository's `.git/config` — not even for the
  * duration of the clone, which a crash or a kill would otherwise leave behind.
  */
-function cloneCredentialEnv(url: string, host?: string, token?: string): NodeJS.ProcessEnv | null {
+export async function cloneCredentialEnv(url: string, host?: string, token?: string): Promise<NodeJS.ProcessEnv | null> {
   if (!token || !token.trim() || !/^https:\/\//i.test(url)) return null
   // The caller names the provider; the URL must really be on it.
   if (!host || hostFromUrl(url) !== host) return null
+  // The renderer sends the active profile's token. A GitLab or Forgejo token
+  // only goes to the instance that issued it — never to another profile's server.
+  if (host === 'gitlab' || host === 'forgejo') {
+    token = (await activeProfileAuth(host, url)).token
+    if (!token) return null
+  }
   const auth = basicAuthFor(host as RepoHost | undefined, token, url)
   return auth ? gitCredentialEnv(url, auth) : null
 }
@@ -1736,8 +1744,8 @@ async function remoteCredential(repoPath: string, url: string): Promise<BasicCre
   const host = hostFromUrl(url)
   if (!host) return null
   const auth = await pickHostAuth({
-    bound: await boundProfileAuth(host, repoPath),
-    active: () => activeProfileAuth(host)
+    bound: await boundProfileAuth(host, repoPath, url),
+    active: () => activeProfileAuth(host, url)
   })
   if (auth.token) return basicAuthFor(host, auth.token, url)
   if (!auth.link) return null
@@ -7121,7 +7129,7 @@ export const gitService = {
   /** Branch names a remote advertises, for the clone dialog's branch picker.
    *  Never touches disk — `ls-remote` is a network read with no local repo. */
   async remoteBranches(url: string, host?: string, token?: string): Promise<string[]> {
-    const credEnv = cloneCredentialEnv(url, host, token)
+    const credEnv = await cloneCredentialEnv(url, host, token)
     if (credEnv) await assertGitSupportsCredentialEnv()
     try {
       const { stdout } = await pexecFile('git', ['ls-remote', '--heads', url], {
@@ -7153,7 +7161,7 @@ export const gitService = {
     // a local repository only takes effect through a file:// URL.
     const localShallow = !!opts.depth && !/^[a-z][a-z0-9+.-]*:/i.test(url) && !url.includes('@') && existsSync(url)
     const cloneUrl = localShallow ? pathToFileURL(resolvePath(url)).href : url
-    const credEnv = localShallow ? null : cloneCredentialEnv(url, opts.host, opts.token)
+    const credEnv = localShallow ? null : await cloneCredentialEnv(url, opts.host, opts.token)
     if (credEnv) await assertGitSupportsCredentialEnv()
     // Streaming the underlying `git clone --progress` so the UI can show real progress;
     // simpleGit auto-appends --progress when a progress handler is configured.

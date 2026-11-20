@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Globe, Github, Gitlab, Cloud, Server, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
+import { X, Globe, Github, Gitlab, Cloud, Server, GitFork, Loader2, Search, Lock, FolderGit2, Folder, Plus, Check, ChevronDown, ChevronRight, RefreshCw, Sparkles, GitMerge, ArrowUpFromLine, TextCursorInput } from 'lucide-react'
 import { useUIStore, type ModalSpec } from '../stores/ui'
 import { useSettingsStore, GROUP_COLORS } from '../stores/settings'
 import { pickGroupColor } from '../lib/groupColors'
@@ -553,14 +553,15 @@ const REMOTE_PROVIDERS = [
   { id: 'github', label: 'GitHub' },
   { id: 'gitlab', label: 'GitLab' },
   { id: 'bitbucket', label: 'Bitbucket' },
-  { id: 'azure', label: 'Azure DevOps' }
+  { id: 'azure', label: 'Azure DevOps' },
+  { id: 'forgejo', label: 'Forgejo' }
 ] as const
 
 type RemoteProviderId = (typeof REMOTE_PROVIDERS)[number]['id']
 
 const HOST_META: Record<
   RepoHost,
-  { label: string; tokenField: 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken' }
+  { label: string; tokenField: 'githubToken' | 'gitlabToken' | 'bitbucketToken' | 'azureToken' | 'forgejoToken' }
 > = {
   github: {
     label: 'GitHub',
@@ -577,6 +578,10 @@ const HOST_META: Record<
   azure: {
     label: 'Azure DevOps',
     tokenField: 'azureToken'
+  },
+  forgejo: {
+    label: 'Forgejo',
+    tokenField: 'forgejoToken'
   }
 }
 
@@ -585,7 +590,8 @@ const PROVIDER_ICONS: Record<RemoteProviderId, typeof Globe> = {
   github: Github,
   gitlab: Gitlab,
   bitbucket: Cloud,
-  azure: Server
+  azure: Server,
+  forgejo: GitFork
 }
 
 function repoToName(repo: RemoteRepo): string {
@@ -620,7 +626,7 @@ function RepoPicker({
   const profiles = useSettingsStore((s) => s.settings.profiles)
   const profile = profiles.find((p) => p.id === profileId) ?? profiles[0] ?? defaultProfile()
   const meta = HOST_META[host]
-  const token = profile[meta.tokenField]
+  const token = profile[meta.tokenField] ?? ''
   const HostIcon = PROVIDER_ICONS[host]
 
   const [org, setOrg] = useState('')
@@ -912,7 +918,7 @@ function ProviderCreateForm({
   const toast = useUIStore((s) => s.toast)
   const profiles = useSettingsStore((s) => s.settings.profiles)
   const profile = profiles.find((p) => p.id === profileId) ?? profiles[0] ?? defaultProfile()
-  const token = profile[HOST_META[host].tokenField]
+  const token = profile[HOST_META[host].tokenField] ?? ''
 
   const [mode, setMode] = useState<'create' | 'existing'>('create')
   const [owner, setOwner] = useState<RemoteOwner | null>(null)
@@ -944,7 +950,8 @@ function ProviderCreateForm({
         description: description.trim() || undefined,
         private: isPrivate
       }
-      const repo = await hostingApi.createRepo(host, token, opts, azureOrg)
+      // Only Azure scopes by organization; GitLab resolves its instance from the profile.
+      const repo = await hostingApi.createRepo(host, token, opts, host === 'azure' ? azureOrg : undefined)
       closeModal()
       await repoActions.addRemoteAndPush(spec.path, remoteName.trim(), repo.url)
     } catch (e) {
@@ -1005,7 +1012,7 @@ function ProviderCreateForm({
             </>
           )}
           <label className="modal-label">{host === 'azure' ? t('modal.project') : t('modal.account')}</label>
-          <OwnerSelect host={host} token={token} org={azureOrg} value={owner} onChange={setOwner} />
+          <OwnerSelect host={host} token={token} org={host === 'azure' ? azureOrg : undefined} value={owner} onChange={setOwner} />
 
           <label className="modal-label">{t('modal.repositoryName')}</label>
           <input

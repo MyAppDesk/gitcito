@@ -728,6 +728,15 @@ export const shots = [
     }
   },
   {
+    out: 'forgejo-integration',
+    repos: ['octopus-merge'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'integrations' }))
+      await page.getByRole('button', { name: 'Forgejo', exact: true }).click()
+      await page.locator('input[aria-required="true"]').fill('https://forge.example.org')
+    }
+  },
+  {
     // Integrations with the keychain off — the default every shot launches with
     // (`keychain` unset) — so the notice under the token field says the token
     // lasts until quit, with its Enable button.

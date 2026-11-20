@@ -6,7 +6,7 @@ import { execFile, spawn } from 'child_process'
 import icon from '../../resources/icon.png?asset'
 import type { AppRelease } from '../shared/types'
 import { registerGitHandlers } from './git'
-import { registerSettingsHandlers } from './settings'
+import { readSettings, registerSettingsHandlers } from './settings'
 import { registerAiHandlers } from './ai'
 import { registerRepoChatHandlers } from './repoChat'
 import { registerWikiHandlers } from './wiki'
@@ -190,6 +190,11 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   app.setName(app.isPackaged ? 'Gitcito' : 'Gitcito Dev')
+
+  // Fills the self-managed GitLab / Forgejo registry before anything parses a
+  // remote — the window does it again on settings:get, a CLI run never would.
+  // Plain settings only: no secrets, so no keychain prompt at launch.
+  void readSettings().catch(() => undefined)
 
   // The embedded DevTools panel stays on loopback: a link inside it opens in
   // the real browser, and a redirect off the machine is refused outright.

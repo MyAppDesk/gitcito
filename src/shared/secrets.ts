@@ -1,3 +1,4 @@
+import { tokenMatchesInstance, GITLAB_COM } from './gitlabInstance'
 import type { AppSettings } from './types'
 
 /**
@@ -8,8 +9,11 @@ import type { AppSettings } from './types'
 export interface ProfileSecrets {
   githubToken?: string
   azureToken?: string
+  gitlabTokenIssuer?: string
+  forgejoTokenIssuer?: string
   gitlabToken?: string
   bitbucketToken?: string
+  forgejoToken?: string
   /** Legacy single AI key, written before accounts existed. Still read. */
   aiApiKey?: string
   /** One API key per AI account id. */
@@ -20,7 +24,7 @@ export interface ProfileSecrets {
 export type SecretStore = Record<string, ProfileSecrets>
 
 /** Profile fields holding a host access token. */
-export const TOKEN_FIELDS = ['githubToken', 'azureToken', 'gitlabToken', 'bitbucketToken'] as const
+export const TOKEN_FIELDS = ['githubToken', 'azureToken', 'gitlabToken', 'bitbucketToken', 'forgejoToken'] as const
 
 export function hasSettingsSecrets(settings: AppSettings | null | undefined): boolean {
   return (settings?.profiles ?? []).some(
@@ -41,6 +45,8 @@ export function stripSettingsSecrets(settings: AppSettings): AppSettings {
       azureToken: '',
       gitlabToken: '',
       bitbucketToken: '',
+      // Optional field: blank it where it exists, never add it to an older profile.
+      ...(p.forgejoToken !== undefined ? { forgejoToken: '' } : {}),
       ai: p.ai
         ? {
             ...p.ai,
@@ -59,7 +65,15 @@ export function extractSecrets(settings: AppSettings): SecretStore {
     const secrets: ProfileSecrets = {}
     for (const field of TOKEN_FIELDS) {
       const value = p[field]
-      if (value) secrets[field] = value
+      if (!value) continue
+      if (field === 'gitlabToken') {
+        if (!tokenMatchesInstance('gitlab', p.gitlabUrl, p.gitlabTokenIssuer)) continue
+        secrets.gitlabTokenIssuer = p.gitlabTokenIssuer ?? GITLAB_COM
+      } else if (field === 'forgejoToken') {
+        if (!tokenMatchesInstance('forgejo', p.forgejoUrl, p.forgejoTokenIssuer)) continue
+        secrets.forgejoTokenIssuer = p.forgejoTokenIssuer
+      }
+      secrets[field] = value
     }
     const aiKeys: Record<string, string> = {}
     for (const account of p.ai?.accounts ?? []) {
@@ -80,9 +94,20 @@ export function applySecrets(settings: AppSettings, store: SecretStore): AppSett
     ...settings,
     profiles: (settings.profiles ?? []).map((p) => {
       const secrets = store[p.id]
-      if (!secrets) return p
       const restored = { ...p }
+      for (const provider of ['gitlab', 'forgejo'] as const) {
+        const field = `${provider}Token` as const
+        const issuer = `${provider}TokenIssuer` as const
+        const address = p[`${provider}Url`]
+        if (p[field] && !tokenMatchesInstance(provider, address, p[issuer])) restored[field] = ''
+        if (secrets?.[field] && tokenMatchesInstance(provider, address, secrets[issuer])) {
+          restored[field] = secrets[field]
+          if (secrets[issuer]) restored[issuer] = secrets[issuer]
+        }
+      }
+      if (!secrets) return restored
       for (const field of TOKEN_FIELDS) {
+        if (field === 'gitlabToken' || field === 'forgejoToken') continue
         if (secrets[field]) restored[field] = secrets[field] as string
       }
       if (!restored.ai) return restored

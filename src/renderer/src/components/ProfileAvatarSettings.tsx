@@ -45,7 +45,8 @@ export function useProfileAccounts(profile: Profile): ProfileAccounts {
       const link = profile.links?.[h.id]
       if (!token && !link) continue
       void hostingApi
-        .whoAmI(h.id, token, undefined, false, link)
+        // A GitLab token is asked about on its own instance only.
+        .whoAmI(h.id, token, h.id === 'gitlab' ? profile.gitlabUrl?.trim() || undefined : undefined, false, link, h.id === 'gitlab' ? profile.gitlabTokenIssuer : undefined)
         .then((account) => {
           if (alive && account) setAccounts((cur) => ({ ...cur, [h.id]: account }))
         })

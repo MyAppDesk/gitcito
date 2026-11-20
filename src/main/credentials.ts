@@ -1,4 +1,5 @@
 import { execFile } from 'child_process'
+import { isKnownForgejoHost, isKnownGitlabHost } from './gitlabInstances'
 import type { AccountLink, RepoHost } from '../shared/types'
 import { isAccountLogin } from '../shared/hostToken'
 
@@ -453,5 +454,9 @@ export function providerOfHost(host: string): RepoHost | undefined {
   if (h === 'dev.azure.com' || h.endsWith('.visualstudio.com')) return 'azure'
   if (h === 'gitlab.com' || h.endsWith('.gitlab.com')) return 'gitlab'
   if (h === 'bitbucket.org' || h.endsWith('.bitbucket.org')) return 'bitbucket'
+  // A self-managed GitLab a profile points at. Being recognised only makes it
+  // GitLab; which token it may receive is `profileAuth`'s decision.
+  if (isKnownGitlabHost(h)) return 'gitlab'
+  if (isKnownForgejoHost(h)) return 'forgejo'
   return undefined
 }

@@ -1,4 +1,5 @@
 import type { RemoteInfo } from '../../../shared/types'
+import { gitlabInstanceOf, normalizeGitlabUrl } from '../../../shared/gitlabInstance'
 
 // PR tabs are saved to settings. Keep credentials and URL parameters out of that file.
 export function prRemoteIdentity(raw: string): string {
@@ -66,15 +67,22 @@ export function repoIsGitHub(remotes: RemoteInfo[]): boolean {
   return isGitHubRemote(origin?.url)
 }
 
-/** True if a remote's host has a rich PR detail/review surface (GitHub or GitLab). */
-export function isReviewableRemote(url: string | undefined | null): boolean {
-  return !!url && /(github\.com|gitlab\.com)[/:]/i.test(url)
+/**
+ * True if a remote's host has a rich PR detail/review surface: GitHub, or a
+ * GitLab — gitlab.com or one of the self-managed `gitlabInstances` the
+ * profiles point at (their `gitlabUrl`s).
+ */
+export function isReviewableRemote(url: string | undefined | null, gitlabInstances: readonly string[] = []): boolean {
+  if (!url) return false
+  if (/(?:^|[/@.])github\.com[/:]/i.test(url)) return true
+  const known = gitlabInstances.map((u) => normalizeGitlabUrl(u)).filter((u): u is string => !!u)
+  return gitlabInstanceOf(url, known) !== null
 }
 
 /** True if the repo's origin (or first) remote supports the PR detail modal. */
-export function repoSupportsPrReview(remotes: RemoteInfo[]): boolean {
+export function repoSupportsPrReview(remotes: RemoteInfo[], gitlabInstances: readonly string[] = []): boolean {
   const origin = remotes.find((r) => r.name === 'origin') ?? remotes[0]
-  return isReviewableRemote(origin?.url)
+  return isReviewableRemote(origin?.url, gitlabInstances)
 }
 
 /**

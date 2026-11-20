@@ -14,10 +14,14 @@ export function remoteAvatarUrl(url?: string): string | null {
   if (!url) return null
   const parsed = parseRemoteOwner(url)
   if (!parsed) return null
-  if (parsed.host.includes('github.com')) {
+  // Exact public hosts only. A self-managed GitLab or GitHub Enterprise remote
+  // (`gitlab.example.org`) would otherwise send its internal group name to
+  // gitlab.com or GitHub just to draw an icon; it gets the plain icon instead.
+  const host = parsed.host.replace(/^www\./, '')
+  if (host === 'github.com') {
     return `https://avatars.githubusercontent.com/${parsed.owner}?s=32`
   }
-  if (parsed.host.includes('gitlab')) {
+  if (host === 'gitlab.com') {
     return `https://gitlab.com/${parsed.owner}.png`
   }
   return null

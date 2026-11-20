@@ -111,9 +111,74 @@ so **approve** uses its approval endpoint and **request changes** removes your
 approval and posts your comment. **Rebase-merge** is not offered — GitLab
 decides merge-commit vs fast-forward from the project's settings, so the merge
 menu shows merge and squash only. Inline threads show the file and line but not
-the surrounding diff hunk, which GitLab's API does not return. Review/merge
-works for projects on **gitlab.com**; self-hosted instances are not supported
-yet. Bitbucket and Azure DevOps still open in the browser for review.
+the surrounding diff hunk, which GitLab's API does not return. Review and merge
+work on gitlab.com and on a [self-managed GitLab](#self-managed-gitlab). Bitbucket
+and Azure DevOps still open in the browser for review.
+
+## Self-managed GitLab
+
+A company GitLab lives at its own address. Give a profile that address in
+**Settings → Integrations → GitLab → GitLab address**, for example
+`git.example.org` or `https://example.net/gitlab` for one served under a path.
+From then on, remotes on that host are GitLab: merge requests list, open,
+review and merge, the clone browser and *create repository* talk to it, and
+push and fetch sign in with that profile's token.
+
+**A GitLab token belongs to one instance.** A profile's token is sent only to
+the address that profile names. If the address is empty, that means gitlab.com.
+A gitlab.com token never reaches the company server, and a company token never
+reaches gitlab.com. If the work and the personal account are on different
+instances, give each its own profile. A repository bound to a profile uses that
+profile's instance.
+
+**Create token** opens the token page on your instance with `api` and
+`write_repository` pre-selected. A read-only token connects fine and then fails
+on the first push.
+
+Limits:
+
+- **https only.** A plain `http://` address is refused, because the token would
+  cross the network in clear text.
+- **One GitLab instance per profile.** Add a second profile for a second
+  instance.
+- Over ssh the host is matched, not the path, so two instances on one host under
+  different paths cannot be told apart for an ssh remote.
+- Remote avatars are drawn only for gitlab.com and github.com. A self-managed
+  remote gets the plain icon, so its group names are never sent to a public
+  host.
+
+## Forgejo
+
+Set the instance address before entering its token. Changing the address clears the previous sign-in.
+
+![Forgejo integration settings](../screenshots/forgejo-integration.webp)
+
+Forgejo, and Gitea, which shares its API, always runs at an address its owner
+chose: your own server, or a public one such as codeberg.org. Give a profile
+that address in **Settings → Integrations → Forgejo**, together with an access
+token. **Create token** opens the token page on that server. Give the token
+read and write permission on *repository*, and read permission on *user* and
+*organization*.
+
+From then on, remotes on that server are Forgejo:
+
+| Works | How |
+|-------|-----|
+| Push and fetch | Signed in with the profile's token |
+| Open pull requests | Listed in the sidebar, like any other host |
+| Create a pull request | From the app; a draft is marked with the `WIP:` prefix Forgejo uses |
+| Clone browser, create repository | Against that server, under your account or an organization |
+
+Just like GitLab tokens, **a Forgejo token only goes to the server that issued
+it**. A profile without a Forgejo address has no Forgejo credential at all.
+There is no default server to fall back to.
+
+Limits:
+
+- Reviewing, commenting on and merging a pull request still opens in the
+  browser. That review surface is GitHub and GitLab only for now.
+- https only, one Forgejo server per profile.
+- Lists show the first 50 pull requests and repositories.
 
 ## Issues, milestones, releases — GitHub
 

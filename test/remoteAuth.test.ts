@@ -11,6 +11,8 @@ import type { RemoteAuthCheck } from '../src/shared/types'
 
 describe('remote URL handling', () => {
   it('never shows a password that sits in the URL', () => {
+    expect(urlWithoutUserinfo('https://github.com/o/r.git?token=fixture#private')).toBe('https://github.com/o/r.git')
+    expect(urlWithoutUserinfo('https://user:fixture@[')).toBe('')
     expect(urlWithoutUserinfo('https://me:ghp_secret@github.com/o/r.git')).toBe('https://github.com/o/r.git')
     expect(urlWithoutUserinfo('https://github.com/o/r.git')).toBe('https://github.com/o/r.git')
     expect(urlWithoutUserinfo('git@github.com:o/r.git')).toBe('git@github.com:o/r.git')

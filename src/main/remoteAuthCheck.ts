@@ -23,12 +23,13 @@ const TIMEOUT_MS = 8000
 export function urlWithoutUserinfo(url: string): string {
   try {
     const u = new URL(url)
-    if (!u.username && !u.password) return url
+    u.search = ''
+    u.hash = ''
     u.username = ''
     u.password = ''
     return u.toString()
   } catch {
-    return url
+    return /^[\w.-]+@[\w.-]+:/.test(url) ? url : ''
   }
 }
 
@@ -76,6 +77,7 @@ export function gitlabScopeVerdict(scopes: string[] | null): Pick<RemoteAuthChec
 async function get(url: string, headers: Record<string, string>): Promise<Response | null> {
   try {
     return await fetch(url, {
+      redirect: 'error',
       headers: { 'User-Agent': 'Gitcito', ...headers },
       signal: AbortSignal.timeout(TIMEOUT_MS)
     })
@@ -133,10 +135,10 @@ async function askForgejo(base: string, token: string): Promise<HostVerdict> {
  * Ask the host the token belongs to. `remoteUrl` decides the instance: the
  * caller already made sure the token is that instance's (`profileAuth`).
  */
-function askHost(provider: RepoHost, remoteUrl: string, host: string, token: string): Promise<HostVerdict> {
+function askHost(provider: RepoHost, remoteUrl: string, token: string): Promise<HostVerdict> {
   const base = parseRemoteUrl(remoteUrl)?.base
   if (provider === 'github') return askGithub(token)
-  if (provider === 'gitlab') return askGitlab(base ?? `https://${host}`, token)
+  if (provider === 'gitlab' && base) return askGitlab(base, token)
   if (provider === 'forgejo' && base) return askForgejo(base, token)
   // Azure DevOps and Bitbucket do not report a token's scopes in a way worth a
   // round-trip here: the source and profile are still shown.
@@ -170,8 +172,13 @@ export async function checkRemoteAuth(repoPath: string, remote: string, pushUrl:
 
   // git uses a password in the URL before asking any helper.
   if (kind === 'embedded') {
-    const password = decodeURIComponent(new URL(pushUrl).password)
-    return { ...base, source: 'embedded', ...(provider && host ? await askHost(provider, pushUrl, host, password) : {}) }
+    let password: string
+    try {
+      password = decodeURIComponent(new URL(pushUrl).password)
+    } catch {
+      return { ...base, source: 'embedded' }
+    }
+    return { ...base, source: 'embedded', ...(provider && host ? await askHost(provider, pushUrl, password) : {}) }
   }
 
   if (provider && host) {
@@ -184,11 +191,11 @@ export async function checkRemoteAuth(repoPath: string, remote: string, pushUrl:
     if (auth.token || auth.link) {
       const who = await profileName(repoPath)
       const profile = { ...(who.name ? { profile: who.name } : {}), bound: who.bound }
-      if (auth.token) return { ...base, ...profile, source: 'token', ...(await askHost(provider, pushUrl, host, auth.token)) }
+      if (auth.token) return { ...base, ...profile, source: 'token', ...(await askHost(provider, pushUrl, auth.token)) }
       const link = auth.link as NonNullable<typeof auth.link>
       const linked = await apiToken(pushUrl, { link }).catch(() => null)
       if (!linked) return { ...base, ...profile, source: link.source, login: link.login, linkMissing: true }
-      return { ...base, ...profile, source: link.source, login: link.login, ...(await askHost(provider, pushUrl, host, linked.token)) }
+      return { ...base, ...profile, source: link.source, login: link.login, ...(await askHost(provider, pushUrl, linked.token)) }
     }
   }
 
@@ -199,6 +206,6 @@ export async function checkRemoteAuth(repoPath: string, remote: string, pushUrl:
     ...base,
     source: 'helper',
     ...(cred.username ? { login: cred.username } : {}),
-    ...(provider && host ? await askHost(provider, pushUrl, host, cred.password) : {})
+    ...(provider && host ? await askHost(provider, pushUrl, cred.password) : {})
   }
 }

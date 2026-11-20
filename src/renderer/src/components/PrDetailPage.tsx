@@ -114,9 +114,15 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     })
 
   const tokens = useMemo(
-    () => ({ github: profile.githubToken || undefined, gitlab: profile.gitlabToken || undefined }),
-    [profile.githubToken, profile.gitlabToken]
+    () => ({
+      github: profile.githubToken || undefined,
+      gitlab: profile.gitlabToken || undefined,
+      forgejo: profile.forgejoToken || undefined
+    }),
+    [profile.githubToken, profile.gitlabToken, profile.forgejoToken]
   )
+  // Forgejo has no API to reply inside an existing line thread.
+  const canReplyInThread = provider !== 'forgejo'
 
   const load = useCallback(async (): Promise<void> => {
     setError(null)
@@ -285,24 +291,26 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                       <div className="prp-card-body">{autolink(c.body, web)}</div>
                     </div>
                   ))}
-                  <div className="prd-thread-reply">
-                    <input
-                      className="prd-reply-input"
-                      placeholder={t('prDetail.replyPlaceholder')}
-                      value={replies[th.rootId] ?? ''}
-                      onChange={(e) => setReplies((r) => ({ ...r, [th.rootId]: e.target.value }))}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') replyToThread(th.rootId)
-                      }}
-                    />
-                    <button
-                      className="btn ghost tiny"
-                      onClick={() => replyToThread(th.rootId)}
-                      disabled={busy || !(replies[th.rootId] ?? '').trim()}
-                    >
-                      {t('prDetail.reply')}
-                    </button>
-                  </div>
+                  {canReplyInThread && (
+                    <div className="prd-thread-reply">
+                      <input
+                        className="prd-reply-input"
+                        placeholder={t('prDetail.replyPlaceholder')}
+                        value={replies[th.rootId] ?? ''}
+                        onChange={(e) => setReplies((r) => ({ ...r, [th.rootId]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') replyToThread(th.rootId)
+                        }}
+                      />
+                      <button
+                        className="btn ghost tiny"
+                        onClick={() => replyToThread(th.rootId)}
+                        disabled={busy || !(replies[th.rootId] ?? '').trim()}
+                      >
+                        {t('prDetail.reply')}
+                      </button>
+                    </div>
+                  )}
                 </article>
               ))}
               {conversationCount === 0 && <p className="prp-muted prp-pad">{t('prDetail.noComments')}</p>}

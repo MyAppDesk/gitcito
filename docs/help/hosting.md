@@ -165,7 +165,7 @@ From then on, remotes on that server are Forgejo:
 | Works | How |
 |-------|-----|
 | Push and fetch | Signed in with the profile's token |
-| Open pull requests | Listed in the sidebar, like any other host |
+| Open pull requests | Listed in the sidebar, and open in the [pull request page](#reviewing--github-and-gitlab): conversation, each file's diff, checks (commit statuses, including Forgejo Actions), comment, approve, request changes, and merge / squash / rebase |
 | Create a pull request | From the app; a draft is marked with the `WIP:` prefix Forgejo uses |
 | Clone browser, create repository | Against that server, under your account or an organization |
 
@@ -175,8 +175,8 @@ There is no default server to fall back to.
 
 Limits:
 
-- Reviewing, commenting on and merging a pull request still opens in the
-  browser. That review surface is GitHub and GitLab only for now.
+- Line-comment threads are shown but cannot be replied to from the app:
+  Forgejo has no API for a reply inside an existing thread. Reply on the server.
 - https only, one Forgejo server per profile.
 - Lists show the first 50 pull requests and repositories.
 

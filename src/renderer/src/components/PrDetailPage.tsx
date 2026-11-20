@@ -23,10 +23,12 @@ import {
   CircleDot,
   CalendarDays,
   Sparkles,
-  ClipboardList
+  ClipboardList,
+  ScrollText
 } from 'lucide-react'
 import type { PageContent, PrCheck, PrDetail, PrFile, PrMergeMethod, PrReviewEvent } from '../../../shared/types'
 import { hostingApi, shellApi } from '../infrastructure/api'
+import { CheckLogPanel } from './CheckLogPanel'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
@@ -81,6 +83,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 
   const [pr, setPr] = useState<PrDetail | null>(null)
   const [checks, setChecks] = useState<PrCheck[] | null>(null)
+  // The check whose log is open under its row.
+  const [openLog, setOpenLog] = useState<number | null>(null)
   const [files, setFiles] = useState<PrFile[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -415,15 +419,28 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           ) : (
             <div className="prd-checks prp-checks">
               {checks.map((c, i) => (
-                <div key={i} className="prd-check">
-                  <span className={`prd-check-dot ${checkState(c)}`} />
-                  <span className="prd-check-name">{c.name}</span>
-                  <span className="prd-check-state">{c.status === 'completed' ? c.conclusion : c.status}</span>
-                  {c.url && (
-                    <button className="prd-check-logs" title={t('prDetail.viewLogs')} onClick={() => void shellApi.openExternal(c.url)}>
-                      <ExternalLink size={12} />
-                    </button>
-                  )}
+                <div key={i} className="prp-check-item">
+                  <div className="prd-check">
+                    <span className={`prd-check-dot ${checkState(c)}`} />
+                    <span className="prd-check-name">{c.name}</span>
+                    <span className="prd-check-state">{c.status === 'completed' ? c.conclusion : c.status}</span>
+                    {c.hasLog && (
+                      <button
+                        className="prd-check-logs"
+                        title={openLog === i ? t('prPage.hideLog') : t('prPage.showLog')}
+                        aria-expanded={openLog === i}
+                        onClick={() => setOpenLog(openLog === i ? null : i)}
+                      >
+                        <ScrollText size={12} />
+                      </button>
+                    )}
+                    {c.url && (
+                      <button className="prd-check-logs" title={t('prDetail.viewLogs')} onClick={() => void shellApi.openExternal(c.url)}>
+                        <ExternalLink size={12} />
+                      </button>
+                    )}
+                  </div>
+                  {openLog === i && <CheckLogPanel remoteUrl={remoteUrl} tokens={tokens} url={c.url} />}
                 </div>
               ))}
             </div>

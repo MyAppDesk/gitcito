@@ -184,6 +184,14 @@ From then on, remotes on that server are Forgejo:
 | Create a pull request | From the app; a draft is marked with the `WIP:` prefix Forgejo uses |
 | Clone browser, create repository | Against that server, under your account or an organization |
 
+A check that is a **Forgejo Actions** job shows its log under the row, colours
+included, starting at the end where a failure is. Forgejo has no API for job
+logs, so the app asks for the same page its web log viewer downloads, sending
+the token only when the link is a job on this very server; a status from an
+external CI is never sent it. A server that serves logs only to a signed-in
+browser answers with its sign-in page, and the row says so and offers the
+browser instead. Very long logs show their last few thousand lines.
+
 Just like GitLab tokens, **a Forgejo token only goes to the server that issued
 it**. A profile without a Forgejo address has no Forgejo credential at all.
 There is no default server to fall back to.

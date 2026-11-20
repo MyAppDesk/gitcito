@@ -308,6 +308,8 @@ const api = {
       ipcRenderer.invoke('hosting:prComment', remoteUrl, tokens, number, body),
     prReplyReviewComment: (remoteUrl: string, tokens: unknown, number: number, inReplyTo: number | string, body: string): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prReplyReviewComment', remoteUrl, tokens, number, inReplyTo, body),
+    prCheckLog: (remoteUrl: string, tokens: unknown, url: string): Promise<unknown> =>
+      ipcRenderer.invoke('hosting:prCheckLog', remoteUrl, tokens, url),
     prChecks: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>
       ipcRenderer.invoke('hosting:prChecks', remoteUrl, tokens, number),
     prFiles: (remoteUrl: string, tokens: unknown, number: number): Promise<unknown> =>

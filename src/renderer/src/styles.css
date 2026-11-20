@@ -17898,6 +17898,23 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
 .prp-work-item { display: flex; gap: 6px; align-items: baseline; min-width: 0; max-width: 100%; }
 .prp-work-item-id { flex: none; font-variant-numeric: tabular-nums; }
 .prp-work-item-title { color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.prp-check-item { display: flex; flex-direction: column; }
+.prp-check-log { margin: 4px 0 8px 18px; font-size: 12px; }
+.prp-check-log pre {
+  margin: 0;
+  max-height: 420px;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-0, #0d1117);
+  color: var(--text-1);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.prp-check-log-note { margin-bottom: 4px; }
 
 /* Narrow windows: the sidebar moves under the conversation instead of squeezing it. */
 @media (max-width: 860px) {

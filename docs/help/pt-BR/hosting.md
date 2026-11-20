@@ -171,6 +171,14 @@ A partir daí, os remotes nesse servidor são Forgejo:
 | Criar pull request | Pelo app; um rascunho leva o prefixo `WIP:` que o Forgejo usa |
 | Navegador de clone, criar repositório | Nesse servidor, na sua conta ou numa organização |
 
+Uma check que é um job do **Forgejo Actions** mostra o log embaixo da linha,
+com cores, começando pelo fim, onde fica a falha. O Forgejo não tem API para
+logs de job, então o app pede a mesma página que o visualizador de log da web
+baixa, enviando o token só quando o link é um job deste mesmo servidor; um status
+de CI externa nunca o recebe. Um servidor que só entrega logs a um navegador com
+login responde com a tela de login, e a linha avisa isso e oferece o navegador.
+Logs muito longos mostram as últimas milhares de linhas.
+
 Como no GitLab, **um token do Forgejo só vai para o servidor que o emitiu**. Um
 perfil sem endereço do Forgejo não tem credencial do Forgejo, e não existe
 servidor padrão para onde cair.

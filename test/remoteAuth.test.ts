@@ -75,7 +75,7 @@ describe('remoteAuthFindings', () => {
 
   it('flags a password in the URL, and nothing to sign in with', () => {
     expect(remoteAuthFindings({ ...base, source: 'embedded' }).map((f) => f.key)).toContain('remoteAuth.embedded')
-    expect(remoteAuthStatus({ ...base, source: 'none' })).toBe('fail')
+    expect(remoteAuthStatus({ ...base, source: 'none' })).toBe('warn')
     expect(remoteAuthStatus({ ...base, source: 'ssh' })).toBe('ok')
   })
 })

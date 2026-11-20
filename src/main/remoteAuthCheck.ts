@@ -137,7 +137,7 @@ async function askForgejo(base: string, token: string): Promise<HostVerdict> {
  */
 function askHost(provider: RepoHost, remoteUrl: string, token: string): Promise<HostVerdict> {
   const base = parseRemoteUrl(remoteUrl)?.base
-  if (provider === 'github') return askGithub(token)
+  if (provider === 'github' && new URL(remoteUrl).origin === 'https://github.com') return askGithub(token)
   if (provider === 'gitlab' && base) return askGitlab(base, token)
   if (provider === 'forgejo' && base) return askForgejo(base, token)
   // Azure DevOps and Bitbucket do not report a token's scopes in a way worth a

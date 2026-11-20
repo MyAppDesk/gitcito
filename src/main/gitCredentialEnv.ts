@@ -21,7 +21,8 @@ export const GIT_USERNAME_VAR = 'GITCITO_GIT_USERNAME'
 export const GIT_PASSWORD_VAR = 'GITCITO_GIT_PASSWORD'
 
 // Answers `get` only; `store` and `erase` are no-ops, so nothing persists it.
-const HELPER = `!f() { test "$1" = get || exit 0; printf 'username=%s\\npassword=%s\\n' "$${GIT_USERNAME_VAR}" "$${GIT_PASSWORD_VAR}"; }; f`
+const helperCommand = (usernameVar: string, passwordVar: string): string =>
+  `!f() { test "$1" = get || exit 0; printf 'username=%s\\npassword=%s\\n' "$${usernameVar}" "$${passwordVar}"; }; f`
 
 export interface BasicCredential {
   username: string
@@ -58,11 +59,15 @@ export function gitCredentialEnv(
   const passwordVar = scope === 'repository' ? GIT_PASSWORD_VAR + '_' + at : GIT_PASSWORD_VAR
   const key = `credential.${origin}.helper`
   return {
-    GIT_CONFIG_COUNT: String(at + 2),
+    GIT_CONFIG_COUNT: String(at + (scope === 'repository' ? 3 : 2)),
     [`GIT_CONFIG_KEY_${at}`]: key,
     [`GIT_CONFIG_VALUE_${at}`]: '',
     [`GIT_CONFIG_KEY_${at + 1}`]: key,
-    [`GIT_CONFIG_VALUE_${at + 1}`]: HELPER.replace(GIT_USERNAME_VAR, usernameVar).replace(GIT_PASSWORD_VAR, passwordVar),
+    [`GIT_CONFIG_VALUE_${at + 1}`]: helperCommand(usernameVar, passwordVar),
+    ...(scope === 'repository' && {
+      [`GIT_CONFIG_KEY_${at + 2}`]: `credential.${origin}.useHttpPath`,
+      [`GIT_CONFIG_VALUE_${at + 2}`]: 'true'
+    }),
     [usernameVar]: cred.username,
     [passwordVar]: cred.password
   }

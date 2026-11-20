@@ -24,9 +24,9 @@ describe('profile credential handed to git through the environment', () => {
 
   afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
-  const fill = (extra: NodeJS.ProcessEnv, host: string): Record<string, string> => {
+  const fill = (extra: NodeJS.ProcessEnv, host: string, path = 'acme/widgets.git'): Record<string, string> => {
     const out = execFileSync('git', ['credential', 'fill'], {
-      input: `protocol=https\nhost=${host}\npath=acme/widgets.git\n\n`,
+      input: `protocol=https\nhost=${host}\npath=${path}\n\n`,
       env: { ...env, ...extra },
       encoding: 'utf8'
     })
@@ -57,6 +57,20 @@ describe('profile credential handed to git through the environment', () => {
       env: { ...env, ...extra }
     })
     expect(readFileSync(storeFile, 'utf8')).not.toContain('profile-pat')
+  })
+
+  it('keeps separate push credentials for two repositories on the same host', () => {
+    const first = gitCredentialEnv('https://github.com/a/one.git', { username: 'one', password: 'first' }, env, 'repository')!
+    const second = gitCredentialEnv('https://github.com/b/two.git', { username: 'two', password: 'second' }, { ...env, ...first }, 'repository')!
+    const both = { ...first, ...second }
+    expect(fill(both, 'github.com', 'a/one.git').password).toBe('first')
+    expect(fill(both, 'github.com', 'b/two.git').password).toBe('second')
+    expect(fill(both, 'github.com', 'other/repo.git').password).toBe('machine-secret')
+    execFileSync('git', ['credential', 'approve'], {
+      input: 'protocol=https\nhost=github.com\npath=b/two.git\nusername=two\npassword=second\n\n',
+      env: { ...env, ...both }
+    })
+    expect(readFileSync(storeFile, 'utf8')).not.toContain('second')
   })
 
   it('appends to config already passed through the environment instead of replacing it', () => {

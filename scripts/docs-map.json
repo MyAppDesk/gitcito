@@ -154,6 +154,7 @@
       "settings": "themes",
       "settings-ai": "ai",
       "settings-security": "security",
+      "settings-environment": "environment",
       "ssh-keys": "ssh-keys",
       "subtree": "subtree",
       "settings-shortcuts": "keyboard",

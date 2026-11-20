@@ -78,6 +78,28 @@ trancher avant de commiter.
 Les pastilles de sévérité filtrent aussi. Éteintes, elles signifient *tout
 montrer* ; en allumer une restreint à cette sévérité.
 
+## Tests
+
+Le troisième onglet du panneau lance la suite de tests du projet et montre le résultat sous forme d’arbre : chaque fichier de test puis ses tests, les échecs d’abord. **Lancer les tests** dans la palette de commandes l’ouvre et démarre l’exécution ; le bouton ▶ de l’onglet fait de même, et ↻ relance.
+
+| Ligne | Un clic |
+|---|---|
+| Un test en échec | Ouvre le fichier de test à la ligne où pointe l’échec, et déplie le message sous la ligne |
+| Un test réussi ou ignoré | Ouvre le fichier de test |
+| Un fichier qui a échoué avant d’exécuter le moindre test (erreur de syntaxe, import cassé) | Ouvre le fichier ; son message dit ce qui l’a arrêté |
+
+**Échecs seulement** ne garde que les échecs ; la recherche filtre par nom de test, ou par chemin pour garder tout un fichier.
+
+Il lit le rapport machine du runner — `vitest run --reporter=json` ou `jest --json` — et non sa sortie, donc noms, durées et messages sont exacts. La ligne vient de la pile de l’échec : c’est l’assertion qui a échoué, pas le début du test.
+
+Les limites, franchement :
+
+- **Seulement vitest et jest**, trouvés dans le `package.json` à la racine du dépôt ; vitest l’emporte si les deux y sont. Les suites de chaque paquet d’un monorepo ne sont pas lancées une à une.
+- **Seul le runner installé est lancé** — le paquet dans `node_modules`, démarré directement avec Node (sans shell, donc aucun chemin n’est jamais lu comme une commande). S’il est déclaré mais pas installé, l’onglet le dit ; rien n’est téléchargé à votre place.
+- **Toute la suite, à chaque fois.** Il n’y a pas encore de « seulement ce que j’ai changé », et une suite lente prend ici autant de temps que dans un terminal. Elle s’arrête au bout de dix minutes.
+- Si le runner plante avant d’écrire son rapport, l’onglet montre ce qu’il a affiché.
+- Il exécute le code du projet, comme le ferait `npm test` — à la demande, jamais de lui-même.
+
 ## Les limites
 
 - **Pas de serveur de langage.** C’est un balayage, pas un démon : pas de

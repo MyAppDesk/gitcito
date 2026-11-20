@@ -77,6 +77,28 @@ aggiunti questo diff?" è una domanda a cui rispondere prima del commit.
 Anche i chip di gravità filtrano. Spenti significano *mostra tutto*; accenderne
 uno restringe a quello.
 
+## Test
+
+La terza scheda del pannello esegue la suite di test del progetto e mostra il risultato come albero: ogni file di test e, dentro, i suoi test, prima i falliti. **Esegui i test** nella palette dei comandi la apre e avvia l’esecuzione; il pulsante ▶ della scheda fa lo stesso, e ↻ riesegue.
+
+| Riga | Un clic |
+|---|---|
+| Un test fallito | Apre il file di test alla riga indicata dal fallimento e mostra il messaggio sotto la riga |
+| Un test superato o saltato | Apre il file di test |
+| Un file fallito prima di eseguire qualsiasi test (errore di sintassi, import rotto) | Apre il file; il suo messaggio dice cosa l’ha fermato |
+
+**Solo falliti** tiene solo i fallimenti; la ricerca filtra per nome del test, o per percorso per tenere un file intero.
+
+Legge il report macchina del runner — `vitest run --reporter=json` o `jest --json` — e non il suo output, quindi nomi, durate e messaggi sono esatti. La riga viene dallo stack del fallimento: è l’asserzione fallita, non l’inizio del test.
+
+I limiti, chiaramente:
+
+- **Solo vitest e jest**, trovati nel `package.json` alla radice del repository; vince vitest se ci sono entrambi. Le suite dei singoli pacchetti di un monorepo non vengono eseguite una per una.
+- **Gira solo il runner installato** — il pacchetto in `node_modules`, avviato direttamente con Node (senza shell, quindi nessun percorso viene mai letto come comando). Se è dichiarato ma non installato, la scheda lo dice; non viene scaricato nulla al posto tuo.
+- **Tutta la suite, ogni volta.** Non c’è ancora un “solo ciò che ho cambiato”, e una suite lenta impiega qui quanto in un terminale. Si ferma dopo dieci minuti.
+- Se il runner si blocca prima di scrivere il report, la scheda mostra ciò che ha stampato.
+- Esegue il codice del progetto, come farebbe `npm test` — su richiesta, mai da solo.
+
 ## I limiti
 
 - **Nessun language server.** Questa è una scansione, non un demone: niente

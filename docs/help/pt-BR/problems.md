@@ -3,7 +3,7 @@ title: Problemas
 category: Ferramentas do workspace
 order: 92
 summary: O que os analisadores do seu projeto dizem, e o quanto disso o seu diff causou.
-keywords: problemas analisador diagnósticos erros avisos lint tsc typescript eslint dart analyze clippy cargo go vet ruff painel arquivos alterados
+keywords: problemas analisador diagnósticos erros avisos lint tsc typescript eslint dart analyze clippy cargo go vet ruff painel arquivos alterados testes suíte vitest jest unitários falhas rodar testes
 ---
 
 # Problemas
@@ -75,6 +75,42 @@ adicionou" é uma pergunta que se responde antes de commitar.
 
 As pastilhas de severidade também filtram. Apagadas significam *mostrar tudo*;
 acender uma restringe àquela severidade.
+
+## Testes
+
+A terceira aba do painel roda a suíte de testes do projeto e mostra o resultado
+como uma árvore: cada arquivo de teste e, dentro dele, os testes, com as falhas
+primeiro. **Rodar testes** na paleta de comandos abre a aba e já começa; o botão
+▶ da aba faz o mesmo, e o ↻ roda de novo.
+
+| Linha | Clique para |
+|---|---|
+| Um teste que falhou | Abrir o arquivo de teste na linha para onde a falha aponta, e desdobrar a mensagem da falha embaixo da linha |
+| Um teste que passou ou foi pulado | Abrir o arquivo de teste |
+| Um arquivo que falhou antes de rodar qualquer teste (erro de sintaxe, import quebrado) | Abrir o arquivo; a mensagem diz o que o parou |
+
+**Só falhas** mantém apenas as falhas; a busca filtra pelo nome do teste, ou pelo
+caminho para manter um arquivo inteiro.
+
+Ele lê o relatório de máquina do próprio runner — `vitest run --reporter=json`,
+ou `jest --json` — e não a saída do terminal, então nomes, durações e mensagens
+são exatos. A linha vem da stack da falha, então é a asserção que falhou, não o
+começo do teste.
+
+Os limites, sem rodeios:
+
+- **Só vitest e jest**, encontrados no `package.json` da raiz do repositório; o
+  vitest ganha quando os dois estão listados. As suítes de cada pacote de um
+  monorepo não rodam uma a uma.
+- **Só roda o runner instalado** — o pacote em `node_modules`, iniciado direto
+  pelo Node (sem shell, então nenhum caminho é lido como comando). Se ele está
+  listado mas não instalado, a aba avisa; nada é baixado por você.
+- **A suíte inteira, toda vez.** Ainda não há "só o que eu mudei", e uma suíte
+  lenta demora aqui o mesmo que num terminal. Ela para depois de dez minutos.
+- Se o runner quebrar antes de escrever o relatório, a aba mostra o que ele
+  imprimiu.
+- Ele roda o código do projeto, como o `npm test` faria — quando você pede,
+  nunca sozinho.
 
 ## Os limites
 

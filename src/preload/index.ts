@@ -353,6 +353,7 @@ const api = {
     resize: (id: number, cols: number, rows: number): void => ipcRenderer.send('term:resize', id, cols, rows),
     kill: (id: number): void => ipcRenderer.send('term:kill', id),
     procName: (id: number): Promise<string> => ipcRenderer.invoke('term:process', id),
+    completions: (id: number, kind: string): Promise<unknown> => ipcRenderer.invoke('term:completions', id, kind),
     poshThemes: (): Promise<{ dir: string | null; exe: string | null; themes: string[] }> =>
       ipcRenderer.invoke('term:posh-themes'),
     poshPreview: (theme: string): Promise<string | null> => ipcRenderer.invoke('term:posh-preview', theme),
@@ -407,6 +408,12 @@ const api = {
     run: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('analyze:run', repoPath),
     detect: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('analyze:detect', repoPath),
     cancel: (repoPath: string): void => ipcRenderer.send('analyze:cancel', repoPath)
+  },
+  // Tests: the project's own suite (vitest / jest), run on demand.
+  tests: {
+    run: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('tests:run', repoPath),
+    detect: (repoPath: string): Promise<unknown> => ipcRenderer.invoke('tests:detect', repoPath),
+    cancel: (repoPath: string): void => ipcRenderer.send('tests:cancel', repoPath)
   },
 
   // TODO markers carried by the repository's own source, scanned on demand.

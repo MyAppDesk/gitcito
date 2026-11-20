@@ -76,6 +76,28 @@ odpowiedzieć przed commitem.
 Plakietki ważności też filtrują. Zgaszone znaczą *pokaż wszystko*; zapalenie
 jednej zawęża do niej.
 
+## Testy
+
+Trzecia karta panelu uruchamia zestaw testów projektu i pokazuje wynik jako drzewo: każdy plik testów, a w nim jego testy, nieudane najpierw. **Uruchom testy** w palecie poleceń otwiera ją i rozpoczyna przebieg; przycisk ▶ na karcie robi to samo, a ↻ uruchamia ponownie.
+
+| Wiersz | Kliknięcie |
+|---|---|
+| Nieudany test | Otwiera plik testu w wierszu, na który wskazuje błąd, i rozwija komunikat pod wierszem |
+| Test zaliczony lub pominięty | Otwiera plik testu |
+| Plik, który zawiódł, zanim uruchomił jakikolwiek test (błąd składni, zepsuty import) | Otwiera plik; komunikat mówi, co go zatrzymało |
+
+**Tylko nieudane** zostawia tylko porażki; wyszukiwanie filtruje po nazwie testu albo po ścieżce, by zachować cały plik.
+
+Czyta maszynowy raport samego runnera — `vitest run --reporter=json` lub `jest --json` — a nie jego wyjście, więc nazwy, czasy i komunikaty są dokładne. Wiersz pochodzi ze stosu błędu: to asercja, która zawiodła, a nie początek testu.
+
+Ograniczenia, wprost:
+
+- **Tylko vitest i jest**, znalezione w `package.json` w katalogu głównym repozytorium; wygrywa vitest, gdy są oba. Zestawy poszczególnych pakietów monorepo nie są uruchamiane osobno.
+- **Uruchamia się tylko zainstalowany runner** — pakiet w `node_modules`, startowany bezpośrednio przez Node (bez powłoki, więc żadna ścieżka nigdy nie jest czytana jako polecenie). Jeśli jest wpisany, ale niezainstalowany, karta o tym mówi; nic nie jest pobierane za ciebie.
+- **Za każdym razem cały zestaw.** Nie ma jeszcze „tylko tego, co zmieniłem”, a wolny zestaw trwa tu tyle samo co w terminalu. Zatrzymuje się po dziesięciu minutach.
+- Jeśli runner padnie przed zapisaniem raportu, karta pokazuje to, co wypisał.
+- Uruchamia kod projektu, tak jak zrobiłby to `npm test` — na żądanie, nigdy sam z siebie.
+
 ## Ograniczenia
 
 - **Bez serwera języka.** To przebieg, nie demon: żadnych falek w trakcie

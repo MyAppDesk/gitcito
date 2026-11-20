@@ -79,6 +79,28 @@ will.
 Auch die Severity-Chips filtern. Unbeleuchtet heißt *alles zeigen*; einen
 anzuschalten grenzt darauf ein.
 
+## Tests
+
+Der dritte Tab des Docks führt die Testsuite des Projekts aus und zeigt das Ergebnis als Baum: jede Testdatei, darin ihre Tests, Fehlschläge zuerst. **Tests ausführen** in der Befehlspalette öffnet ihn und startet den Lauf; der ▶-Knopf im Tab tut dasselbe, und ↻ führt erneut aus.
+
+| Zeile | Ein Klick |
+|---|---|
+| Ein fehlgeschlagener Test | Öffnet die Testdatei an der Zeile, auf die der Fehler zeigt, und klappt die Fehlermeldung unter der Zeile auf |
+| Ein bestandener oder übersprungener Test | Öffnet die Testdatei |
+| Eine Datei, die scheiterte, bevor ein Test lief (Syntaxfehler, kaputter Import) | Öffnet die Datei; ihre Meldung sagt, was sie gestoppt hat |
+
+**Nur Fehlschläge** behält nur die Fehlschläge; das Suchfeld filtert nach Testname, oder nach Pfad, um eine ganze Datei zu behalten.
+
+Gelesen wird der Maschinenbericht des Runners selbst — `vitest run --reporter=json` oder `jest --json` —, nicht seine Ausgabe, daher sind Namen, Dauern und Meldungen exakt. Die Zeile stammt aus dem Stack des Fehlers: Es ist die fehlgeschlagene Assertion, nicht der Anfang des Tests.
+
+Die Grenzen, offen gesagt:
+
+- **Nur vitest und jest**, gefunden in der `package.json` der Repository-Wurzel; vitest gewinnt, wenn beide eingetragen sind. Die Suiten einzelner Pakete eines Monorepos laufen nicht einzeln.
+- **Nur der installierte Runner läuft** — das Paket in `node_modules`, direkt mit Node gestartet (ohne Shell, also wird kein Pfad je als Befehl gelesen). Ist er eingetragen, aber nicht installiert, sagt der Tab das; nichts wird für dich heruntergeladen.
+- **Immer die ganze Suite.** Ein „nur was ich geändert habe“ gibt es noch nicht, und eine langsame Suite dauert hier so lange wie im Terminal. Nach zehn Minuten wird sie gestoppt.
+- Stürzt der Runner ab, bevor er seinen Bericht schreibt, zeigt der Tab stattdessen seine Ausgabe.
+- Es führt den Code des Projekts aus, wie `npm test` es täte — auf Anfrage, nie von selbst.
+
 ## Die Grenzen
 
 - **Kein Language Server.** Das ist ein Durchlauf, kein Daemon: keine

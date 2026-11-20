@@ -268,6 +268,7 @@ export const gitApi = {
   /** Fast-forward a local branch from its upstream without checking it out. */
   pullBranch: (path: string, branch: string) => call<void>('pullBranch', path, branch),
   setBranchRef: (path: string, branch: string, sha: string) => call<void>('setBranchRef', path, branch, sha),
+  moveBranchTo: (path: string, branch: string, sha: string) => call<string>('moveBranchTo', path, branch, sha),
   isAncestor: (path: string, ancestor: string, descendant: string) =>
     call<boolean>('isAncestor', path, ancestor, descendant),
   /** Returns the commit `target` was on, for undo. */

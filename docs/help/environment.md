@@ -19,6 +19,8 @@ The [repository doctor](repo-settings.md) answers a different question: whether
 *this repository* can build here, from what its `.gitcito.json` asks for. The
 environment check covers the app itself and is the same for every repository.
 
+![Environment checks in Settings](../screenshots/settings-environment.webp)
+
 ## What it checks
 
 | Row | Green means | Yellow or red means |

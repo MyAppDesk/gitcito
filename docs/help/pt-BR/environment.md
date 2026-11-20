@@ -20,6 +20,8 @@ repositório* consegue ser compilado aqui, a partir do que o `.gitcito.json` del
 pede. A verificação do ambiente cobre o próprio app e é igual para todos os
 repositórios.
 
+![Verificações de ambiente nas configurações](../../screenshots/settings-environment.webp)
+
 ## O que é verificado
 
 | Linha | Verde quer dizer | Amarelo ou vermelho quer dizer |

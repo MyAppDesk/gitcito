@@ -19,6 +19,10 @@ describe('environment check — git', () => {
 })
 
 describe('environment check — credential helper', () => {
+  it('keeps custom helper commands out of the renderer', () => {
+    expect(credentialHelperCheck('!custom-helper --password=fixture\0').actual).toBe('credential.helper')
+  })
+
   it('reports the helper git will use last', () => {
     expect(credentialHelperCheck('cache --timeout=900\0libsecret\0')).toEqual({
       id: 'credentialHelper',

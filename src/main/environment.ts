@@ -75,7 +75,7 @@ const hostOf = (url: string): string => {
   try {
     return new URL(url).host
   } catch {
-    return url
+    return ''
   }
 }
 
@@ -93,11 +93,16 @@ export function credentialHelperCheck(globalOutput: string, perUrlOutput = ''): 
   if (global.some(isStore) || perUrl.some((p) => isStore(p.helper))) {
     return { id: 'credentialHelper', status: 'warn', actual: 'store' }
   }
-  if (global.length) return { id: 'credentialHelper', status: 'ok', actual: global[global.length - 1] }
+  if (global.length) {
+    // Shell helpers and arguments can contain credentials. Only expose standard helper names.
+    const name = global[global.length - 1].split(/\s+/)[0]
+    const known = ['cache', 'manager', 'manager-core', 'libsecret', 'osxkeychain', 'wincred']
+    return { id: 'credentialHelper', status: 'ok', actual: known.includes(name) ? name : 'credential.helper' }
+  }
   // Only per-host helpers (e.g. `gh auth setup-git`): those hosts are covered.
   if (perUrl.length) {
-    const hosts = [...new Set(perUrl.map((p) => hostOf(p.url)))]
-    return { id: 'credentialHelper', status: 'ok', actual: hosts.join(', '), perHost: true }
+    const hosts = [...new Set(perUrl.map((p) => hostOf(p.url)).filter(Boolean))]
+    return { id: 'credentialHelper', status: 'ok', actual: hosts.join(', ') || 'credential.helper', perHost: hosts.length > 0 }
   }
   return { id: 'credentialHelper', status: 'warn' }
 }

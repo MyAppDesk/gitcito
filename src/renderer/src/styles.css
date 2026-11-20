@@ -17820,3 +17820,17 @@ mark.diff-find-hit.current { background: #ff9632; color: #10121a; }
   .prp-files-split { flex-direction: column; height: auto; }
   .prp-file-list { flex: none; max-height: 240px; }
 }
+
+/* Settings → Environment: the doctor's rows, machine-wide. */
+.env-check-list { margin: 8px 0 12px; }
+.env-check-row .rc-doctor-name { flex-basis: 150px; }
+.env-check-fix { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.env-check-fix code {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--bg-1);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}

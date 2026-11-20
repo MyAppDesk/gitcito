@@ -686,6 +686,28 @@ export const shots = [
     }
   },
   {
+    out: 'settings-environment',
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page, _repos, app) => {
+      await app.evaluate(({ ipcMain }) => {
+        ipcMain.removeHandler('env:check')
+        ipcMain.removeHandler('env:checkNetwork')
+        ipcMain.handle('env:check', () => [
+          { id: 'git', status: 'ok', actual: '2.51.0' },
+          { id: 'lfs', status: 'ok', actual: '3.7.0' },
+          { id: 'terminal', status: 'ok' },
+          { id: 'credentialHelper', status: 'ok', actual: 'libsecret' }
+        ])
+        ipcMain.handle('env:checkNetwork', () => [
+          { id: 'gh', status: 'warn', actual: 'repo', fix: 'gh auth refresh -h github.com -s workflow' }
+        ])
+      })
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'environment' }))
+      await page.locator('.env-check-row').nth(4).waitFor()
+    }
+  },
+  {
     // Settings → Shortcuts tab (rebindable shortcut editor).
     out: 'settings-shortcuts',
     repos: ['octopus-merge'],

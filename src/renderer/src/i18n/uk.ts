@@ -207,6 +207,7 @@ export const uk: Dict = {
   'sidebar.copySubmoduleUrl': 'Копіювати URL підмодуля',
   'sidebar.openOnWeb': 'Відкрити у вебі',
   'sidebar.openDetails': 'Відкрити деталі',
+  'sidebar.openPrInNewTab': 'Відкрити в новій вкладці',
   'sidebar.copyLink': 'Скопіювати посилання',
   'sidebar.copyTitle': 'Скопіювати заголовок',
   'sidebar.submoduleUninit': 'не ініціалізовано',

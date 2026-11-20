@@ -206,6 +206,7 @@ export const tr: Dict = {
   'sidebar.copySubmoduleUrl': 'Alt modül URL’sini kopyala',
   'sidebar.openOnWeb': 'Web’de aç',
   'sidebar.openDetails': 'Ayrıntıları aç',
+  'sidebar.openPrInNewTab': 'Yeni sekmede aç',
   'sidebar.copyLink': 'Bağlantıyı kopyala',
   'sidebar.copyTitle': 'Başlığı kopyala',
   'sidebar.submoduleUninit': 'başlatılmamış',

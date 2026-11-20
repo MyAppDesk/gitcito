@@ -878,6 +878,8 @@ export function TitleBar(): React.JSX.Element {
         }}
       >
         {pageTabIcon(page.type)}
+        {/* Several PRs can sit on one repository: the number tells them apart. */}
+        {page.type === 'pr' && <span className="tab-page-num">#{page.number}</span>}
         <span
           className="tab-page-close"
           role="button"

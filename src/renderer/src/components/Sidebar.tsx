@@ -1424,6 +1424,14 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
               label: t('sidebar.openDetails'),
               onClick: (): void =>
                 openPageTab({ type: 'pr', repoPath: path, remoteUrl: origin.url, number: pr.id, title: pr.title })
+            } satisfies MenuItem,
+            {
+              label: t('sidebar.openPrInNewTab'),
+              onClick: (): void =>
+                openPageTab(
+                  { type: 'pr', repoPath: path, remoteUrl: origin.url, number: pr.id, title: pr.title },
+                  { ownTab: true }
+                )
             } satisfies MenuItem
           ]
         : []),

@@ -66,7 +66,13 @@ parent costs one more request per refresh.
 
 ## Reviewing — GitHub and GitLab
 
-Clicking a pull request opens it as a **page of its own**, a tab like an issue.
+Clicking a pull request opens it as a **page of its own**. It rides on its
+repository like the wiki does: an icon with the PR number on the repository's
+tab, or on its chip inside a group. Click the icon again, or the repository's
+name, to go back. **Open in a new tab** in the PR's right-click menu gives it a
+top-level tab instead. If the repository is not open anywhere, the PR opens in a
+tab of its own.
+
 The work happens in the main column, and the sidebar says what the PR *is*, so
 you do not have to scroll through it.
 

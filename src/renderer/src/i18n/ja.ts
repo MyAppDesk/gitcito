@@ -206,6 +206,7 @@ export const ja: Dict = {
   'sidebar.copySubmoduleUrl': 'サブモジュールの URL をコピー',
   'sidebar.openOnWeb': 'Web で開く',
   'sidebar.openDetails': '詳細を開く',
+  'sidebar.openPrInNewTab': '新しいタブで開く',
   'sidebar.copyLink': 'リンクをコピー',
   'sidebar.copyTitle': 'タイトルをコピー',
   'sidebar.submoduleUninit': '未初期化',

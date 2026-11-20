@@ -241,6 +241,8 @@ function PageBody({ page }: { page: PageContent }): React.JSX.Element | null {
       return <WikiPageView repoPath={page.repoPath} />
     case 'devtools':
       return <DevToolsPage launchId={page.launchId} url={page.url} label={page.label} tool={page.tool} />
+    case 'pr':
+      return <PrDetailPage page={page} />
     default:
       return null
   }

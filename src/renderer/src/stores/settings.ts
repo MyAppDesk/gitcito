@@ -244,7 +244,9 @@ interface SettingsState {
    *  thing the user just asked for. */
   openFromCli(payload: { path: string; name?: string; group?: string }): void
   /** Open (or focus the existing) non-repo page tab, e.g. the changelog. */
-  openPageTab(page: PageContent): void
+  /** Open a page. A repo-scoped page rides on its repository's tab unless
+   *  `ownTab` asks for a tab of its own. */
+  openPageTab(page: PageContent, opts?: { ownTab?: boolean }): void
   /** Show one of a repo tab's attached pages, or the repository itself (null). */
   setRepoPage(tabId: string, index: number | null): void
   /** Detach a page from a repo tab. */
@@ -694,13 +696,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       )
     })),
 
-  openPageTab: (page) => {
+  openPageTab: (page, opts) => {
     leaveMission()
     // A repo-scoped page rides on its repository's tab rather than taking one of
     // its own. When there is no such tab — the repo lives in a group, or is not
     // open — it falls back to a tab, because opening something must open
     // something.
-    const plan = planAttach(get().settings.tabs, get().settings.activeTabId, page)
+    const plan = opts?.ownTab ? null : planAttach(get().settings.tabs, get().settings.activeTabId, page)
     if (plan) {
       return get().update((s) => ({
         ...s,

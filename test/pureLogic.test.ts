@@ -5025,6 +5025,19 @@ describe('pages that ride on a repository tab', () => {
     expect(planAttach(tabs, 't1', devtools('/r', 8))?.pages).toHaveLength(2)
   })
 
+  it('attaches pull requests to their repository, one icon per PR', () => {
+    const pr = (number: number, remoteUrl = 'https://github.com/o/r.git'): never =>
+      ({ type: 'pr', repoPath: '/r', remoteUrl, number, title: `PR ${number}` }) as never
+    // In a group, the PR rides on its repository's chip, which becomes the selected one.
+    expect(planAttach([groupTab('g1', '/r')], 'g1', pr(59))).toMatchObject({ tabId: 'g1', index: 0, activeRepoPath: '/r' })
+    const tabs = [repoTab('t1', '/r', [pr(59)])]
+    // The same PR again focuses its icon; another PR adds one.
+    expect(planAttach(tabs, 't1', pr(59))).toMatchObject({ index: 0, pages: [pr(59)] })
+    expect(planAttach(tabs, 't1', pr(60))?.pages).toHaveLength(2)
+    // Same number on another remote (a fork) is a different PR.
+    expect(planAttach(tabs, 't1', pr(59, 'https://github.com/fork/r.git'))?.pages).toHaveLength(2)
+  })
+
   it('drops back to the repository when the open page is closed', () => {
     expect(planClose([wiki('/r'), devtools('/r', 7)], 0, 0)).toEqual({ pages: [devtools('/r', 7)], activePage: null })
     // Closing a page to the left of the open one keeps you on the same page.

@@ -207,6 +207,7 @@ export const ptBR: Dict = {
   'sidebar.copySubmoduleUrl': 'Copiar a URL do submódulo',
   'sidebar.openOnWeb': 'Abrir na web',
   'sidebar.openDetails': 'Abrir detalhes',
+  'sidebar.openPrInNewTab': 'Abrir em nova aba',
   'sidebar.copyLink': 'Copiar link',
   'sidebar.copyTitle': 'Copiar título',
   'sidebar.submoduleUninit': 'não iniciado',

@@ -48,9 +48,15 @@ atualizada.
 
 ## Revisando — GitHub e GitLab
 
-Clicar num pull request abre ele como uma **página própria**, numa aba, como
-uma issue. O trabalho fica na coluna principal, e a barra lateral diz o que o PR
-*é*, sem precisar rolar a tela.
+Clicar num pull request abre ele como uma **página própria**. Ela fica presa ao
+repositório, como o wiki: um ícone com o número do PR na aba do repositório, ou
+no chip dele dentro de um grupo. Clique no ícone de novo, ou no nome do
+repositório, para voltar. **Abrir em nova aba**, no menu de botão direito do PR,
+abre como aba separada. Se o repositório não estiver aberto em nenhuma aba, o PR
+abre numa aba própria.
+
+O trabalho fica na coluna principal, e a barra lateral diz o que o PR *é*, sem
+precisar rolar a tela.
 
 A coluna principal tem três seções:
 

@@ -207,6 +207,7 @@ export const zhCN: Dict = {
   'sidebar.copySubmoduleUrl': '复制子模块 URL',
   'sidebar.openOnWeb': '在网页中打开',
   'sidebar.openDetails': '打开详情',
+  'sidebar.openPrInNewTab': '在新标签页中打开',
   'sidebar.copyLink': '复制链接',
   'sidebar.copyTitle': '复制标题',
   'sidebar.submoduleUninit': '未初始化',

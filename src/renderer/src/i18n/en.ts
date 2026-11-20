@@ -208,6 +208,7 @@ export const en = {
   'sidebar.copySubmoduleUrl': 'Copy submodule URL',
   'sidebar.openOnWeb': 'Open on web',
   'sidebar.openDetails': 'Open details',
+  'sidebar.openPrInNewTab': 'Open in a new tab',
   'sidebar.copyLink': 'Copy link',
   'sidebar.copyTitle': 'Copy title',
   'sidebar.submoduleUninit': 'uninit',

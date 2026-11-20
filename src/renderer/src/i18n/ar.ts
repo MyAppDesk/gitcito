@@ -207,6 +207,7 @@ export const ar: Dict = {
   'sidebar.copySubmoduleUrl': 'نسخ عنوان الوحدة الفرعية',
   'sidebar.openOnWeb': 'فتح على الويب',
   'sidebar.openDetails': 'فتح التفاصيل',
+  'sidebar.openPrInNewTab': 'فتح في علامة تبويب جديدة',
   'sidebar.copyLink': 'نسخ الرابط',
   'sidebar.copyTitle': 'نسخ العنوان',
   'sidebar.submoduleUninit': 'غير مهيأة',

@@ -207,6 +207,7 @@ export const he: Dict = {
   'sidebar.copySubmoduleUrl': 'העתקת כתובת התת־מודול',
   'sidebar.openOnWeb': 'פתיחה באתר',
   'sidebar.openDetails': 'פתיחת פרטים',
+  'sidebar.openPrInNewTab': 'פתיחה בכרטיסייה חדשה',
   'sidebar.copyLink': 'העתקת קישור',
   'sidebar.copyTitle': 'העתקת כותרת',
   'sidebar.submoduleUninit': 'לא מאותחל',

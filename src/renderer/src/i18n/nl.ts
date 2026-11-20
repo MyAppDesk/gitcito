@@ -207,6 +207,7 @@ export const nl: Dict = {
   'sidebar.copySubmoduleUrl': 'Submodule-URL kopiëren',
   'sidebar.openOnWeb': 'Op het web openen',
   'sidebar.openDetails': 'Details openen',
+  'sidebar.openPrInNewTab': 'Openen in nieuw tabblad',
   'sidebar.copyLink': 'Link kopiëren',
   'sidebar.copyTitle': 'Titel kopiëren',
   'sidebar.submoduleUninit': 'niet geïnit.',

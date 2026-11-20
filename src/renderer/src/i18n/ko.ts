@@ -207,6 +207,7 @@ export const ko: Dict = {
   'sidebar.copySubmoduleUrl': '서브모듈 URL 복사',
   'sidebar.openOnWeb': '웹에서 열기',
   'sidebar.openDetails': '상세 정보 열기',
+  'sidebar.openPrInNewTab': '새 탭에서 열기',
   'sidebar.copyLink': '링크 복사',
   'sidebar.copyTitle': '제목 복사',
   'sidebar.submoduleUninit': '미초기화',

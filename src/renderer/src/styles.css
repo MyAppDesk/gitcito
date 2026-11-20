@@ -4428,6 +4428,7 @@ body.col-resizing .node-ava {
 }
 .tab-page-chip:hover { color: var(--text-1); background: var(--bg-3); }
 .tab-page-chip.active { color: var(--accent); background: var(--accent-soft); }
+.tab-page-num { margin-inline-start: 3px; font-size: 10.5px; font-variant-numeric: tabular-nums; }
 .tab-page-close {
   position: absolute;
   inset-block-start: -4px;

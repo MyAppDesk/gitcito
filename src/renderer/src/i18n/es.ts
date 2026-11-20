@@ -206,6 +206,7 @@ export const es: Dict = {
   'sidebar.copySubmoduleUrl': 'Copiar URL del submódulo',
   'sidebar.openOnWeb': 'Abrir en la web',
   'sidebar.openDetails': 'Abrir detalles',
+  'sidebar.openPrInNewTab': 'Abrir en una pestaña nueva',
   'sidebar.copyLink': 'Copiar enlace',
   'sidebar.copyTitle': 'Copiar título',
   'sidebar.submoduleUninit': 'sin iniciar',

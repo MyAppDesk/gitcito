@@ -16,23 +16,25 @@ import { hostingApi, shellApi } from '../infrastructure/api'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
 import type { GitHubNotification } from '../../../shared/types'
-import { useT } from '../i18n'
+import { useT, type TranslationKey } from '../i18n'
 
-/** Friendly label for GitHub's `reason` field. */
-const REASON_LABELS: Record<string, string> = {
-  assign: 'Assigned',
-  author: 'You authored',
-  comment: 'New comment',
-  ci_activity: 'CI activity',
-  invitation: 'Invitation',
-  manual: 'Subscribed',
-  mention: 'Mentioned',
-  push: 'New commits',
-  review_requested: 'Review requested',
-  security_alert: 'Security alert',
-  state_change: 'State changed',
-  subscribed: 'Subscribed',
-  team_mention: 'Team mentioned'
+/** GitHub's `reason` field → its label's key (the key, not the text: a module
+ *  constant would freeze the language active on first import). */
+const REASON_KEYS: Record<string, TranslationKey> = {
+  assign: 'notif.reason.assign',
+  author: 'notif.reason.author',
+  comment: 'notif.reason.comment',
+  ci_activity: 'notif.ciActivity',
+  invitation: 'notif.reason.invitation',
+  manual: 'notif.reason.manual',
+  mention: 'notif.reason.mention',
+  push: 'notif.reason.push',
+  review_requested: 'notif.reviewRequested',
+  security_alert: 'notif.reason.security_alert',
+  state_change: 'notif.reason.state_change',
+  // GitHub's two ways of saying you follow the thread read the same.
+  subscribed: 'notif.reason.manual',
+  team_mention: 'notif.reason.team_mention'
 }
 
 function typeIcon(type: string): React.JSX.Element {
@@ -174,7 +176,7 @@ export function NotificationsPage(): React.JSX.Element {
                 <button className="notif-main" onClick={() => open(n)}>
                   <span className="notif-title">{n.title}</span>
                   <span className="notif-meta">
-                    <span className="notif-reason">{REASON_LABELS[n.reason] ?? n.reason}</span>
+                    <span className="notif-reason">{REASON_KEYS[n.reason] ? t(REASON_KEYS[n.reason]) : n.reason}</span>
                     {' · '}
                     {n.repoFullName}
                     {n.number != null ? ` #${n.number}` : ''}

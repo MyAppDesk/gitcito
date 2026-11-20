@@ -62,7 +62,7 @@ import { useSettingsStore } from '../stores/settings'
 import { gitApi, cliApi } from '../infrastructure/api'
 import { tabActiveRepoPath } from '../../../shared/types'
 import { getFrecency, frecencyScore, bumpFrecency } from '../lib/frecency'
-import { repoIsGitHub } from '../lib/hosting'
+import { repoHasIssueTracker } from '../lib/hosting'
 import { openInEditor } from '../lib/editorOpen'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { fuzzyScore } from '../lib/fuzzy'
@@ -233,8 +233,9 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'create-pr', title: t('cmd.createPr'), group: 'Actions', keywords: 'pr github merge request', icon: <GitPullRequest size={15} />, run: act(() => ui.openModal({ kind: 'create-pr', repoPath: path, source: repo.branches.current })) },
       ...((): Command[] => {
         const origin = repo.remotes.find((r) => r.name === 'origin') ?? repo.remotes[0]
-        return origin && repoIsGitHub(repo.remotes)
-          ? [{ id: 'create-issue', title: t('cmd.createIssue'), group: 'Actions', keywords: 'github issue new bug report', icon: <CircleDot size={15} />, run: act(() => ui.openModal({ kind: 'create-issue', repoPath: path, remoteUrl: origin.url })) } as Command]
+        const forgejoUrls = useSettingsStore.getState().settings.profiles.map((p) => p.forgejoUrl)
+        return origin && repoHasIssueTracker(repo.remotes, forgejoUrls)
+          ? [{ id: 'create-issue', title: t('cmd.createIssue'), group: 'Actions', keywords: 'github forgejo issue new bug report', icon: <CircleDot size={15} />, run: act(() => ui.openModal({ kind: 'create-issue', repoPath: path, remoteUrl: origin.url })) } as Command]
           : []
       })(),
       { id: 'subtree', title: t('cmd.subtree'), group: 'Actions', keywords: 'subtree vendor library embed prefix split monorepo submodule alternative', icon: <FolderInput size={15} />, run: act(() => ui.openModal({ kind: 'subtree', repoPath: path })) },
@@ -278,7 +279,15 @@ export function CommandPalette(): React.JSX.Element {
       { id: 'filter-path', title: t('cmd.filterPath'), group: 'Actions', keywords: 'path file folder history touched commits filter', icon: <FolderTree size={15} />, run: act(() => ui.openModal({ kind: 'input', title: t('cmdp.filterTitle'), label: t('cmdp.filterLabel'), placeholder: 'src/main', submitLabel: t('cmdp.filterSubmit'), onSubmit: (v) => ui.setPathFilter(v.trim() || null) })) },
       ...(aiEnabled ? [{ id: 'ai-assistant', title: t('aiWizard.configTitle'), group: 'Actions', keywords: 'ai config wizard generate claude cursor copilot instructions', icon: <Sparkles size={15} />, run: act(() => ui.openModal({ kind: 'ai-config-wizard', repoPath: path, repoName: repo.name })) } as Command] : []),
       { id: 'terminal', title: t('cmd.terminal'), group: 'Actions', keywords: 'shell console pty', icon: <TerminalSquare size={15} />, run: act(() => { if (repoPath) ui.toggleTerminal(repoPath) }) },
-      ...(analyzerMode === 'off' ? [] : [{ id: 'problems', title: t('cmd.problems'), group: 'Actions', keywords: 'analyzer analyzers diagnostics errors warnings lint tsc eslint dart clippy vet ruff', icon: <TriangleAlert size={15} />, run: act(() => { if (repoPath) ui.toggleProblems(repoPath) }) } as Command]),
+      ...(analyzerMode === 'off' ? [] : [{ id: 'problems', title: t('cmd.problems'), group: 'Actions', keywords: 'analyzer analyzers diagnostics errors warnings lint tsc eslint dart clippy vet ruff', icon: <TriangleAlert size={15} />, run: act(() => { if (repoPath) { if (!ui.problemsOpenByRepo[repoPath]) useProblemsStore.getState().setMode('problems'); ui.toggleProblems(repoPath) } }) } as Command]),
+      ...(repoPath
+        ? [{ id: 'run-tests', title: t('cmd.runTests'), group: 'Actions', keywords: 'tests test suite vitest jest run unit spec failing', icon: <FlaskConical size={15} />, run: act(() => {
+            const problems = useProblemsStore.getState()
+            problems.setMode('tests')
+            ui.setProblemsOpen(repoPath, true)
+            void problems.runTests(repoPath)
+          }) } as Command]
+        : []),
       { id: 'code-todos', title: t('cmd.codeTodos'), group: 'Actions', keywords: 'todo todos fixme hack xxx note marker markers comment comments backlog owner tag', icon: <ListTodo size={15} />, run: act(() => { if (repoPath) { useProblemsStore.getState().setMode('todos'); ui.setProblemsOpen(repoPath, true) } }) },
       ...(editor?.command ? [{ id: 'open-in-editor', title: interp(t('cmd.openInEditor'), { app: editor.name }), group: 'Actions', keywords: 'editor vscode code cursor zed sublime jetbrains open folder workspace', icon: <SquarePen size={15} />, run: act(() => void openInEditor(editor, { path, isDir: true, repo: path })) } as Command] : []),
       { id: 'reflog', title: t('cmd.reflog'), group: 'Actions', keywords: 'recovery undo history head', icon: <History size={15} />, run: act(() => ui.openModal({ kind: 'reflog', repoPath: path })) },

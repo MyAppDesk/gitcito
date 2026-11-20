@@ -6,6 +6,7 @@ interface TermApi {
   resize(id: number, cols: number, rows: number): void
   kill(id: number): void
   procName(id: number): Promise<string>
+  completions(id: number, kind: string): Promise<unknown>
   poshThemes(): Promise<{ dir: string | null; exe: string | null; themes: string[] }>
   poshPreview(theme: string): Promise<string | null>
   onData(id: number, cb: (data: string) => void): () => void
@@ -267,6 +268,11 @@ interface PreloadApi {
   analyze: {
     run(repoPath: string): Promise<import('../../shared/types').AnalyzeResult>
     detect(repoPath: string): Promise<string[]>
+    cancel(repoPath: string): void
+  }
+  tests: {
+    run(repoPath: string): Promise<import('../../shared/types').TestRunResult>
+    detect(repoPath: string): Promise<{ runner: import('../../shared/types').TestRunner | null; installed: boolean }>
     cancel(repoPath: string): void
   }
   todoScan: {

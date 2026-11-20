@@ -31,12 +31,16 @@ export function AIPRReview({
   repoPath,
   prTitle,
   sourceBranch,
-  targetBranch
+  targetBranch,
+  diff: givenDiff
 }: {
   repoPath: string
   prTitle: string
   sourceBranch: string
   targetBranch: string
+  /** The PR's diff as the host reports it. Used as-is when given, so a PR whose
+   *  branches were never fetched (a fork, someone else's) can still be reviewed. */
+  diff?: string
 }): React.JSX.Element {
   const t = useT()
   const closeModal = useUIStore((s) => s.closeModal)
@@ -53,13 +57,13 @@ export function AIPRReview({
     const run = async (): Promise<void> => {
       setLoading(true)
       try {
-        const diff = await gitApi.compareBranches(repoPath, sourceBranch, targetBranch)
-        if (!diff.diff.trim()) {
-          setSummary('No differences found between these branches.')
+        const diff = givenDiff ?? (await gitApi.compareBranches(repoPath, sourceBranch, targetBranch)).diff
+        if (!diff.trim()) {
+          setSummary(t('aiReview.noDiff'))
           setLoading(false)
           return
         }
-        const result = await aiApi.reviewPR(diff.diff, { ...aiFor('review'), cliCwd: repoPath })
+        const result = await aiApi.reviewPR(diff, { ...aiFor('review'), cliCwd: repoPath })
         setSummary(result.summary)
         setRisks(result.risks)
         setSuggestions(result.suggestions)
@@ -71,7 +75,7 @@ export function AIPRReview({
       }
     }
     void run()
-  }, [repoPath, sourceBranch, targetBranch])
+  }, [repoPath, sourceBranch, targetBranch, givenDiff])
 
   const riskFindings = findings.filter((f) => f.kind === 'risk')
   const suggestionFindings = findings.filter((f) => f.kind === 'suggestion')

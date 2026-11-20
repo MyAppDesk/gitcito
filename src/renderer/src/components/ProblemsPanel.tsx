@@ -3,6 +3,7 @@ import { CircleX, TriangleAlert, Info, RefreshCw, X, Search, GitCompareArrows, L
 import type { Problem, ProblemSeverity } from '../../../shared/types'
 import { useProblemsStore } from '../stores/problems'
 import { CodeTodosView } from './CodeTodosPanel'
+import { TestsView } from './TestsView'
 import { useRepoStore } from '../stores/repo'
 import { useSettingsStore } from '../stores/settings'
 import { useUIStore } from '../stores/ui'
@@ -49,6 +50,14 @@ export function DockTabs(): React.JSX.Element {
       >
         {t('ctodo.title')}
       </button>
+      <button
+        className={`prob-tab ${mode === 'tests' ? 'on' : ''}`}
+        role="tab"
+        aria-selected={mode === 'tests'}
+        onClick={() => setMode('tests')}
+      >
+        {t('tests.title')}
+      </button>
     </span>
   )
 }
@@ -59,6 +68,7 @@ export function ProblemsPanel({ repoPath }: { repoPath: string }): React.JSX.Ele
   const analyzerMode = useSettingsStore((s) => s.settings.analyzerMode ?? 'onOpen')
   // With the analyzers off the dock is the TODO scan and nothing else, even if
   // the analyzer half happened to be the one selected last.
+  if (mode === 'tests') return <TestsView repoPath={repoPath} />
   return mode === 'todos' || analyzerMode === 'off' ? (
     <CodeTodosView repoPath={repoPath} />
   ) : (

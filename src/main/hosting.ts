@@ -480,7 +480,7 @@ async function listPullRequests(
     const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
     const res = await fetch(
       `${glApi(parsed.base)}/projects/${pid}/merge_requests?state=opened&per_page=30`,
-      { headers: gitlabAuth(auth) }
+      { redirect: 'error', headers: gitlabAuth(auth) }
     )
     if (!res.ok) throw new Error(`GitLab API error (${res.status})`)
     const data = (await res.json()) as Array<{
@@ -775,6 +775,7 @@ async function createPullRequest(
     const pid = encodeURIComponent(`${parsed.owner}/${parsed.repo}`)
     const res = await fetch(`${glApi(parsed.base)}/projects/${pid}/merge_requests`, {
       method: 'POST',
+      redirect: 'error',
       headers: { ...gitlabAuth(auth), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         source_branch: opts.source,
@@ -891,6 +892,7 @@ export async function glJson<T>(
 ): Promise<T> {
   const res = await fetch(url, {
     ...init,
+    redirect: 'error',
     headers: {
       ...gitlabAuth(auth),
       ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
@@ -1742,7 +1744,7 @@ async function listRepositories(provider: RepoHost, token: string, org?: string)
   if (provider === 'gitlab') {
     const res = await fetch(
       `${glApi(await providerBase(provider, org))}/projects?membership=true&per_page=100&order_by=last_activity_at&simple=true`,
-      { headers: gitlabAuth(auth) }
+      { redirect: 'error', headers: gitlabAuth(auth) }
     )
     if (!res.ok) throw new Error(`GitLab API error (${res.status})`)
     const data = (await res.json()) as Array<{
@@ -2004,7 +2006,7 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
   if (provider === 'gitlab') {
     const headers = gitlabAuth(auth)
     const api = glApi(providerBaseUrl('gitlab', org))
-    const userRes = await fetch(`${api}/user`, { headers })
+    const userRes = await fetch(`${api}/user`, { headers, redirect: 'error' })
     if (!userRes.ok) throw new Error(`GitLab API error (${userRes.status})`)
     const user = (await userRes.json()) as {
       id: number
@@ -2013,7 +2015,7 @@ async function describeAccount(provider: RepoHost, auth: ApiAuth, org?: string):
       avatar_url: string | null
       web_url: string
     }
-    const groupsRes = await fetch(`${api}/groups?min_access_level=10&per_page=100`, { headers })
+    const groupsRes = await fetch(`${api}/groups?min_access_level=10&per_page=100`, { headers, redirect: 'error' })
     const groups = groupsRes.ok
       ? ((await groupsRes.json()) as Array<{ full_path: string; avatar_url: string | null; web_url: string }>)
       : []
@@ -2133,6 +2135,7 @@ async function createRepository(
   if (provider === 'gitlab') {
     const res = await fetch(`${glApi(await providerBase(provider, org))}/projects`, {
       method: 'POST',
+      redirect: 'error',
       headers: { ...gitlabAuth(auth), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: opts.name,

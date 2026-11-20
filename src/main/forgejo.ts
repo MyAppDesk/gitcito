@@ -20,6 +20,7 @@ const api = (base: string): string => `${base}/api/v1`
 export async function fjJson<T>(url: string, token: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...init,
+    redirect: 'error',
     headers: {
       Authorization: `token ${token}`,
       Accept: 'application/json',

@@ -3410,6 +3410,7 @@ export const zhCN: Dict = {
   'terminal.showList': '显示终端列表',
   'terminal.listTitle': '终端',
   'terminal.new': '新建终端',
+  'terminal.suggestHint': 'Tab 补全 · ↑ ↓ 选择 · Esc 关闭',
   'terminal.hideList': '隐藏列表',
   'terminal.closePane': '关闭终端面板',
   'terminal.rename': '重命名…',

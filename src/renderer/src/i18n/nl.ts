@@ -3418,6 +3418,7 @@ export const nl: Dict = {
   'terminal.showList': 'Terminals tonen',
   'terminal.listTitle': 'Terminals',
   'terminal.new': 'Nieuwe terminal',
+  'terminal.suggestHint': 'Tab vult aan · ↑ ↓ kiest · Esc sluit',
   'terminal.hideList': 'Lijst verbergen',
   'terminal.closePane': 'Terminalpaneel sluiten',
   'terminal.rename': 'Hernoemen…',

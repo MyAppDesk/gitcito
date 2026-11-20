@@ -351,6 +351,7 @@ const api = {
     resize: (id: number, cols: number, rows: number): void => ipcRenderer.send('term:resize', id, cols, rows),
     kill: (id: number): void => ipcRenderer.send('term:kill', id),
     procName: (id: number): Promise<string> => ipcRenderer.invoke('term:process', id),
+    scripts: (id: number): Promise<unknown> => ipcRenderer.invoke('term:scripts', id),
     poshThemes: (): Promise<{ dir: string | null; exe: string | null; themes: string[] }> =>
       ipcRenderer.invoke('term:posh-themes'),
     poshPreview: (theme: string): Promise<string | null> => ipcRenderer.invoke('term:posh-preview', theme),

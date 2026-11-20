@@ -3413,6 +3413,7 @@ export const es: Dict = {
   'terminal.showList': 'Mostrar terminales',
   'terminal.listTitle': 'Terminales',
   'terminal.new': 'Nueva terminal',
+  'terminal.suggestHint': 'Tab completa · ↑ ↓ elige · Esc cierra',
   'terminal.hideList': 'Ocultar lista',
   'terminal.closePane': 'Cerrar el panel de terminales',
   'terminal.rename': 'Renombrar…',

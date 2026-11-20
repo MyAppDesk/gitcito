@@ -5,6 +5,7 @@ import type { TerminalThemeColors } from '../../../shared/types'
 import { TERMINAL_THEMES } from '../theme/themes'
 import { useTermTitlesStore } from '../stores/termTitles'
 import { useSettingsStore } from '../stores/settings'
+import { createTermSuggest, type TermSuggest } from './termSuggest'
 
 export interface TermHandle {
   term: Terminal
@@ -115,7 +116,11 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
       () => undefined
     )
   }
+  // The `npm run …` suggestion list — shell terminals only, set once the pty exists.
+  let suggest: TermSuggest | null = null
   term.attachCustomKeyEventHandler((e) => {
+    // An open suggestion list owns Tab, ↑, ↓ and Esc; everything else reaches the shell.
+    if (suggest?.handleKey(e)) return false
     // Only the keys xterm itself scrolls the viewport with (Shift+PageUp/
     // PageDown) count as scroll intent. Marking on every keystroke — or on
     // selection keys — left the intent window open while the user typed, so
@@ -833,7 +838,13 @@ export function getOrCreateTerm(panelId: string, cwd: string, launchId?: number)
         term.write('\r\n\x1b[90m[process exited]\x1b[0m\r\n')
       )
     )
-    term.onData(sendInput)
+    suggest = createTermSuggest({ term, container, ptyId: id, send: sendInput })
+    const s = suggest
+    cleanups.push(() => s.dispose())
+    term.onData((data) => {
+      sendInput(data)
+      s.onInput(data)
+    })
     term.onResize(({ cols, rows }) => {
       if (cols > 0 && rows > 0) sendPtyResize(cols, rows)
     })

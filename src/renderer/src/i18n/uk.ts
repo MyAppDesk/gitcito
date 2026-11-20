@@ -3410,6 +3410,7 @@ export const uk: Dict = {
   'terminal.showList': 'Показати термінали',
   'terminal.listTitle': 'Термінали',
   'terminal.new': 'Новий термінал',
+  'terminal.suggestHint': 'Tab — доповнити · ↑ ↓ — вибрати · Esc — закрити',
   'terminal.hideList': 'Приховати список',
   'terminal.closePane': 'Закрити панель термінала',
   'terminal.rename': 'Перейменувати…',

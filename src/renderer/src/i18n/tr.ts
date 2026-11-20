@@ -3353,6 +3353,7 @@ export const tr: Dict = {
   'terminal.showList': 'Terminalleri göster',
   'terminal.listTitle': 'Terminaller',
   'terminal.new': 'Yeni terminal',
+  'terminal.suggestHint': 'Tab tamamlar · ↑ ↓ seçer · Esc kapatır',
   'terminal.hideList': 'Listeyi gizle',
   'terminal.closePane': 'Terminal panelini kapat',
   'terminal.rename': 'Yeniden adlandır…',

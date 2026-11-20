@@ -3410,6 +3410,7 @@ export const ru: Dict = {
   'terminal.showList': 'Показать терминалы',
   'terminal.listTitle': 'Терминалы',
   'terminal.new': 'Новый терминал',
+  'terminal.suggestHint': 'Tab — дополнить · ↑ ↓ — выбрать · Esc — закрыть',
   'terminal.hideList': 'Скрыть список',
   'terminal.closePane': 'Закрыть панель терминала',
   'terminal.rename': 'Переименовать…',

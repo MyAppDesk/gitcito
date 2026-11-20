@@ -3350,6 +3350,7 @@ export const ja: Dict = {
   'terminal.showList': 'ターミナル一覧を表示',
   'terminal.listTitle': 'ターミナル',
   'terminal.new': '新しいターミナル',
+  'terminal.suggestHint': 'Tab で補完 · ↑ ↓ で選択 · Esc で閉じる',
   'terminal.hideList': '一覧を隠す',
   'terminal.closePane': 'ターミナルパネルを閉じる',
   'terminal.rename': '名前を変更…',

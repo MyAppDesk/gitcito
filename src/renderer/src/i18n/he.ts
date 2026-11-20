@@ -3413,6 +3413,7 @@ export const he: Dict = {
   'terminal.showList': 'הצגת הטרמינלים',
   'terminal.listTitle': 'טרמינלים',
   'terminal.new': 'טרמינל חדש',
+  'terminal.suggestHint': 'Tab להשלמה · ↑ ↓ לבחירה · Esc לסגירה',
   'terminal.hideList': 'הסתרת הרשימה',
   'terminal.closePane': 'סגירת חלונית המסוף',
   'terminal.rename': 'שינוי שם…',

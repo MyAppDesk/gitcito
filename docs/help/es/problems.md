@@ -78,6 +78,28 @@ antes de commitear.
 Las pastillas de severidad también filtran. Apagadas significan *mostrar todo*;
 encender una reduce la lista a esa severidad.
 
+## Tests
+
+La tercera pestaña del panel ejecuta la suite de tests del proyecto y muestra el resultado como un árbol: cada archivo de tests y, dentro, sus tests, con los fallos primero. **Ejecutar tests** en la paleta de comandos la abre e inicia la ejecución; el botón ▶ de la pestaña hace lo mismo, y ↻ vuelve a ejecutar.
+
+| Fila | Al hacer clic |
+|---|---|
+| Un test fallido | Abre el archivo de test en la línea a la que apunta el fallo y despliega el mensaje bajo la fila |
+| Un test que pasó o se omitió | Abre el archivo de test |
+| Un archivo que falló antes de ejecutar ningún test (error de sintaxis, import roto) | Abre el archivo; su mensaje dice qué lo detuvo |
+
+**Solo fallos** deja solo los fallos; la búsqueda filtra por nombre de test, o por ruta para conservar un archivo entero.
+
+Lee el informe de máquina del propio runner — `vitest run --reporter=json` o `jest --json` — y no su salida, así que nombres, duraciones y mensajes son exactos. La línea sale de la pila del fallo: es la aserción que falló, no el comienzo del test.
+
+Los límites, sin rodeos:
+
+- **Solo vitest y jest**, encontrados en el `package.json` de la raíz del repositorio; gana vitest si están los dos. Las suites de cada paquete de un monorepo no se ejecutan una a una.
+- **Solo se ejecuta el runner instalado** — el paquete en `node_modules`, lanzado directamente con Node (sin shell, así que ninguna ruta se lee nunca como un comando). Si está listado pero no instalado, la pestaña lo dice; no se descarga nada por ti.
+- **Toda la suite, cada vez.** Todavía no hay un "solo lo que cambié", y una suite lenta tarda aquí lo mismo que en un terminal. Se detiene a los diez minutos.
+- Si el runner se cae antes de escribir su informe, la pestaña muestra lo que imprimió.
+- Ejecuta el código del proyecto, como haría `npm test` — cuando lo pides, nunca por su cuenta.
+
 ## Los límites
 
 - **No hay servidor de lenguaje.** Esto es un barrido, no un demonio: sin

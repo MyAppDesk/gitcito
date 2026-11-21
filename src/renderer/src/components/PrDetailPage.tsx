@@ -21,10 +21,14 @@ import {
   Milestone,
   FileDiff,
   CircleDot,
-  CalendarDays
+  CalendarDays,
+  Sparkles,
+  ClipboardList,
+  ScrollText
 } from 'lucide-react'
 import type { PageContent, PrCheck, PrDetail, PrFile, PrMergeMethod, PrReviewEvent } from '../../../shared/types'
 import { hostingApi, shellApi } from '../infrastructure/api'
+import { CheckLogPanel } from './CheckLogPanel'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 import { useRepoStore } from '../stores/repo'
@@ -79,6 +83,8 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
 
   const [pr, setPr] = useState<PrDetail | null>(null)
   const [checks, setChecks] = useState<PrCheck[] | null>(null)
+  // The check whose log is open under its row.
+  const [openLog, setOpenLog] = useState<number | null>(null)
   const [files, setFiles] = useState<PrFile[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -114,9 +120,16 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     })
 
   const tokens = useMemo(
-    () => ({ github: profile.githubToken || undefined, gitlab: profile.gitlabToken || undefined }),
-    [profile.githubToken, profile.gitlabToken]
+    () => ({
+      github: profile.githubToken || undefined,
+      gitlab: profile.gitlabToken || undefined,
+      forgejo: profile.forgejoToken || undefined,
+      azure: profile.azureToken || undefined
+    }),
+    [profile.githubToken, profile.gitlabToken, profile.forgejoToken, profile.azureToken]
   )
+  // Forgejo has no API to reply inside an existing line thread.
+  const canReplyInThread = provider !== 'forgejo'
 
   const load = useCallback(async (): Promise<void> => {
     setError(null)
@@ -184,6 +197,27 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
     useUIStore.getState().openModal({ kind: 'pr-preview', repoPath, number, remote })
   }
 
+  const aiEnabled = profile.ai.enabled !== false
+  // The AI review reads the PR's diff as the host gave it, once the files are
+  // in; until then it falls back to comparing the branches locally.
+  const reviewWithAi = (): void => {
+    if (!pr) return
+    const diff = files?.length
+      ? files
+          .filter((f) => f.patch)
+          .map((f) => `diff --git a/${f.previousFilename ?? f.filename} b/${f.filename}\n--- a/${f.previousFilename ?? f.filename}\n+++ b/${f.filename}\n${f.patch}`)
+          .join('\n')
+      : undefined
+    useUIStore.getState().openModal({
+      kind: 'ai-pr-review',
+      repoPath,
+      prTitle: pr.title,
+      sourceBranch: pr.source,
+      targetBranch: pr.target,
+      ...(diff ? { diff } : {})
+    })
+  }
+
   const web = remoteWebUrl(remoteUrl)
   const status = pr ? prStatus(pr) : null
   const canMerge = !!pr && pr.state === 'open' && !pr.merged
@@ -207,6 +241,11 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           <button className="icon-btn" title={t('prPage.refresh')} onClick={() => void load()} disabled={busy}>
             <RefreshCw size={14} />
           </button>
+          {aiEnabled && pr && (
+            <button className="icon-btn" title={t('sidebar.aiPrReview')} onClick={reviewWithAi}>
+              <Sparkles size={14} />
+            </button>
+          )}
           <button className="icon-btn" title={t('prPreview.open')} onClick={previewLocally}>
             <GitPullRequestArrow size={14} />
           </button>
@@ -285,24 +324,26 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
                       <div className="prp-card-body">{autolink(c.body, web)}</div>
                     </div>
                   ))}
-                  <div className="prd-thread-reply">
-                    <input
-                      className="prd-reply-input"
-                      placeholder={t('prDetail.replyPlaceholder')}
-                      value={replies[th.rootId] ?? ''}
-                      onChange={(e) => setReplies((r) => ({ ...r, [th.rootId]: e.target.value }))}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') replyToThread(th.rootId)
-                      }}
-                    />
-                    <button
-                      className="btn ghost tiny"
-                      onClick={() => replyToThread(th.rootId)}
-                      disabled={busy || !(replies[th.rootId] ?? '').trim()}
-                    >
-                      {t('prDetail.reply')}
-                    </button>
-                  </div>
+                  {canReplyInThread && (
+                    <div className="prd-thread-reply">
+                      <input
+                        className="prd-reply-input"
+                        placeholder={t('prDetail.replyPlaceholder')}
+                        value={replies[th.rootId] ?? ''}
+                        onChange={(e) => setReplies((r) => ({ ...r, [th.rootId]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') replyToThread(th.rootId)
+                        }}
+                      />
+                      <button
+                        className="btn ghost tiny"
+                        onClick={() => replyToThread(th.rootId)}
+                        disabled={busy || !(replies[th.rootId] ?? '').trim()}
+                      >
+                        {t('prDetail.reply')}
+                      </button>
+                    </div>
+                  )}
                 </article>
               ))}
               {conversationCount === 0 && <p className="prp-muted prp-pad">{t('prDetail.noComments')}</p>}
@@ -378,15 +419,28 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
           ) : (
             <div className="prd-checks prp-checks">
               {checks.map((c, i) => (
-                <div key={i} className="prd-check">
-                  <span className={`prd-check-dot ${checkState(c)}`} />
-                  <span className="prd-check-name">{c.name}</span>
-                  <span className="prd-check-state">{c.status === 'completed' ? c.conclusion : c.status}</span>
-                  {c.url && (
-                    <button className="prd-check-logs" title={t('prDetail.viewLogs')} onClick={() => void shellApi.openExternal(c.url)}>
-                      <ExternalLink size={12} />
-                    </button>
-                  )}
+                <div key={i} className="prp-check-item">
+                  <div className="prd-check">
+                    <span className={`prd-check-dot ${checkState(c)}`} />
+                    <span className="prd-check-name">{c.name}</span>
+                    <span className="prd-check-state">{c.status === 'completed' ? c.conclusion : c.status}</span>
+                    {c.hasLog && (
+                      <button
+                        className="prd-check-logs"
+                        title={openLog === i ? t('prPage.hideLog') : t('prPage.showLog')}
+                        aria-expanded={openLog === i}
+                        onClick={() => setOpenLog(openLog === i ? null : i)}
+                      >
+                        <ScrollText size={12} />
+                      </button>
+                    )}
+                    {c.url && (
+                      <button className="prd-check-logs" title={t('prDetail.viewLogs')} onClick={() => void shellApi.openExternal(c.url)}>
+                        <ExternalLink size={12} />
+                      </button>
+                    )}
+                  </div>
+                  {openLog === i && <CheckLogPanel remoteUrl={remoteUrl} tokens={tokens} url={c.url} />}
                 </div>
               ))}
             </div>
@@ -490,6 +544,24 @@ export function PrDetailPage({ page }: { page: PrPage }): React.JSX.Element {
               </div>
               {pr.sourceRepo && <div className="prp-side-note">{interp(t('prPage.fromFork'), { repo: pr.sourceRepo })}</div>}
             </Field>
+
+            {pr.workItems && pr.workItems.length > 0 && (
+              <Field icon={<ClipboardList size={12} />} label={t('prPage.workItems')}>
+                <ul className="prp-work-items">
+                  {pr.workItems.map((w) => (
+                    <li key={w.id}>
+                      <button className="prp-link prp-work-item" title={w.url} onClick={() => void shellApi.openExternal(w.url)}>
+                        <span className="prp-work-item-id">{`AB#${w.id}` /* i18n-ignore work item reference */}</span>
+                        <span className="prp-work-item-title">{w.title}</span>
+                      </button>
+                      {(w.type || w.state) && (
+                        <div className="prp-side-note">{[w.type, w.state].filter(Boolean).join(' · ')}</div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </Field>
+            )}
 
             <Field icon={<FileDiff size={12} />} label={t('prPage.changes')}>
               <ChangeSummary pr={pr} files={files} />

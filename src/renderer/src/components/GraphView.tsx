@@ -8,7 +8,9 @@ import { GraphHeaderFilter, type FilterOption } from './GraphHeaderFilter'
 import { layoutGraph } from '../graph/layout'
 import { edgePath, spurPath, colorForPalette, findGraphPalette, DENSITY_ROW_H, LINE_WIDTH_PX } from '../graph/style'
 import { useRepoStore, repoActions, type RepoData } from '../stores/repo'
-import { draggingRef, useUIStore, type MenuItem } from '../stores/ui'
+import { draggingCommit, draggingRef, useUIStore, type MenuItem } from '../stores/ui'
+import { commitDropActions } from '../lib/commitDrop'
+import { openCommitDropMenu } from '../lib/commitDropMenu'
 import { useSettingsStore } from '../stores/settings'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { Avatar } from './Avatar'
@@ -697,6 +699,7 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
   // rendered before the drag began would otherwise still see "nothing dragged"
   // and refuse the drop. Not subscribed, so a drag does not re-render the graph.
   const setDragRef = useUIStore((s) => s.setDraggingRef)
+  const setDragCommit = useUIStore((s) => s.setDraggingCommit)
   const [dropRefKey, setDropRefKey] = useState<string | null>(null)
   // Row hovered with no ref of its own — show which branch contains it.
   const [hoverRow, setHoverRow] = useState<string | null>(null)
@@ -1686,7 +1689,12 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
         }}
         onDragOver={(e) => {
           const dragRef = draggingRef()
-          if (!dragRef || !branchDropActions(dragRef, ref).length) return
+          const dragCommit = draggingCommit()
+          const accepts = dragRef
+            ? branchDropActions(dragRef, ref).length > 0
+            : !!dragCommit &&
+              commitDropActions(ref, { currentBranch: repo.branches.current, targetHead: c.hash, commit: dragCommit }).length > 0
+          if (!accepts) return
           e.preventDefault()
           e.stopPropagation()
           e.dataTransfer.dropEffect = 'move'
@@ -1697,9 +1705,12 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
           e.preventDefault()
           e.stopPropagation()
           const source = draggingRef()
+          const commit = draggingCommit()
           setDragRef(null)
+          setDragCommit(null)
           setDropRefKey(null)
           if (source) void openBranchDropMenu(repo.path, source, ref, e.clientX, e.clientY)
+          else if (commit) openCommitDropMenu(repo.path, commit, ref, c.hash, e.clientX, e.clientY)
         }}
         onMouseEnter={() => setPreviewHash(c.hash)}
         onMouseLeave={() => setPreviewHash((h) => (h === c.hash ? null : h))}
@@ -1963,7 +1974,13 @@ export function GraphView({ repo }: { repo: RepoData }): React.JSX.Element {
               onDragStart={(e) => {
                 if (isWip || stash) return
                 e.dataTransfer.setData(CHAT_COMMIT_MIME, c.hash)
-                e.dataTransfer.effectAllowed = 'copy'
+                // Copy for the chat, move for a branch badge (cherry-pick / move the branch here).
+                e.dataTransfer.effectAllowed = 'copyMove'
+                setDragCommit(c.hash)
+              }}
+              onDragEnd={() => {
+                setDragCommit(null)
+                setDropRefKey(null)
               }}
               onMouseEnter={() => setHoverRow(c.hash)}
               onMouseLeave={() => setHoverRow((h) => (h === c.hash ? null : h))}

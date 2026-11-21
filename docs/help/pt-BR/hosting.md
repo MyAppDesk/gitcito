@@ -58,7 +58,9 @@ abre como aba separada. Se o repositório não estiver aberto em nenhuma aba, o 
 abre numa aba própria.
 
 O trabalho fica na coluna principal, e a barra lateral diz o que o PR *é*, sem
-precisar rolar a tela.
+precisar rolar a tela. Com a IA ligada, o botão ✨ do cabeçalho revisa o diff do
+PR como o host o informa, então funciona mesmo para uma branch que você nunca
+baixou (um fork, de outra pessoa).
 
 A coluna principal tem três seções:
 
@@ -96,8 +98,21 @@ de "enviar revisão", então **aprovar** usa o endpoint de aprovação dele e
 fast-forward pelas configurações do projeto, então o menu de merge mostra só
 merge e squash. Threads inline mostram o arquivo e a linha, mas não o hunk de
 diff ao redor, que a API do GitLab não retorna. Revisar e fazer merge funciona
-no gitlab.com e num [GitLab self-managed](#gitlab-self-managed). Bitbucket e
-Azure DevOps ainda abrem no navegador para revisão.
+no gitlab.com e num [GitLab self-managed](#gitlab-self-managed). O Bitbucket
+ainda abre no navegador para revisão.
+
+Diferenças do Azure DevOps: aprovar registra o seu voto (*Approved*); **pedir
+mudanças** vota *Waiting for author*. Concluir o PR aceita merge, squash ou
+rebase. O Azure lista os arquivos alterados mas não manda o diff, então o app
+busca as duas versões de cada arquivo e calcula o diff — para os primeiros 200
+arquivos; um arquivo binário, ou uma mudança grande demais para calcular aqui,
+tem link para o host. As pessoas aparecem com as iniciais, porque as fotos de
+perfil do Azure exigem um navegador com login.
+
+A barra lateral também lista os **work items vinculados ao PR** — número,
+título, tipo e estado — cada um abrindo no navegador. Ler esses itens exige um
+token com leitura de work items (*Work Items: Read*); sem isso a linha
+simplesmente não aparece.
 
 ## GitLab self-managed
 
@@ -142,17 +157,27 @@ O Forgejo, e o Gitea, que usa a mesma API, sempre roda num endereço escolhido
 pelo dono: o seu próprio servidor ou um público, como o codeberg.org. Informe
 esse endereço a um perfil em **Configurações → Integrações → Forgejo**, junto
 com um token de acesso. **Criar token** abre a página de tokens desse servidor.
-Dê ao token permissão de leitura e escrita em *repository*, e de leitura em
-*user* e *organization*.
+Dê ao token permissão de leitura e escrita em *repository*, *issue* e
+*notification*, e de leitura em *user* e *organization*. As permissões de um
+token não mudam depois: um token criado sem *issue* ou *notification* não lista
+issues nem notificações, e a solução é criar um novo.
 
 A partir daí, os remotes nesse servidor são Forgejo:
 
 | Funciona | Como |
 |----------|------|
 | Push e fetch | Login com o token do perfil |
-| Pull requests abertos | Listados na sidebar, como em qualquer host |
+| Pull requests abertos | Listados na sidebar, e abrem na [página do pull request](#revisando--github-e-gitlab): conversa, diff de cada arquivo, checks (status de commit, incluindo o Forgejo Actions), comentar, aprovar, pedir mudanças, e merge / squash / rebase |
 | Criar pull request | Pelo app; um rascunho leva o prefixo `WIP:` que o Forgejo usa |
 | Navegador de clone, criar repositório | Nesse servidor, na sua conta ou numa organização |
+
+Uma check que é um job do **Forgejo Actions** mostra o log embaixo da linha,
+com cores, começando pelo fim, onde fica a falha. O Forgejo não tem API para
+logs de job, então o app pede a mesma página que o visualizador de log da web
+baixa, enviando o token só quando o link é um job deste mesmo servidor; um status
+de CI externa nunca o recebe. Um servidor que só entrega logs a um navegador com
+login responde com a tela de login, e a linha avisa isso e oferece o navegador.
+Logs muito longos mostram as últimas milhares de linhas.
 
 Como no GitLab, **um token do Forgejo só vai para o servidor que o emitiu**. Um
 perfil sem endereço do Forgejo não tem credencial do Forgejo, e não existe
@@ -160,24 +185,50 @@ servidor padrão para onde cair.
 
 Limites:
 
-- Revisar, comentar e fazer merge de um pull request ainda abre no navegador.
-  Por enquanto, essa tela de revisão é só do GitHub e do GitLab.
+- As threads de comentário de linha aparecem, mas não dá para responder pelo
+  app: o Forgejo não tem API para responder dentro de uma thread existente.
+  Responda no servidor.
 - Só https, um servidor Forgejo por perfil.
-- As listas mostram os primeiros 50 pull requests e repositórios.
+- As listas param depois de vinte requisições: 1.000 pull requests ou
+  repositórios no tamanho de página padrão do servidor.
 
-## Issues, milestones, releases — GitHub
+## Issues, milestones, releases — GitHub e Forgejo
 
 Navegue pelas issues e abra uma aba de issue completa: corpo, comentários, labels,
 responsáveis, milestone, campos do Projects v2, fechar/reabrir, e **criar uma
 branch para esta issue** (com nomeação por IA). Milestones mostram progresso e as
 issues delas. Releases são navegáveis com uma página de changelog.
 
-## Notificações — GitHub
+Num servidor [Forgejo](#forgejo), as mesmas listas e páginas funcionam, com o
+token Forgejo do perfil. Duas coisas são só do GitHub e ficam vazias lá: os
+campos do Projects v2 e os pull requests vinculados a uma issue. Releases
+listam as mais recentes, não o histórico inteiro.
+
+## Aguardando a sua revisão
+
+Na lista de pull requests da sidebar, um 👁 marca os PRs em que **você** é
+revisor e ainda não respondeu — no GitHub, no GitLab e no Forgejo. Quem é
+"você" é perguntado ao host com a credencial do perfil e lembrado por dez
+minutos. Um token que não consegue ler o próprio usuário (sem `read:user` no
+Forgejo, por exemplo) não marca nada.
+
+Com **Configurações → Notificações do sistema** ligado, um pull request do GitLab
+ou do Forgejo que *passa* a esperar por você dispara uma; clicar nela abre a
+página do PR. A primeira olhada num repositório só registra o que já está
+esperando, então abrir o app não repete o acúmulo. Os pedidos de review do GitHub
+ficam com a caixa de notificações dele, mais abaixo, que já avisa.
+
+## Notificações — GitHub e Forgejo
 
 Sua caixa de entrada inteira — pedidos de revisão, menções, atividade de CI — em
 todos os repositórios, com filtros de não lidas/todas e marcar como lida. O sino da
 barra de ferramentas carrega um selo de não lidas, e notificações de desktop
 opcionais disparam quando uma revisão é pedida ou o CI termina.
+
+Se o perfil ativo tem um servidor Forgejo, as notificações dele entram na mesma
+lista, das mais novas para as mais antigas, e são marcadas como lidas naquele
+servidor. O Forgejo não diz *por que* você foi notificado, então essas linhas não
+têm motivo, e nunca disparam notificação de desktop — isso é decidido pelo motivo.
 
 ## Tokens
 

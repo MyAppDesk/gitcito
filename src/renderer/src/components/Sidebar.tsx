@@ -42,7 +42,8 @@ import {
   Bookmark as BookmarkIcon,
   Folder,
   FolderOpen,
-  Eraser
+  Eraser,
+  Eye
 } from 'lucide-react'
 import { FileTree } from './FileTree'
 import { FileSearchBar, EMPTY_FILTER, type FileFilter } from './FileSearchBar'
@@ -57,7 +58,7 @@ import { gitApi, shellApi } from '../infrastructure/api'
 import { groupPrStacks, stackRowStates, type StackRowState } from '../lib/prStacks'
 import { ciIcon, CI_STATE_KEY } from './CiIcon'
 import { useT, interp, type TranslationKey } from '../i18n'
-import { forkUpstream, repoIsGitHub, repoSupportsPrReview } from '../lib/hosting'
+import { forkUpstream, repoHasIssueTracker, repoSupportsPrReview } from '../lib/hosting'
 import { folderOpenMenuItems } from '../lib/openWith'
 import { togglePin, selectPinned } from '../lib/pinnedBranches'
 import { branchDropActions, encodeDropRef, BRANCH_DND_TYPE, type DropRef } from '../lib/branchDrop'
@@ -87,6 +88,13 @@ import { defaultSettings } from '../../../shared/types'
 import type { BranchInfo, MergeRiskKind, ReleaseInfo, RemoteBranchInfo, StashInfo, TagInfo, WorktreeInfo, SubmoduleInfo, LaunchGroup, LaunchConfig, PullRequest, IssueInfo, MilestoneInfo, RemoteInfo, RepoTodo, RepoBookmark } from '../../../shared/types'
 
 import { RemoteIcon } from './RemoteIcon'
+
+/** The Forgejo servers the profiles point at, read when a menu is built. */
+const forgejoInstances = (): string[] =>
+  useSettingsStore
+    .getState()
+    .settings.profiles.map((p) => p.forgejoUrl?.trim() ?? '')
+    .filter(Boolean)
 
 /** The self-managed GitLabs the profiles point at, read when a menu is built. */
 const gitlabInstances = (): string[] =>
@@ -286,6 +294,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const sidebarOrder = useMemo(() => repoLayout?.sidebarOrder ?? baseSidebarOrder, [repoLayout, baseSidebarOrder])
   const sidebarHidden = useMemo(() => repoLayout?.sidebarHidden ?? baseSidebarHidden, [repoLayout, baseSidebarHidden])
   const groupBranches = useSettingsStore((s) => s.settings.groupBranches)
+  const profiles = useSettingsStore((s) => s.settings.profiles)
   const updateRepoLayout = useSettingsStore((s) => s.updateRepoLayout)
   const openPageTab = useSettingsStore((s) => s.openPageTab)
   const openRepoTab = useSettingsStore((s) => s.openRepoTab)
@@ -1427,7 +1436,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
   const prMenu = (pr: PullRequest, remote?: RemoteInfo): MenuItem[] => {
     const origin = remote ?? hostOrigin()
     return [
-      ...(repoSupportsPrReview(repo.remotes, gitlabInstances()) && origin
+      ...(repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances()) && origin
         ? [
             {
               label: t('sidebar.openDetails'),
@@ -1878,7 +1887,7 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           onKeyDown={keyActivate}
           onClick={() => {
             // Rich PR detail exists for GitHub and GitLab; other hosts open in browser.
-            if (!repoSupportsPrReview(repo.remotes, gitlabInstances())) {
+            if (!repoSupportsPrReview(repo.remotes, gitlabInstances(), forgejoInstances())) {
               void window.api.openExternal(pr.url)
               return
             }
@@ -1913,6 +1922,12 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
           {rowState === 'blocked' && (
             <span className="sb-pr-flag blocked" title={t('pr.blockedDownstack')}>
               <Ban size={11} />
+            </span>
+          )}
+          {/* You are a pending reviewer here — the one thing in the list that is yours to do. */}
+          {pr.awaitingYou && (
+            <span className="sb-pr-flag awaiting" title={t('pr.awaitingYourReview')} aria-label={t('pr.awaitingYourReview')}>
+              <Eye size={11} />
             </span>
           )}
           {/* Unlike the detail view, previewing works on every host — the PR
@@ -2854,8 +2869,8 @@ export function Sidebar({ repo }: { repo: RepoData }): React.JSX.Element {
     )
   }
 
-  // Issues, Milestones & Releases are GitHub-only features; hide them for other hosts.
-  if (!repoIsGitHub(repo.remotes)) {
+  // Issues, Milestones & Releases are listed for GitHub and Forgejo; hide them for other hosts.
+  if (!repoHasIssueTracker(repo.remotes, profiles.map((p) => p.forgejoUrl))) {
     delete sections.issues
     delete sections.milestones
     delete sections.releases

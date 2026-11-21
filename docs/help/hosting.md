@@ -76,7 +76,9 @@ top-level tab instead. If the repository is not open anywhere, the PR opens in a
 tab of its own.
 
 The work happens in the main column, and the sidebar says what the PR *is*, so
-you do not have to scroll through it.
+you do not have to scroll through it. With AI on, the ✨ button in the header
+reviews the PR's diff as the host reports it, so it works even for a branch you
+have never fetched (a fork, someone else's).
 
 The main column has three sections:
 
@@ -113,7 +115,18 @@ decides merge-commit vs fast-forward from the project's settings, so the merge
 menu shows merge and squash only. Inline threads show the file and line but not
 the surrounding diff hunk, which GitLab's API does not return. Review and merge
 work on gitlab.com and on a [self-managed GitLab](#self-managed-gitlab). Bitbucket
-and Azure DevOps still open in the browser for review.
+still opens in the browser for review.
+
+Azure DevOps differences: approving casts your vote (*Approved*); **request
+changes** votes *Waiting for author*. Completing the PR takes merge, squash or
+rebase. Azure lists a PR's changed files but sends no diff, so the app fetches
+both versions of each file and diffs them itself — for the first 200 files; a
+binary file, or a change too large to diff here, links to the host. People show
+as initials, because Azure's profile pictures need a signed-in browser.
+
+The sidebar also lists the **work items linked to the PR** — number, title,
+type and state — each opening in the browser. Reading them takes a token that
+can read work items (*Work Items: Read*); without it the row is simply left out.
 
 ## Self-managed GitLab
 
@@ -157,17 +170,27 @@ Forgejo, and Gitea, which shares its API, always runs at an address its owner
 chose: your own server, or a public one such as codeberg.org. Give a profile
 that address in **Settings → Integrations → Forgejo**, together with an access
 token. **Create token** opens the token page on that server. Give the token
-read and write permission on *repository*, and read permission on *user* and
-*organization*.
+read and write permission on *repository*, *issue* and *notification*, and
+read permission on *user* and *organization*. A token's permissions cannot be
+changed later: one made without *issue* or *notification* lists no issues or
+notifications, and a new token is the fix.
 
 From then on, remotes on that server are Forgejo:
 
 | Works | How |
 |-------|-----|
 | Push and fetch | Signed in with the profile's token |
-| Open pull requests | Listed in the sidebar, like any other host |
+| Open pull requests | Listed in the sidebar, and open in the [pull request page](#reviewing--github-and-gitlab): conversation, each file's diff, checks (commit statuses, including Forgejo Actions), comment, approve, request changes, and merge / squash / rebase |
 | Create a pull request | From the app; a draft is marked with the `WIP:` prefix Forgejo uses |
 | Clone browser, create repository | Against that server, under your account or an organization |
+
+A check that is a **Forgejo Actions** job shows its log under the row, colours
+included, starting at the end where a failure is. Forgejo has no API for job
+logs, so the app asks for the same page its web log viewer downloads, sending
+the token only when the link is a job on this very server; a status from an
+external CI is never sent it. A server that serves logs only to a signed-in
+browser answers with its sign-in page, and the row says so and offers the
+browser instead. Very long logs show their last few thousand lines.
 
 Just like GitLab tokens, **a Forgejo token only goes to the server that issued
 it**. A profile without a Forgejo address has no Forgejo credential at all.
@@ -175,24 +198,49 @@ There is no default server to fall back to.
 
 Limits:
 
-- Reviewing, commenting on and merging a pull request still opens in the
-  browser. That review surface is GitHub and GitLab only for now.
+- Line-comment threads are shown but cannot be replied to from the app:
+  Forgejo has no API for a reply inside an existing thread. Reply on the server.
 - https only, one Forgejo server per profile.
-- Lists show the first 50 pull requests and repositories.
+- Lists stop after twenty requests: 1,000 pull requests or repositories at the
+  server's default page size.
 
-## Issues, milestones, releases — GitHub
+## Issues, milestones, releases — GitHub and Forgejo
 
 Browse issues and open a full issue tab: body, comments, labels, assignees,
 milestone, Projects v2 fields, close/reopen, and **create a branch for this
 issue** (with AI naming). Milestones show progress and their issues. Releases
 are browsable with a changelog page.
 
-## Notifications — GitHub
+On a [Forgejo](#forgejo) server the same lists and pages work, with the
+profile's Forgejo token. Two things are GitHub's alone and stay empty there:
+Projects v2 fields, and the pull requests linked to an issue. Releases list the
+most recent ones, not the whole history.
+
+## Waiting for your review
+
+In the sidebar's pull request list, a 👁 marks the PRs where **you** are a
+reviewer who has not answered yet — on GitHub, GitLab and Forgejo alike. Who
+"you" are is asked of the host with the profile's credential and remembered for
+ten minutes. A token that cannot read its own user (no `read:user` on Forgejo,
+for example) marks nothing.
+
+With **Settings → Desktop notifications** on, a GitLab or Forgejo pull request
+that *starts* waiting for you raises one; clicking it opens the PR page. The
+first look at a repository only takes note of what is already waiting, so
+opening the app does not replay a backlog. GitHub's review requests are left to
+its notifications inbox, below, which already announces them.
+
+## Notifications — GitHub and Forgejo
 
 Your whole inbox — review requests, mentions, CI activity — across every
 repository, with unread/all filters and mark-as-read. The toolbar bell carries
 an unread badge, and optional desktop notifications fire when a review is
 requested or CI finishes.
+
+If the active profile has a Forgejo server, its notifications join the same
+list, newest first, and are marked read on that server. Forgejo does not say
+*why* you were notified, so those rows carry no reason, and they never raise a
+desktop notification — that is decided by the reason.
 
 ## Tokens
 

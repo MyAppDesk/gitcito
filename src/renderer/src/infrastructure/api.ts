@@ -270,6 +270,7 @@ export const gitApi = {
   /** Fast-forward a local branch from its upstream without checking it out. */
   pullBranch: (path: string, branch: string) => call<void>('pullBranch', path, branch),
   setBranchRef: (path: string, branch: string, sha: string) => call<void>('setBranchRef', path, branch, sha),
+  moveBranchTo: (path: string, branch: string, sha: string) => call<string>('moveBranchTo', path, branch, sha),
   isAncestor: (path: string, ancestor: string, descendant: string) =>
     call<boolean>('isAncestor', path, ancestor, descendant),
   /** Returns the commit `target` was on, for undo. */
@@ -984,31 +985,36 @@ export const hostingApi = {
     window.api.hosting.openCreatePR(remoteUrl, source, target),
   createPR: (remoteUrl: string, tokens: { github?: string; azure?: string; gitlab?: string; bitbucket?: string; forgejo?: string }, opts: CreatePrOpts) =>
     window.api.hosting.createPR(remoteUrl, tokens, opts) as Promise<CreatePrResult>,
-  prDetail: (remoteUrl: string, tokens: { github?: string; gitlab?: string }, number: number) =>
+  prDetail: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number) =>
     window.api.hosting.prDetail(remoteUrl, tokens, number) as Promise<PrDetail>,
-  prComment: (remoteUrl: string, tokens: { github?: string; gitlab?: string }, number: number, body: string) =>
+  workItem: (remoteUrl: string, tokens: { azure?: string }, id: number) =>
+    window.api.hosting.workItem(remoteUrl, tokens, id) as Promise<{ id: number; title: string; type: string; state?: string }>,
+  prComment: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number, body: string) =>
     window.api.hosting.prComment(remoteUrl, tokens, number, body) as Promise<void>,
   prReplyReviewComment: (
     remoteUrl: string,
-    tokens: { github?: string; gitlab?: string },
+    tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string },
     number: number,
     inReplyTo: number | string,
     body: string
   ) => window.api.hosting.prReplyReviewComment(remoteUrl, tokens, number, inReplyTo, body) as Promise<void>,
-  prChecks: (remoteUrl: string, tokens: { github?: string; gitlab?: string }, number: number) =>
+  /** A check's log text, or null when the app cannot read it (open it in the browser instead). */
+  prCheckLog: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string }, url: string) =>
+    window.api.hosting.prCheckLog(remoteUrl, tokens, url) as Promise<string | null>,
+  prChecks: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number) =>
     window.api.hosting.prChecks(remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrCheck[]>,
-  prFiles: (remoteUrl: string, tokens: { github?: string; gitlab?: string }, number: number) =>
+  prFiles: (remoteUrl: string, tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }, number: number) =>
     window.api.hosting.prFiles(remoteUrl, tokens, number) as Promise<import('../../../shared/types').PrFile[]>,
   prReview: (
     remoteUrl: string,
-    tokens: { github?: string; gitlab?: string },
+    tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string },
     number: number,
     event: PrReviewEvent,
     body: string
   ) => window.api.hosting.prReview(remoteUrl, tokens, number, event, body) as Promise<void>,
   prMerge: (
     remoteUrl: string,
-    tokens: { github?: string; gitlab?: string },
+    tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string },
     number: number,
     method: PrMergeMethod
   ) => window.api.hosting.prMerge(remoteUrl, tokens, number, method) as Promise<void>,

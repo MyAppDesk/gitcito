@@ -156,7 +156,8 @@ export type ModalSpec =
       onReset: (strategy: ResetStrategy, backup: boolean) => void
     }
   | { kind: 'clone'; onClone: (repo: { path: string; name: string }) => void }
-  | { kind: 'create-branch'; path: string; currentBranch?: string; description?: string }
+  | { kind: 'create-branch'; path: string; currentBranch?: string; description?: string; initialName?: string }
+  | { kind: 'work-item-branch'; path: string; remoteUrl: string }
   | { kind: 'settings'; page?: 'profile' | 'layout' | 'integrations' | 'ai' | 'themes' | 'general' | 'security' | 'shortcuts' | 'data' | 'environment'; themeTab?: 'theme' | 'graph' }
   | { kind: 'launcher'; groupId?: string }
   | { kind: 'create-repo'; onCreate: (repo: { path: string; name: string }) => void }
@@ -192,7 +193,7 @@ export type ModalSpec =
   | { kind: 'absorb'; repoPath: string }
   | { kind: 'time-machine'; repoPath: string }
   | { kind: 'timelapse'; repoPath: string }
-  | { kind: 'ai-pr-review'; repoPath: string; prTitle: string; sourceBranch: string; targetBranch: string }
+  | { kind: 'ai-pr-review'; repoPath: string; prTitle: string; sourceBranch: string; targetBranch: string; diff?: string }
   /** The colour picker. Deliberately knows nothing about what it is colouring:
    *  it is used by group tabs, folders and Repositories-page sections alike.
    *  `tabId` is optional so a page-local colour can reuse the same modal. */
@@ -392,6 +393,8 @@ interface UIState {
    *  window, because a drop target cannot read the drag's payload until the
    *  drop — and a sidebar row and a graph badge are different components. */
   draggingRef: DropRef | null
+  /** A graph commit being dragged — branch badges offer cherry-pick / move onto themselves. */
+  draggingCommit: string | null
   /** Which toolbar operation is in flight, so the spinner can render on the
    *  relevant tool button instead of a layout-shifting label on the right. */
   busyOp: 'push' | 'pull' | 'fetch' | null
@@ -451,6 +454,7 @@ interface UIState {
   setBusy(label: string | null, op?: 'push' | 'pull' | 'fetch' | null): void
   setRepoSwitching(path: string | null): void
   setDraggingRef(ref: DropRef | null): void
+  setDraggingCommit(hash: string | null): void
   beginInflight(): void
   endInflight(): void
   requestComposerIntent(intent: { path: string; summary: string; description: string; amend: boolean }): void
@@ -501,6 +505,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   busy: null,
   repoSwitching: null,
   draggingRef: null,
+  draggingCommit: null,
   busyOp: null,
   inflight: 0,
   composerIntent: null,
@@ -580,6 +585,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setBusy: (busy, op = null) => set({ busy, busyOp: op }),
   setRepoSwitching: (repoSwitching) => set({ repoSwitching }),
   setDraggingRef: (draggingRef) => set({ draggingRef }),
+  setDraggingCommit: (draggingCommit) => set({ draggingCommit }),
   beginInflight: () => set((s) => ({ inflight: s.inflight + 1 })),
   endInflight: () => set((s) => ({ inflight: Math.max(0, s.inflight - 1) })),
   requestComposerIntent: (composerIntent) => set({ composerIntent }),
@@ -619,4 +625,9 @@ export const useUIStore = create<UIState>((set, get) => ({
 /** The ref being dragged right now, read at event time — see `draggingRef` in the store. */
 export function draggingRef(): DropRef | null {
   return useUIStore.getState().draggingRef
+}
+
+/** The commit being dragged right now, read at event time like `draggingRef`. */
+export function draggingCommit(): string | null {
+  return useUIStore.getState().draggingCommit
 }

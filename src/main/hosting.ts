@@ -13,11 +13,30 @@ import { activeProfileAuth, allProfileAuth, boundProfileAuth, profileForgejoInst
 import {
   createForgejoPull,
   createForgejoRepo,
+  forgejoComment,
+  forgejoMerge,
+  forgejoPullChecks,
+  forgejoJobLog,
+  forgejoPullDetail,
+  forgejoPullFiles,
+  forgejoReview,
   describeForgejoAccount,
+  fjJson,
   forgejoCompareUrl,
   listForgejoOwners,
   listForgejoPulls,
-  listForgejoRepos
+  listForgejoRepos,
+  listForgejoIssues,
+  forgejoIssueDetail,
+  setForgejoIssueState,
+  createForgejoIssue,
+  listForgejoMilestones,
+  forgejoMilestoneIssues,
+  listForgejoReleases,
+  listForgejoNotifications,
+  markForgejoNotificationRead,
+  markAllForgejoNotificationsRead,
+  FORGEJO_NOTIFICATION
 } from './forgejo'
 import { knownForgejoInstances, knownGitlabInstances } from './gitlabInstances'
 import {
@@ -71,6 +90,18 @@ import type {
   RepoHost,
   GithubStackInfo
 } from '../shared/types'
+import {
+  azureComment,
+  azureMerge,
+  azurePrChecks,
+  azurePrDetail,
+  azurePrFiles,
+  azureReply,
+  azureReview,
+  azureWorkItem,
+  type Ado,
+  type AzureRepo
+} from './azurePr'
 
 interface ParsedRemote {
   provider: Exclude<HostingProvider, null>
@@ -452,7 +483,48 @@ export async function githubRepoError(
   )
 }
 
+/** Mark the PRs that wait on `login`'s review. Logins compare case-insensitively, as hosts treat them. */
+export function markAwaitingYou(prs: PullRequest[], login: string | null): PullRequest[] {
+  if (!login) return prs
+  const me = login.toLowerCase()
+  return prs.map((p) => (p.requestedReviewers?.some((r) => r.toLowerCase() === me) ? { ...p, awaitingYou: true } : p))
+}
+
+/** Who a token signs in as, per host — remembered for a while, keyed by a hash of the token (never the token). */
+const loginCache = new Map<string, { login: string | null; at: number }>()
+const LOGIN_TTL_MS = 10 * 60_000
+
+async function myLogin(parsed: ParsedRemote, token: string, auth: ApiAuth): Promise<string | null> {
+  const key = `${parsed.provider}|${parsed.base ?? ''}|${createHash('sha256').update(token).digest('hex').slice(0, 16)}`
+  const hit = loginCache.get(key)
+  if (hit && Date.now() - hit.at < LOGIN_TTL_MS) return hit.login
+  let login: string | null = null
+  try {
+    if (parsed.provider === 'github') login = (await ghJson<{ login: string }>('https://api.github.com/user', token)).login
+    else if (parsed.provider === 'gitlab') login = (await glJson<{ username: string }>(`${glApi(parsed.base)}/user`, auth)).username
+    else if (parsed.provider === 'forgejo' && parsed.base) login = (await fjJson<{ login: string }>(`${parsed.base}/api/v1/user`, token)).login
+  } catch {
+    // A token without user scope cannot say who it is: no marks, no error.
+  }
+  loginCache.set(key, { login, at: Date.now() })
+  return login
+}
+
+/** The open PRs of a remote, with the ones waiting on your review marked. */
 async function listPullRequests(
+  remoteUrl: string,
+  tokens: HostTokens,
+  repoPath?: string
+): Promise<{ provider: HostingProvider; prs: PullRequest[] }> {
+  const result = await listPullRequestsOf(remoteUrl, tokens, repoPath)
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || !result.prs.some((p) => p.requestedReviewers?.length)) return result
+  const auth = await tokenForRemote(remoteUrl, parsed.provider, tokens, repoPath).catch(() => null)
+  if (!auth) return result
+  return { ...result, prs: markAwaitingYou(result.prs, await myLogin(parsed, auth.token, auth)) }
+}
+
+async function listPullRequestsOf(
   remoteUrl: string,
   tokens: HostTokens,
   repoPath?: string
@@ -479,6 +551,7 @@ async function listPullRequests(
       web_url: string
       draft?: boolean
       work_in_progress?: boolean
+      reviewers?: Array<{ username: string }>
     }>
     return {
       provider: 'gitlab',
@@ -489,7 +562,8 @@ async function listPullRequests(
         sourceBranch: p.source_branch,
         targetBranch: p.target_branch,
         url: p.web_url,
-        isDraft: !!(p.draft || p.work_in_progress)
+        isDraft: !!(p.draft || p.work_in_progress),
+        requestedReviewers: (p.reviewers ?? []).map((r) => r.username)
       }))
     }
   }
@@ -552,6 +626,7 @@ async function listPullRequests(
       // Present once GitHub's stacked pull requests are in play; absent on a
       // server without them, which is the same as "this one is on its own".
       stack?: { number: number } | null
+      requested_reviewers?: Array<{ login: string }>
     }>
     const prs: PullRequest[] = data.map((p) => ({
       id: p.number,
@@ -564,7 +639,8 @@ async function listPullRequests(
       stackNumber: p.stack?.number,
       state: 'open',
       headSha: p.head.sha,
-      headRepo: p.head.repo?.full_name
+      headRepo: p.head.repo?.full_name,
+      requestedReviewers: (p.requested_reviewers ?? []).map((u) => u.login)
     }))
     if (!auth) return { provider: 'github', prs }
 
@@ -612,24 +688,27 @@ async function listPullRequests(
   // Azure DevOps
   if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
   const base = `https://dev.azure.com/${parsed.owner}/${encodeURIComponent(parsed.project)}`
-  const data = await withAzureRetry(remoteUrl, auth, (token) =>
-    adoJson<{
-      value: Array<{
-        pullRequestId: number
-        title: string
-        isDraft: boolean
-        createdBy: { displayName: string }
-        sourceRefName: string
-        targetRefName: string
-      }>
-    }>(
-      `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests?searchCriteria.status=active&api-version=7.1`,
-      token
+  type AzPull = {
+    pullRequestId: number
+    title: string
+    isDraft: boolean
+    createdBy: { displayName: string }
+    sourceRefName: string
+    targetRefName: string
+  }
+  // Unpaged, the API stops at about a hundred; $top/$skip walk the rest.
+  const prs = await withAzureRetry(remoteUrl, auth, (token) =>
+    allPages((page) =>
+      adoJson<{ value: AzPull[] }>(
+        `${base}/_apis/git/repositories/${encodeURIComponent(parsed.repo)}/pullrequests` +
+          `?searchCriteria.status=active&$top=100&$skip=${(page - 1) * 100}&api-version=7.1`,
+        token
+      ).then((d) => d.value)
     )
   )
   return {
     provider: 'azure',
-    prs: data.value.map((p) => ({
+    prs: prs.map((p) => ({
       id: p.pullRequestId,
       title: p.title,
       author: p.createdBy.displayName,
@@ -641,13 +720,41 @@ async function listPullRequests(
   }
 }
 
+/**
+ * A Forgejo remote's instance, owner/repo and token — through remoteApiToken,
+ * so only the profile owning that instance's token is used. Null when the
+ * remote is not on a Forgejo server or no credential reaches it.
+ */
+async function forgejoRemote(
+  remoteUrl: string,
+  repoPath?: string
+): Promise<{ base: string; owner: string; repo: string; token: string } | null> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'forgejo' || !parsed.base) return null
+  const auth = await remoteApiToken(remoteUrl, 'forgejo', undefined, repoPath)
+  return auth ? { base: parsed.base, owner: parsed.owner, repo: parsed.repo, token: auth.token } : null
+}
+
+/** forgejoRemote for an action the user asked for: no credential is an error, not an empty list. */
+async function forgejoRemoteOrThrow(remoteUrl: string): Promise<{ base: string; owner: string; repo: string; token: string }> {
+  const f = await forgejoRemote(remoteUrl)
+  if (!f) throw await noCredential('Forgejo', remoteUrl)
+  return f
+}
+
+const isForgejo = (remoteUrl: string): boolean => parseRemoteUrl(remoteUrl)?.provider === 'forgejo'
+
 async function listReleases(
   remoteUrl: string,
   tokens: { github?: string },
   repoPath?: string
 ): Promise<{ provider: HostingProvider; releases: ReleaseInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
-  // Releases are a GitHub concept; Azure DevOps "releases" are pipelines, not this.
+  if (parsed?.provider === 'forgejo') {
+    const f = await forgejoRemote(remoteUrl, repoPath)
+    return { provider: 'forgejo', releases: f ? await listForgejoReleases(f.base, f.owner, f.repo, f.token) : [] }
+  }
+  // Azure DevOps "releases" are pipelines, and GitLab's are not wired: GitHub and Forgejo only.
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, releases: [] }
 
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
@@ -960,9 +1067,9 @@ async function glMergeRequestDetail(remoteUrl: string, token: string | undefined
       source_project_id?: number
       project_id?: number
     }>(`${mrUrl}?with_labels_details=true`, auth),
-    glJson<Array<{ id: string; notes: GlNote[] }>>(`${mrUrl}/discussions?per_page=100`, auth).catch(
-      () => [] as Array<{ id: string; notes: GlNote[] }>
-    ),
+    allPages((page) =>
+      glJson<Array<{ id: string; notes: GlNote[] }>>(`${mrUrl}/discussions?per_page=100&page=${page}`, auth)
+    ).catch(() => [] as Array<{ id: string; notes: GlNote[] }>),
     glJson<{ approved_by?: Array<{ user: GlUser | null }> }>(`${mrUrl}/approvals`, auth).catch(() => ({
       approved_by: []
     })),
@@ -1194,12 +1301,60 @@ interface GhUser {
   avatar_url?: string
 }
 
+/**
+ * An Azure DevOps remote, and an `ado` caller for it: the profile's credential
+ * (remoteApiToken) with the same retry-on-revoked-helper-credential the list
+ * uses, so azurePr.ts needs to know nothing about auth.
+ */
+async function azRepoOf(remoteUrl: string, sent: string | undefined): Promise<{ ado: Ado; repo: AzureRepo }> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'azure') throw new Error('Not an Azure DevOps repository.')
+  const auth = await remoteApiToken(remoteUrl, 'azure', sent)
+  if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
+  const ado: Ado = (url, init) => withAzureRetry(remoteUrl, auth, (token) => adoJson(url, token, init))
+  return { ado, repo: { org: parsed.owner, project: parsed.project, repo: parsed.repo } }
+}
+
+/** Resolve a Forgejo remote to its instance, owner/repo and token — through
+ *  remoteApiToken, so only the profile owning that instance's token is used. */
+async function fjRepoOf(
+  remoteUrl: string,
+  sent: string | undefined
+): Promise<{ base: string; owner: string; repo: string; token: string }> {
+  const parsed = parseRemoteUrl(remoteUrl)
+  if (!parsed || parsed.provider !== 'forgejo' || !parsed.base) throw new Error('Not a Forgejo repository.')
+  const auth = await remoteApiToken(remoteUrl, 'forgejo', sent)
+  if (!auth) throw await noCredential('Forgejo', remoteUrl)
+  return { base: parsed.base, owner: parsed.owner, repo: parsed.repo, token: auth.token }
+}
+
+/** An inline review comment on a GitHub PR. */
+interface GhReviewComment {
+  id: number
+  user: GhUser | null
+  body: string
+  created_at: string
+  path: string
+  line: number | null
+  original_line: number | null
+  diff_hunk: string
+  in_reply_to_id?: number
+}
+
 async function pullRequestDetail(
   remoteUrl: string,
   tokens: HostTokens,
   number: number
 ): Promise<PrDetail> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestDetail(remoteUrl, tokens.gitlab, number)
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullDetail(f.base, f.owner, f.repo, f.token, number)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azurePrDetail(a.ado, a.repo, number)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const [pr, comments, reviews, reviewComments] = await Promise.all([
@@ -1230,27 +1385,19 @@ async function pullRequestDetail(
       changed_files?: number
       commits?: number
     }>(`${api}/pulls/${number}`, token),
-    ghJson<Array<{ user: GhUser | null; body: string; created_at: string }>>(
-      `${api}/issues/${number}/comments?per_page=100`,
-      token
+    // Every page: a long discussion used to stop at its first 100 comments.
+    allPages((page) =>
+      ghJson<Array<{ user: GhUser | null; body: string; created_at: string }>>(
+        `${api}/issues/${number}/comments?per_page=100&page=${page}`,
+        token
+      )
     ),
-    ghJson<Array<{ user: GhUser | null; state: string }>>(
-      `${api}/pulls/${number}/reviews?per_page=100`,
-      token
+    allPages((page) =>
+      ghJson<Array<{ user: GhUser | null; state: string }>>(`${api}/pulls/${number}/reviews?per_page=100&page=${page}`, token)
     ),
-    ghJson<
-      Array<{
-        id: number
-        user: GhUser | null
-        body: string
-        created_at: string
-        path: string
-        line: number | null
-        original_line: number | null
-        diff_hunk: string
-        in_reply_to_id?: number
-      }>
-    >(`${api}/pulls/${number}/comments?per_page=100`, token).catch(() => [])
+    allPages((page) =>
+      ghJson<GhReviewComment[]>(`${api}/pulls/${number}/comments?per_page=100&page=${page}`, token)
+    ).catch(() => [] as GhReviewComment[])
   ])
 
   // Group inline review comments into threads. Replies (in_reply_to_id) attach to
@@ -1325,6 +1472,16 @@ async function pullRequestDetail(
   }
 }
 
+/**
+ * A check's log, read by the app — Forgejo Actions jobs on the PR's own server.
+ * Null when it cannot be read here; the page then offers the browser.
+ */
+async function pullRequestCheckLog(remoteUrl: string, tokens: HostTokens, url: string): Promise<string | null> {
+  if (parseRemoteUrl(remoteUrl)?.provider !== 'forgejo' || typeof url !== 'string') return null
+  const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+  return forgejoJobLog(f.base, f.token, url)
+}
+
 /** CI checks on a PR's head commit (GitHub check-runs / GitLab pipeline jobs). */
 async function pullRequestChecks(
   remoteUrl: string,
@@ -1332,6 +1489,14 @@ async function pullRequestChecks(
   number: number
 ): Promise<PrCheck[]> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestChecks(remoteUrl, tokens.gitlab, number)
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullChecks(f.base, f.owner, f.repo, f.token, number)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azurePrChecks(a.ado, a.repo, number)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const pr = await ghJson<{ head: { sha: string } }>(`${api}/pulls/${number}`, token)
@@ -1353,6 +1518,14 @@ async function pullRequestFiles(
   number: number
 ): Promise<PrFile[]> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeRequestFiles(remoteUrl, tokens.gitlab, number)
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoPullFiles(f.base, f.owner, f.repo, f.token, number)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azurePrFiles(a.ado, a.repo, number)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   type GhFile = {
     filename: string
@@ -1386,6 +1559,14 @@ async function replyReviewComment(
   body: string
 ): Promise<void> {
   // GitHub threads reply to a numeric comment id; GitLab to a discussion id string.
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    // The page hides the reply box for Forgejo; this guards any other caller.
+    throw new Error('Forgejo has no API to reply inside a line thread — reply on the host.')
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureReply(a.ado, a.repo, number, Number(inReplyTo), body)
+  }
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') {
     return glReplyReviewComment(remoteUrl, tokens.gitlab, number, String(inReplyTo), body)
   }
@@ -1403,6 +1584,14 @@ async function commentOnPr(
   body: string
 ): Promise<void> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glCommentOnMr(remoteUrl, tokens.gitlab, number, body)
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoComment(f.base, f.owner, f.repo, f.token, number, body)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureComment(a.ado, a.repo, number, body)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}/comments`, token, {
     method: 'POST',
@@ -1418,6 +1607,14 @@ async function reviewPr(
   body: string
 ): Promise<void> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glReviewMr(remoteUrl, tokens.gitlab, number, event, body)
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoReview(f.base, f.owner, f.repo, f.token, number, event, body)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureReview(a.ado, a.repo, number, event, body)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/reviews`, token, {
     method: 'POST',
@@ -1432,6 +1629,14 @@ async function mergePr(
   method: PrMergeMethod
 ): Promise<void> {
   if (parseRemoteUrl(remoteUrl)?.provider === 'gitlab') return glMergeMr(remoteUrl, tokens.gitlab, number, method)
+  if (parseRemoteUrl(remoteUrl)?.provider === 'forgejo') {
+    const f = await fjRepoOf(remoteUrl, tokens.forgejo)
+    return forgejoMerge(f.base, f.owner, f.repo, f.token, number, method)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureMerge(a.ado, a.repo, number, method)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}/merge`, token, {
     method: 'PUT',
@@ -1445,6 +1650,10 @@ async function listIssues(
   repoPath?: string
 ): Promise<{ provider: HostingProvider; issues: IssueInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
+  if (parsed?.provider === 'forgejo') {
+    const f = await forgejoRemote(remoteUrl, repoPath)
+    return { provider: 'forgejo', issues: f ? await listForgejoIssues(f.base, f.owner, f.repo, f.token) : [] }
+  }
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, issues: [] }
   const auth = await remoteApiToken(remoteUrl, 'github', tokens.github, repoPath)
   if (!auth) return { provider: 'github', issues: [] }
@@ -1481,6 +1690,10 @@ async function listMilestones(
   repoPath?: string
 ): Promise<{ provider: HostingProvider; milestones: MilestoneInfo[] }> {
   const parsed = parseRemoteUrl(remoteUrl)
+  if (parsed?.provider === 'forgejo') {
+    const f = await forgejoRemote(remoteUrl, repoPath)
+    return { provider: 'forgejo', milestones: f ? await listForgejoMilestones(f.base, f.owner, f.repo, f.token) : [] }
+  }
   if (!parsed || parsed.provider !== 'github') return { provider: parsed?.provider ?? null, milestones: [] }
   const auth = await remoteApiToken(remoteUrl, 'github', tokens.github, repoPath)
   if (!auth) return { provider: 'github', milestones: [] }
@@ -1590,6 +1803,10 @@ async function issueDetail(
   tokens: { github?: string },
   number: number
 ): Promise<IssueDetail> {
+  if (isForgejo(remoteUrl)) {
+    const f = await forgejoRemoteOrThrow(remoteUrl)
+    return forgejoIssueDetail(f.base, f.owner, f.repo, f.token, number)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
   const [issue, comments, timeline, projectFields] = await Promise.all([
@@ -1643,12 +1860,16 @@ async function issueDetail(
   }
 }
 
-/** Issues belonging to a milestone (open + closed). GitHub only. */
+/** Issues belonging to a milestone (open + closed). GitHub and Forgejo. */
 async function milestoneIssues(
   remoteUrl: string,
   tokens: { github?: string },
   number: number
 ): Promise<IssueInfo[]> {
+  if (isForgejo(remoteUrl)) {
+    const f = await forgejoRemoteOrThrow(remoteUrl)
+    return forgejoMilestoneIssues(f.base, f.owner, f.repo, f.token, number)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const data = await ghJson<
     Array<{
@@ -1679,6 +1900,10 @@ async function setIssueState(
   number: number,
   state: 'open' | 'closed'
 ): Promise<void> {
+  if (isForgejo(remoteUrl)) {
+    const f = await forgejoRemoteOrThrow(remoteUrl)
+    return setForgejoIssueState(f.base, f.owner, f.repo, f.token, number, state)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   await ghJson(`https://api.github.com/repos/${owner}/${repo}/issues/${number}`, token, {
     method: 'PATCH',
@@ -1686,12 +1911,16 @@ async function setIssueState(
   })
 }
 
-/** Create a new issue. GitHub only. Returns its number + web URL. */
+/** Create a new issue on GitHub or Forgejo. Returns its number + web URL. */
 async function createIssue(
   remoteUrl: string,
   tokens: { github?: string },
   opts: { title: string; body?: string }
 ): Promise<{ number: number; url: string }> {
+  if (isForgejo(remoteUrl)) {
+    const f = await forgejoRemoteOrThrow(remoteUrl)
+    return createForgejoIssue(f.base, f.owner, f.repo, f.token, opts)
+  }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const d = await ghJson<{ number: number; html_url: string }>(
     `https://api.github.com/repos/${owner}/${repo}/issues`,
@@ -2480,7 +2709,24 @@ export async function fetchCiStatuses(
  * GitHub notifications for the authenticated user, across every repo the token
  * can see. Token-level (no remote needed). `all=false` ⇒ unread only.
  */
+/** The active profile's Forgejo server and its token, or null when it has none. Silent: this backs a poll. */
+async function forgejoInbox(): Promise<{ base: string; token: string } | null> {
+  const auth = await tokenForProvider('forgejo', '').catch(() => null)
+  return auth ? { base: auth.base, token: auth.token } : null
+}
+
+/** GitHub's inbox and the active profile's Forgejo server's, newest first. */
 async function listNotifications(token: string, all = false): Promise<GitHubNotification[]> {
+  const [gh, fj] = await Promise.all([
+    listGithubNotifications(token, all),
+    forgejoInbox().then((f) => (f ? listForgejoNotifications(f.base, f.token, all) : []))
+      // One host failing must not empty the other's list.
+      .catch(() => [] as GitHubNotification[])
+  ])
+  return fj.length ? [...gh, ...fj].sort((a, b) => b.updatedAt - a.updatedAt) : gh
+}
+
+async function listGithubNotifications(token: string, all: boolean): Promise<GitHubNotification[]> {
   // Same precedence as every other call: a typed token, else the credential
   // git's helper already holds for github.com. Silent (this backs a poll).
   const auth = await tokenForProvider('github', token)
@@ -2525,6 +2771,11 @@ async function listNotifications(token: string, all = false): Promise<GitHubNoti
 }
 
 async function markNotificationRead(token: string, id: string): Promise<void> {
+  if (id.startsWith(FORGEJO_NOTIFICATION)) {
+    const f = await forgejoInbox()
+    if (f) await markForgejoNotificationRead(f.base, f.token, id).catch(() => {})
+    return
+  }
   const auth = await tokenForProvider('github', token)
   if (!auth) return
   await ghJson<unknown>(`https://api.github.com/notifications/threads/${id}`, auth.token, { method: 'PATCH' }).catch(() => {
@@ -2533,6 +2784,8 @@ async function markNotificationRead(token: string, id: string): Promise<void> {
 }
 
 async function markAllNotificationsRead(token: string): Promise<void> {
+  const f = await forgejoInbox()
+  if (f) await markAllForgejoNotificationsRead(f.base, f.token).catch(() => {})
   const auth = await tokenForProvider('github', token)
   if (!auth) return
   token = auth.token
@@ -2608,6 +2861,12 @@ export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:prDetail', (_e, remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestDetail(remoteUrl, tokens, number)
   )
+  // An Azure Boards work item, in the organization of the repository's Azure remote.
+  ipcMain.handle('hosting:workItem', async (_e, remoteUrl: string, tokens: HostTokens, id: number) => {
+    if (!Number.isInteger(id) || id <= 0) throw new Error('A work item number is a positive integer.')
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureWorkItem(a.ado, a.repo.org, id)
+  })
   ipcMain.handle('hosting:prComment', (_e, remoteUrl: string, tokens: HostTokens, number: number, body: string) =>
     commentOnPr(remoteUrl, tokens, number, body)
   )
@@ -2618,6 +2877,9 @@ export function registerHostingHandlers(): void {
   )
   ipcMain.handle('hosting:prFiles', (_e, remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestFiles(remoteUrl, tokens, number)
+  )
+  ipcMain.handle('hosting:prCheckLog', (_e, remoteUrl: string, tokens: HostTokens, url: string) =>
+    pullRequestCheckLog(remoteUrl, tokens, url)
   )
   ipcMain.handle('hosting:prChecks', (_e, remoteUrl: string, tokens: HostTokens, number: number) =>
     pullRequestChecks(remoteUrl, tokens, number)

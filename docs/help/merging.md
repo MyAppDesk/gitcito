@@ -50,6 +50,21 @@ everyone who pulls the target gets its commits, and a push cannot be undone from
 Gitcito. Merge does not ask — it only adds. Merge and rebase come back with one
 **Undo**.
 
+## Drag a commit onto a branch
+
+Drag a commit row from the graph onto a **local branch's** badge:
+
+| Dropped on | Offers |
+|------------|--------|
+| The branch checked out | **Cherry-pick** the commit here; **Reset** the branch to it (the reset dialog, which says what each mode keeps) |
+| Another local branch | **Check it out and cherry-pick**; **Move the branch** to the commit (`git branch -f`) |
+
+Moving a branch asks first: commits only that branch reached are no longer on
+any branch afterwards. Undo puts the branch back. Remote-tracking branches and
+tags take no commit drop, since git does not move them this way, and a branch
+already pointing at the commit offers nothing. The same drag onto the AI chat
+still adds the commit as context.
+
 ## Merge
 
 Fast-forward when possible, or force a merge commit when you want the topology

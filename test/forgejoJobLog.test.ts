@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { forgejoJobLog, forgejoJobLogUrl } from '../src/main/forgejo'
+import { forgejoJobLog, forgejoJobLogUrl, readTail } from '../src/main/forgejo'
 import { logTail } from '../src/renderer/src/lib/ciLog'
 
 const BASE = 'https://forge.example.org'
@@ -82,5 +82,40 @@ describe('logTail', () => {
     const text = Array.from({ length: 10 }, (_, i) => `line ${i}`).join('\r\n') + '\n\n'
     expect(logTail(text, 3)).toEqual({ text: 'line 7\nline 8\nline 9', dropped: 7 })
     expect(logTail('a\nb', 5)).toEqual({ text: 'a\nb', dropped: 0 })
+  })
+})
+
+describe('readTail — a long log, streamed', () => {
+  let server: Server
+  let base = ''
+  beforeAll(async () => {
+    server = createServer((req, res) => {
+      res.writeHead(200, { 'content-type': 'text/plain' })
+      if (req.url === '/small') return void res.end('one\ntwo\n')
+      // ~4 MB in many writes, so the body arrives in chunks.
+      let i = 0
+      const write = (): void => {
+        while (i < 60000) {
+          const ok = res.write(`line ${String(i++).padStart(6, '0')} ${'x'.repeat(60)}\n`)
+          if (!ok) return void res.once('drain', write)
+        }
+        res.end('last line\n')
+      }
+      write()
+    })
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
+    base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+  })
+  afterAll(() => new Promise<void>((r) => server.close(() => r())))
+
+  it('keeps only the end, from a whole line', async () => {
+    const tail = await readTail(await fetch(`${base}/big`), 2000)
+    expect(Buffer.byteLength(tail)).toBeLessThanOrEqual(2000)
+    expect(tail.startsWith('line ')).toBe(true)
+    expect(tail.endsWith('last line\n')).toBe(true)
+  })
+
+  it('returns a short log whole', async () => {
+    expect(await readTail(await fetch(`${base}/small`), 2000)).toBe('one\ntwo\n')
   })
 })

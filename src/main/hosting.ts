@@ -2705,10 +2705,6 @@ export async function fetchCiStatuses(
   return result
 }
 
-/**
- * GitHub notifications for the authenticated user, across every repo the token
- * can see. Token-level (no remote needed). `all=false` ⇒ unread only.
- */
 /** The active profile's Forgejo server and its token, or null when it has none. Silent: this backs a poll. */
 async function forgejoInbox(): Promise<{ base: string; token: string } | null> {
   const auth = await tokenForProvider('forgejo', '').catch(() => null)
@@ -2726,6 +2722,10 @@ async function listNotifications(token: string, all = false): Promise<GitHubNoti
   return fj.length ? [...gh, ...fj].sort((a, b) => b.updatedAt - a.updatedAt) : gh
 }
 
+/**
+ * GitHub notifications for the authenticated user, across every repo the token
+ * can see. Token-level (no remote needed). `all=false` ⇒ unread only.
+ */
 async function listGithubNotifications(token: string, all: boolean): Promise<GitHubNotification[]> {
   // Same precedence as every other call: a typed token, else the credential
   // git's helper already holds for github.com. Silent (this backs a poll).

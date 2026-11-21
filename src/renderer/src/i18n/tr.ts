@@ -3821,7 +3821,6 @@ export const tr: Dict = {
   'signing.openpgp': 'OpenPGP (GPG)',
   'signing.signingKey': 'İmzalama anahtarı',
   'signing.gpgKeyId': 'GPG anahtar kimliği',
-  'signing.save': 'İmzalama ayarlarını kaydet',
   'signing.saved': 'İmzalama ayarları kaydedildi: {repo}',
   'integrations.azurePatPlaceholder': 'Code (read) kapsamlı PAT',
   'settings.azureOrgPlaceholder': 'örn. contoso',

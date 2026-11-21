@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type {
   BranchesPayload,
+  SigningConfig,
   DoctorCheck,
   RepoConfig,
   RepoConfigResult,
@@ -1318,6 +1319,26 @@ const HUNK_ACTIONS = {
 >
 
 export const repoActions = {
+  setSigningConfig: (path: string, name: string, patch: Partial<SigningConfig>): Promise<boolean> => {
+    let previous: SigningConfig
+    return useRepoStore.getState().run(
+      path,
+      interp(t('signing.saved'), { repo: name }),
+      async () => {
+        previous = await gitApi.signingConfig(path)
+        await gitApi.setSigningConfig(path, patch)
+      },
+      {
+        label: t('signing.title'),
+        undo: () => gitApi.setSigningConfig(path, previous),
+        redo: () => gitApi.setSigningConfig(path, patch)
+      },
+      null,
+      undefined,
+      []
+    )
+  },
+
   // Moving HEAD rewrites the `HEAD -> …` decoration the graph reads off each
   // commit ('log' — it comes from `%D`), the per-directory tree status and each
   // worktree's HEAD; `.gitmodules` and the repo config are tracked files the

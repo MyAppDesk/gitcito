@@ -3887,7 +3887,6 @@ export const ptBR: Dict = {
   'signing.openpgp': 'OpenPGP (GPG)',
   'signing.signingKey': 'Chave de assinatura',
   'signing.gpgKeyId': 'ID da chave GPG',
-  'signing.save': 'Salvar as configurações de assinatura',
   'signing.saved': 'Configurações de assinatura salvas para {repo}',
   'integrations.azurePatPlaceholder': 'PAT com escopo Code (leitura)',
   'settings.azureOrgPlaceholder': 'ex.: contoso',

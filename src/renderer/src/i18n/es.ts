@@ -3881,7 +3881,6 @@ export const es: Dict = {
   'signing.openpgp': 'OpenPGP (GPG)',
   'signing.signingKey': 'Clave de firma',
   'signing.gpgKeyId': 'ID de clave GPG',
-  'signing.save': 'Guardar ajustes de firma',
   'signing.saved': 'Ajustes de firma guardados para {repo}',
   'integrations.azurePatPlaceholder': 'PAT con permiso Code (lectura)',
   'settings.azureOrgPlaceholder': 'p. ej. contoso',

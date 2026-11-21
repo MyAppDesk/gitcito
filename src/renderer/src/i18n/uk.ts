@@ -3878,7 +3878,6 @@ export const uk: Dict = {
   'signing.openpgp': 'OpenPGP (GPG)',
   'signing.signingKey': 'Ключ підписування',
   'signing.gpgKeyId': 'Ідентифікатор ключа GPG',
-  'signing.save': 'Зберегти налаштування підписування',
   'signing.saved': 'Налаштування підписування збережено для {repo}',
   'integrations.azurePatPlaceholder': 'PAT з областю Code (read)',
   'settings.azureOrgPlaceholder': 'напр. contoso',

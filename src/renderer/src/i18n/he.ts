@@ -3881,7 +3881,6 @@ export const he: Dict = {
   'signing.openpgp': 'OpenPGP (GPG)',
   'signing.signingKey': 'מפתח החתימה',
   'signing.gpgKeyId': 'מזהה מפתח GPG',
-  'signing.save': 'שמירת הגדרות החתימה',
   'signing.saved': 'הגדרות החתימה נשמרו עבור {repo}',
   'integrations.azurePatPlaceholder': 'PAT עם הרשאת Code (קריאה)',
   'settings.azureOrgPlaceholder': 'למשל contoso',

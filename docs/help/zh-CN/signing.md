@@ -8,7 +8,7 @@ keywords: 签名 提交签名 验证 徽章 信任 密钥 sign signing gpg ssh x
 
 # 签名提交
 
-按仓库打开签名（**设置 → 仓库齿轮**）：GPG、SSH 或 X.509，用你挑的那把密钥。Gitcito
+按仓库打开签名（**设置 → 个人资料 → 提交签名**，需先打开该仓库 —— 每次更改都会立即保存到该仓库）：GPG、SSH 或 X.509，用你挑的那把密钥。Gitcito
 会为该仓库写入 `commit.gpgsign`、`gpg.format` 和 `user.signingkey`——也就是任何其他
 工具都会读的那套配置。
 

@@ -3818,7 +3818,6 @@ export const ja: Dict = {
   'signing.openpgp': 'OpenPGP (GPG)',
   'signing.signingKey': '署名に使う鍵',
   'signing.gpgKeyId': 'GPG の鍵 ID',
-  'signing.save': '署名の設定を保存',
   'signing.saved': '{repo} の署名設定を保存しました',
   'integrations.azurePatPlaceholder': 'Code（読み取り）スコープを持つ PAT',
   'settings.azureOrgPlaceholder': '例: contoso',

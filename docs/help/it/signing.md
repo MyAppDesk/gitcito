@@ -8,7 +8,7 @@ keywords: firma firmare signing gpg ssh x509 verificato signature badge fiducia
 
 # Commit firmati
 
-Attiva la firma per singolo repository (**Impostazioni → ingranaggio del repo**):
+Attiva la firma per singolo repository (**Impostazioni → Profilo → Firma dei commit**, con quel repository aperto — ogni modifica vi viene salvata subito):
 GPG, SSH o X.509, con la chiave che scegli. Gitcito scrive `commit.gpgsign`,
 `gpg.format` e `user.signingkey` per quel repository — la stessa configurazione
 che legge qualsiasi altro strumento.

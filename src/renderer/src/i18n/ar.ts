@@ -3881,7 +3881,6 @@ export const ar: Dict = {
   'signing.openpgp': 'OpenPGP (GPG)',
   'signing.signingKey': 'مفتاح التوقيع',
   'signing.gpgKeyId': 'معرّف مفتاح GPG',
-  'signing.save': 'حفظ إعدادات التوقيع',
   'signing.saved': 'حُفظت إعدادات التوقيع للمستودع {repo}',
   'integrations.azurePatPlaceholder': 'رمز وصول شخصي بصلاحية Code (قراءة)',
   'settings.azureOrgPlaceholder': 'مثلًا contoso',

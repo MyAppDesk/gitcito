@@ -8,7 +8,7 @@ keywords: signer sign signature signing gpg ssh x509 vérifié verified badge co
 
 # Commits signés
 
-Activez la signature par dépôt (**Réglages → roue dentée du dépôt**) : GPG, SSH
+Activez la signature par dépôt (**Réglages → Profil → Signature des commits**, ce dépôt ouvert — chaque changement y est enregistré aussitôt) : GPG, SSH
 ou X.509, avec la clé de votre choix. Gitcito écrit `commit.gpgsign`,
 `gpg.format` et `user.signingkey` pour ce dépôt — la même configuration que lit
 n'importe quel autre outil.

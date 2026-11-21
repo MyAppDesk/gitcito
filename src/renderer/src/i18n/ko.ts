@@ -3878,7 +3878,6 @@ export const ko: Dict = {
   'signing.openpgp': 'OpenPGP (GPG)',
   'signing.signingKey': '서명 키',
   'signing.gpgKeyId': 'GPG 키 id',
-  'signing.save': '서명 설정 저장',
   'signing.saved': '{repo}의 서명 설정을 저장했습니다',
   'integrations.azurePatPlaceholder': 'Code(읽기) 권한이 있는 PAT',
   'settings.azureOrgPlaceholder': '예: contoso',

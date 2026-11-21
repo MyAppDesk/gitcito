@@ -3886,7 +3886,6 @@ export const nl: Dict = {
   'signing.openpgp': 'OpenPGP (GPG)',
   'signing.signingKey': 'Ondertekeningssleutel',
   'signing.gpgKeyId': 'GPG-sleutel-id',
-  'signing.save': 'Ondertekeningsinstellingen opslaan',
   'signing.saved': 'Ondertekeningsinstellingen opgeslagen voor {repo}',
   'integrations.azurePatPlaceholder': 'PAT met de scope Code (lezen)',
   'settings.azureOrgPlaceholder': 'bijv. contoso',

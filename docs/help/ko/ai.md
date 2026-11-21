@@ -28,6 +28,17 @@ Gemini 는 Google 의 OpenAI 호환 엔드포인트로 호출합니다.
 
 ### API 키 대신 구독 사용하기
 
+초기 설정 또는 설정 → AI에서 **내 구독 사용**을 선택하세요. ChatGPT 또는 Claude를 선택하고 터미널에서 해당 명령으로 로그인하세요. 연결을 테스트한 뒤 계정을 추가하세요.
+
+CLI 설치 후 연결 버튼을 누르면 제공업체의 로그인 페이지가 열립니다. 진행 중인 연결은 취소할 수 있습니다.
+
+- ChatGPT (Codex) — `codex login`
+- Claude (Claude Code) — `claude auth login`
+
+테스트는 제공업체에 짧은 요청을 보내며 요금제 사용량에 포함됩니다. 사용 한도에 도달했습니다. 한도가 초기화된 후 다시 시도하세요.
+
+![내 구독 사용](../../screenshots/ai-subscription.webp)
+
 이 컴퓨터에 이미 설치되어 로그인된 에이전트 CLI 로 답하게 하려면 제공자에서
 **로컬 CLI** 를 고르세요 — `claude`, `gemini`, `codex`. Gitcito 가 프롬프트와
 함께 실행 파일을 돌리고 그 답을 읽습니다. 붙여 넣을 API 키도, 저장되는 토큰도

@@ -29,6 +29,17 @@ op te lijken. Gemini wordt bereikt via Googles OpenAI-compatibele endpoint.
 
 ### Een abonnement in plaats van een API-sleutel
 
+Kies bij de eerste installatie of onder Instellingen → AI **Mijn abonnement gebruiken**. Selecteer ChatGPT of Claude en meld je met de bijbehorende opdracht aan in een terminal. Test de verbinding en voeg het account toe zodra de test slaagt.
+
+Klik na de installatie van de CLI op Verbinden om de aanmeldpagina van de aanbieder te openen. Je kunt een lopende verbinding annuleren.
+
+- ChatGPT (Codex) — `codex login`
+- Claude (Claude Code) — `claude auth login`
+
+De test stuurt een kort bericht naar je aanbieder en verbruikt een deel van je quotum. Limiet bereikt. Probeer het opnieuw zodra je quotum is aangevuld.
+
+![Mijn abonnement gebruiken](../../screenshots/ai-subscription.webp)
+
 Kies de aanbieder **Lokale CLI** om te laten antwoorden door een agent-CLI die
 al op deze machine staat en is ingelogd — `claude`, `gemini` of `codex`. Gitcito
 start het programma met je prompt en leest het antwoord; er is geen API-sleutel

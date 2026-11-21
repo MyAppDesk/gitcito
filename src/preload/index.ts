@@ -145,6 +145,11 @@ const api = {
     commitMessage: (diff: string, cfg: unknown, ctx: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:commitMessage', diff, cfg, ctx),
     listModels: (cfg: unknown, force?: boolean): Promise<unknown> => ipcRenderer.invoke('ai:listModels', cfg, force),
+    signInSubscription: (binary: string, path: string, requestId: string): Promise<unknown> =>
+      ipcRenderer.invoke('ai:signInSubscription', binary, path, requestId),
+    cancelSubscriptionSignIn: (requestId: string): Promise<void> =>
+      ipcRenderer.invoke('ai:cancelSubscriptionSignIn', requestId),
+    testSubscription: (binary: string, path: string): Promise<unknown> => ipcRenderer.invoke('ai:testSubscription', binary, path),
     detectCli: (): Promise<unknown> => ipcRenderer.invoke('ai:detectCli'),
     explainCode: (code: string, lang: string, cfg: unknown): Promise<unknown> =>
       ipcRenderer.invoke('ai:explainCode', code, lang, cfg),

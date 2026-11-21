@@ -128,7 +128,7 @@ as one plan (or from an error toast's "fix with AI").
 messages, Claude for chat, a local Ollama for the rest — with model lists fetched
 live from each provider. OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,
 Mistral, Ollama, any compatible endpoint, or a [signed-in CLI](docs/help/ai.md)
-you already pay for instead of an API key.
+you already pay for. Connect your [ChatGPT or Claude subscription](docs/help/ai.md#using-a-subscription-instead-of-an-api-key) during onboarding or in Settings → AI.
 
 ### Make it yours
 

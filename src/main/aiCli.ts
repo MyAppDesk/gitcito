@@ -3,7 +3,8 @@ import { existsSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { AICliBinary, AIConfig } from '../shared/types'
+import type { AICliBinary, AIConfig, SubscriptionCli, SubscriptionTest } from '../shared/types'
+import { shellPathReady } from './fix-path'
 import type { TokenUsage } from './analytics'
 import type { ChatMessage, ModelReply } from './aiTransport'
 
@@ -100,13 +101,14 @@ function run(
   args: string[],
   input: string,
   timeout = CLI_TIMEOUT_MS,
-  cwd?: string
+  cwd?: string,
+  env = process.env
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     const child = execFile(
       file,
       args,
-      { timeout, maxBuffer: CLI_MAX_BUFFER, windowsHide: true, cwd },
+      { timeout, maxBuffer: CLI_MAX_BUFFER, windowsHide: true, cwd, env },
       (err, stdout, stderr) => {
         if (err && (err as NodeJS.ErrnoException).code === 'ENOENT') {
           reject(new Error(`\`${file}\` was not found. Install it, or set an explicit path on the account.`))
@@ -156,14 +158,16 @@ interface ClaudeEnvelope {
 function parseClaudeReply(stdout: string): ModelReply | null {
   try {
     const json = JSON.parse(stdout) as ClaudeEnvelope
-    if (typeof json.result !== 'string') return null
+    if (json?.is_error) throw new Error(json.result || 'Claude Code request failed')
+    if (typeof json?.result !== 'string') return null
     const usage: TokenUsage = {
       promptTokens: json.usage?.input_tokens ?? 0,
       completionTokens: json.usage?.output_tokens ?? 0,
       totalTokens: (json.usage?.input_tokens ?? 0) + (json.usage?.output_tokens ?? 0)
     }
     return { text: json.result, usage }
-  } catch {
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error
     // Older versions, or a CLI that ignored the flag, print plain text. Falling
     // back beats failing the whole feature over an output-format difference.
     return null
@@ -174,16 +178,33 @@ const NO_USAGE: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens
 
 /** One answer from a locally installed, already signed-in agent CLI. */
 export async function runCliModel(cfg: AIConfig, messages: ChatMessage[]): Promise<ModelReply> {
+  const stamped = (cfg.cliCwd ?? '').trim()
+  const cwd = stamped && existsSync(stamped) ? stamped : undefined
+  if (cfg.subscription && !cwd) {
+    const directory = await mkdtemp(join(tmpdir(), 'gitcito-model-'))
+    try {
+      return await invokeCli(cfg, messages, directory, true)
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  }
+  return invokeCli(cfg, messages, cwd)
+}
+
+async function invokeCli(
+  cfg: AIConfig, messages: ChatMessage[], cwd?: string, emptyDirectory = false
+): Promise<ModelReply> {
+  await shellPathReady()
   const binary = cfg.cli ?? 'claude'
   const spec = cliSpec(binary)
   const file = (cfg.cliPath ?? '').trim() || spec.bin
   const model = (cfg.model ?? '').trim()
   const prompt = flattenMessages(messages)
-  // The caller stamps the repo path here so agent CLIs answer with the
-  // codebase in reach — without it they run blind in the app's directory.
-  const stamped = (cfg.cliCwd ?? '').trim()
-  const cwd = stamped && existsSync(stamped) ? stamped : undefined
-
+  const env = cfg.subscription ? subscriptionEnv() : process.env
+  if (cfg.subscription) {
+    if (binary !== 'codex' && binary !== 'claude') throw new Error('Unsupported subscription CLI')
+    await requireSubscription(file, binary, env, cwd)
+  }
   let code: number
   let stdout: string
   let stderr: string
@@ -197,7 +218,12 @@ export async function runCliModel(cfg: AIConfig, messages: ChatMessage[]): Promi
       await rm(dir, { recursive: true, force: true }).catch(() => {})
     }
   } else {
-    ;({ code, stdout, stderr } = await run(file, spec.args(model), prompt, undefined, cwd))
+    const args = spec.args(model)
+    if (cfg.subscription && binary === 'codex') {
+      if (emptyDirectory) args.splice(1, 0, '--skip-git-repo-check')
+      args.unshift(...CODEX_SUBSCRIPTION)
+    }
+    ;({ code, stdout, stderr } = await run(file, args, prompt, undefined, cwd, env))
   }
   if (code !== 0) {
     const detail = (stderr || stdout).trim().slice(0, 300)
@@ -211,12 +237,111 @@ export async function runCliModel(cfg: AIConfig, messages: ChatMessage[]): Promi
   return { text: stdout.trim(), usage: NO_USAGE }
 }
 
+// Provider CLIs also accept API credentials from the launching shell. A subscription
+// account must use the CLI's own login even when Gitcito inherited those variables.
+function subscriptionEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env }
+  for (const key of [
+    'ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN',
+    'CLAUDE_CODE_USE_BEDROCK', 'CLAUDE_CODE_USE_VERTEX', 'CLAUDE_CODE_USE_FOUNDRY',
+    'OPENAI_API_KEY', 'CODEX_API_KEY', 'CODEX_ACCESS_TOKEN'
+  ]) delete env[key]
+  return env
+}
+
+const CODEX_SUBSCRIPTION = ['-c', 'forced_login_method="chatgpt"', '-c', 'model_provider="openai"']
+
+async function requireSubscription(
+  file: string, binary: SubscriptionCli, env: NodeJS.ProcessEnv, cwd?: string
+): Promise<void> {
+  const args = binary === 'claude' ? ['auth', 'status', '--json'] : ['login', 'status']
+  const { code, stdout, stderr } = await run(file, args, '', 15_000, cwd, env)
+  if (code === 0) {
+    if (binary === 'codex' && /logged in using ChatGPT/i.test(stdout + stderr)) return
+    if (binary === 'claude') {
+      const status: unknown = JSON.parse(stdout)
+      if (status && typeof status === 'object' && 'loggedIn' in status && status.loggedIn === true &&
+        'authMethod' in status && status.authMethod === 'claude.ai') return
+    }
+  }
+  throw new Error(`Sign in with your subscription using ${binary === 'claude' ? 'claude auth login' : 'codex login'}.`)
+}
+
+/** The provider CLI opens its browser and owns the callback and credential storage. */
+export async function signInSubscription(
+  binary: SubscriptionCli, path: string, signal: AbortSignal
+): Promise<SubscriptionTest> {
+  if ((binary !== 'codex' && binary !== 'claude') || typeof path !== 'string') return 'failed'
+  await shellPathReady()
+  const directory = await mkdtemp(join(tmpdir(), 'gitcito-sign-in-'))
+  const file = path.trim() || binary
+  const env = subscriptionEnv()
+  try {
+    // Reuse a valid subscription session. Starting login again can replace the
+    // provider's saved session before a new browser flow has completed.
+    try {
+      await requireSubscription(file, binary, env, directory)
+      return 'connected'
+    } catch {
+      if (signal.aborted) return 'failed'
+    }
+    const args = binary === 'codex'
+      ? [...CODEX_SUBSCRIPTION, 'login']
+      : ['auth', 'login']
+    await new Promise<void>((resolve, reject) => {
+      const child = execFile(file, args, {
+        cwd: directory, env, signal, timeout: 180_000, maxBuffer: CLI_MAX_BUFFER, windowsHide: true
+      }, (error) => error ? reject(error) : resolve())
+      // Keep stdin open for the provider's browser callback. Output can contain
+      // one-time authorization URLs and remains inside this process.
+      child.stdin?.on('error', () => undefined)
+    })
+    if (signal.aborted) return 'failed'
+    await requireSubscription(file, binary, env, directory)
+    return 'connected'
+  } catch (error) {
+    if (signal.aborted) return 'failed'
+    return (error as NodeJS.ErrnoException)?.code === 'ENOENT' ? 'missing' : 'login'
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+}
+
+/** Probe from an empty directory. Only a status crosses IPC, never CLI credentials or diagnostics. */
+export async function testSubscription(binary: SubscriptionCli, path: string): Promise<SubscriptionTest> {
+  if (binary !== 'codex' && binary !== 'claude') return 'failed'
+  if (typeof path !== 'string') return 'failed'
+  const file = path.trim() || binary
+  await shellPathReady()
+  const directory = await mkdtemp(join(tmpdir(), 'gitcito-connection-'))
+  try {
+    const env = subscriptionEnv()
+    await requireSubscription(file, binary, env, directory)
+    const args = binary === 'codex'
+      ? ['exec', '--skip-git-repo-check', '--ephemeral', '--sandbox', 'read-only',
+        ...CODEX_SUBSCRIPTION, '-']
+      : ['-p', '--tools', '', '--no-session-persistence']
+    const { code, stdout, stderr } = await run(file, args, 'Reply with exactly OK.', undefined, directory, env)
+    if (code === 0 && stdout.trim().toUpperCase() === 'OK') return 'connected'
+    if (/quota|usage.limit|rate.limit|hit your limit|429/i.test(stdout + stderr)) return 'limit'
+    if (/log.?in|sign.?in|unauthoriz|401|expired/i.test(stdout + stderr)) return 'login'
+    return 'failed'
+  } catch (error) {
+    const message = String(error)
+    if (message.includes('was not found')) return 'missing'
+    return message.includes('Sign in with your subscription') ? 'login' : 'failed'
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+}
+
 /**
  * Which agent CLIs are on PATH. Used to populate the account editor — it
  * resolves the executable's location and nothing more, so listing has no side
  * effect on the user's session or usage.
  */
 export async function detectCliBinaries(): Promise<{ binary: AICliBinary; label: string; path: string }[]> {
+  await shellPathReady()
   const lookup = process.platform === 'win32' ? 'where' : 'which'
   const found: { binary: AICliBinary; label: string; path: string }[] = []
   for (const binary of CLI_BINARIES) {

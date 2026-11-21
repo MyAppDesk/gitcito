@@ -403,6 +403,7 @@ export function OnboardingWizard(): React.JSX.Element {
   const onKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key !== 'Enter' || step === 0) return
     const el = e.target as HTMLElement
+    if (el.closest('.ai-account') || el.tagName === 'SELECT') return
     if (el.tagName === 'TEXTAREA' || el.tagName === 'BUTTON' || el.tagName === 'A') return
     e.preventDefault()
     if (step < TOTAL_STEPS) next()

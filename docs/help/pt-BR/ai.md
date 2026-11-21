@@ -29,6 +29,17 @@ O Gemini é alcançado pelo endpoint compatível com OpenAI do Google.
 
 ### Usar uma assinatura em vez de uma chave de API
 
+Na configuração inicial ou em Configurações → IA, escolha **Usar minha assinatura**. Selecione ChatGPT ou Claude e entre pelo terminal com o comando correspondente. Teste a conexão e adicione a conta após a confirmação.
+
+Depois de instalar a CLI, clique em Conectar para abrir a página de login do provedor. Você pode cancelar a conexão pendente.
+
+- ChatGPT (Codex) — `codex login`
+- Claude (Claude Code) — `claude auth login`
+
+O teste envia uma mensagem curta ao provedor e consome a cota do plano. Limite atingido. Tente novamente quando a cota for renovada.
+
+![Usar minha assinatura](../../screenshots/ai-subscription.webp)
+
 Escolha o provedor **CLI local** para responder com uma CLI de agente já
 instalada e autenticada nesta máquina — `claude`, `gemini` ou `codex`. O Gitcito
 executa o binário com o seu prompt e lê a resposta; não há chave de API para

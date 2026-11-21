@@ -31,6 +31,17 @@ aparentarlo. A Gemini se llega por el endpoint compatible con OpenAI de Google.
 
 ### Usar una suscripción en vez de una clave de API
 
+Durante la configuración inicial o en Ajustes → IA, elige **Usar mi suscripción**. Selecciona ChatGPT o Claude e inicia sesión desde la terminal con el comando correspondiente. Pulsa **Probar conexión** y, cuando aparezca «Conectado», añade la cuenta.
+
+Una vez instalada la CLI, pulsa Conectar para abrir la página de inicio de sesión del proveedor. Puedes cancelar la conexión pendiente.
+
+- ChatGPT (Codex) — `codex login`
+- Claude (Claude Code) — `claude auth login`
+
+La prueba envía un mensaje breve al proveedor y consume cuota de tu plan. Has alcanzado el límite del plan. Reinténtalo cuando se renueve la cuota.
+
+![Usar mi suscripción](../../screenshots/ai-subscription.webp)
+
 Elige el proveedor **CLI local** para responder con una CLI de agente ya
 instalada y con sesión iniciada en esta máquina — `claude`, `gemini` o `codex`.
 Gitcito ejecuta el binario con tu indicación y lee su respuesta; no hay clave de

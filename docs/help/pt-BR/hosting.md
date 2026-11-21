@@ -132,6 +132,16 @@ título, tipo e estado — cada um abrindo no navegador. Ler esses itens exige u
 token com leitura de work items (*Work Items: Read*); sem isso a linha
 simplesmente não aparece.
 
+Os **checks** incluem a **validação de build** da branch — o pipeline que a
+policy exige, que o Azure registra como resultado de policy e não como status —
+ao lado de qualquer status que um pipeline ou CI externo publique. Um check que
+é um build do Azure Pipelines desta organização mostra o log embaixo da linha:
+as tasks que falharam, cada uma com o nome, ou o log inteiro de cada job quando
+nada falhou, começando pelo fim. O token só vai para builds da própria
+organização do PR. O painel lê até três logs, compartilhando um limite de 512 KB
+do final dos logs. Ler logs exige *Build: Read*; sem isso a linha oferece o navegador. Um token sem algum escopo é só recusado — o app nunca trata isso como
+login revogado nem apaga a credencial que o git usa.
+
 ## GitLab self-managed
 
 O GitLab de uma empresa fica num endereço próprio. Informe esse endereço a um

@@ -15,7 +15,7 @@ export function CheckLogPanel({
   url
 }: {
   remoteUrl: string
-  tokens: { github?: string; gitlab?: string; forgejo?: string }
+  tokens: { github?: string; gitlab?: string; forgejo?: string; azure?: string }
   url: string
 }): React.JSX.Element {
   const t = useT()

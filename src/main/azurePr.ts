@@ -21,6 +21,9 @@ import { unifiedDiff } from '../shared/lineDiff'
  */
 
 export type Ado = <T>(url: string, init?: RequestInit) => Promise<T>
+/** A plain-text read (a build log), keeping at most the last `max` bytes. Null
+ *  when the server will not give it — no permission, or a sign-in page. */
+export type AdoText = (url: string, max: number) => Promise<string | null>
 
 export interface AzureRepo {
   org: string
@@ -60,6 +63,7 @@ interface AzPr {
   reviewers?: AzReviewer[]
   labels?: Array<{ name: string; active?: boolean }>
   lastMergeSourceCommit?: { commitId: string }
+  repository?: { project?: { id?: string } }
 }
 
 interface AzComment {
@@ -147,13 +151,15 @@ export function mapAzurePr(r: AzureRepo, pr: AzPr, threads: AzThread[]): PrDetai
   }
 }
 
-export async function azurePrDetail(ado: Ado, r: AzureRepo, id: number): Promise<PrDetail> {
+/** `optional` runs the calls that need a scope the token may lack (Work Items):
+ *  a refusal there must not be mistaken for a revoked credential. */
+export async function azurePrDetail(ado: Ado, r: AzureRepo, id: number, optional: Ado = ado): Promise<PrDetail> {
   const base = `${repoApi(r)}/pullrequests/${id}`
   const [pr, threads, workItems] = await Promise.all([
     ado<AzPr>(`${base}?${V}`),
     ado<{ value?: AzThread[] }>(`${base}/threads?${V}`).catch(() => ({ value: [] as AzThread[] })),
     // A token without Work Items (Read) cannot list them: the row is left out, the PR still opens.
-    azurePrWorkItems(ado, r, id).catch(() => undefined)
+    azurePrWorkItems(optional, r, id).catch(() => undefined)
   ])
   return { ...mapAzurePr(r, pr, threads.value ?? []), ...(workItems ? { workItems } : {}) }
 }
@@ -199,21 +205,165 @@ export async function azurePrWorkItems(ado: Ado, r: AzureRepo, id: number): Prom
   return mapAzureWorkItems(r.org, ids, (items.value ?? []).filter((w): w is AzWorkItem => !!w))
 }
 
-/** PR statuses (build validation and external CI report there). */
-export async function azurePrChecks(ado: Ado, r: AzureRepo, id: number): Promise<PrCheck[]> {
-  const st = await ado<{ value?: Array<{ state?: string; description?: string; context?: { name?: string; genre?: string }; targetUrl?: string }> }>(
-    `${repoApi(r)}/pullrequests/${id}/statuses?${V}`
-  ).catch(() => ({ value: [] }))
-  return (st.value ?? []).map((s) => {
-    const name = [s.context?.genre, s.context?.name].filter(Boolean).join('/') || s.description || 'status'
-    const pending = !s.state || s.state === 'pending' || s.state === 'notSet'
-    return {
-      name,
-      status: pending ? 'in_progress' : 'completed',
-      conclusion: pending ? null : s.state === 'succeeded' ? 'success' : s.state === 'notApplicable' ? 'neutral' : 'failure',
-      url: s.targetUrl ?? ''
-    }
-  })
+/** The policy type Azure gives a branch's build validation. */
+const BUILD_POLICY = '0609b952-1397-4640-95ec-e00a01b2c241'
+
+interface AzPolicyEvaluation {
+  status?: string
+  configuration?: {
+    isBlocking?: boolean
+    type?: { id?: string }
+    settings?: { displayName?: string | null; buildDefinitionId?: number }
+  }
+  context?: { buildId?: number; buildDefinitionName?: string; isExpired?: boolean }
+}
+
+/** Where a build opens in the browser — and the link the log reader recognises. */
+export const azureBuildUrl = (org: string, project: string, buildId: number): string =>
+  `https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}/_build/results?buildId=${buildId}`
+
+/**
+ * The build a check links to, when it is an Azure Pipelines run in this PR's own
+ * organization: `dev.azure.com/<org>/<project>/_build/results?buildId=N`, or the
+ * older `<org>.visualstudio.com/<project>/…`. Anything else — an external CI,
+ * another organization, a look-alike host — is null, and no token goes to it.
+ */
+export function azureBuildRef(org: string, link: string): { project: string; buildId: number } | null {
+  let u: URL
+  let parts: string[]
+  try {
+    u = new URL(link)
+    parts = u.pathname.split('/').filter(Boolean).map((part) => decodeURIComponent(part))
+  } catch {
+    return null
+  }
+  if (u.protocol !== 'https:') return null
+  const host = u.hostname.toLowerCase()
+  let rest: string[]
+  if (host === 'dev.azure.com') {
+    if ((parts[0] ?? '').toLowerCase() !== org.toLowerCase()) return null
+    rest = parts.slice(1)
+  } else if (host === `${org.toLowerCase()}.visualstudio.com`) {
+    rest = parts[0]?.toLowerCase() === 'defaultcollection' ? parts.slice(1) : parts
+  } else return null
+  const buildId = Number(u.searchParams.get('buildId'))
+  if (rest.length !== 3 || rest[1] !== '_build' || rest[2] !== 'results' || !Number.isInteger(buildId) || buildId <= 0) {
+    return null
+  }
+  return { project: rest[0], buildId }
+}
+
+function statusCheck(r: AzureRepo, s: { state?: string; description?: string; context?: { name?: string; genre?: string }; targetUrl?: string }): PrCheck {
+  const name = [s.context?.genre, s.context?.name].filter(Boolean).join('/') || s.description || 'status'
+  const pending = !s.state || s.state === 'pending' || s.state === 'notSet'
+  const url = s.targetUrl ?? ''
+  return {
+    name,
+    status: pending ? 'in_progress' : 'completed',
+    conclusion: pending ? null : s.state === 'succeeded' ? 'success' : s.state === 'notApplicable' ? 'neutral' : 'failure',
+    url,
+    ...(azureBuildRef(r.org, url) ? { hasLog: true } : {})
+  }
+}
+
+/**
+ * A branch's build validation as a check. Azure records it as a policy
+ * evaluation, not as a PR status, so a PR whose only CI is the required
+ * pipeline used to show no check at all. `notApplicable` (the policy does not
+ * cover this PR's files) is left out, like GitHub leaves out a skipped workflow.
+ */
+export function mapAzureBuildPolicies(r: AzureRepo, evaluations: readonly AzPolicyEvaluation[]): PrCheck[] {
+  return evaluations
+    .filter((e) => e.configuration?.type?.id === BUILD_POLICY && e.status !== 'notApplicable')
+    .map((e) => {
+      const buildId = e.context?.buildId
+      const name =
+        e.configuration?.settings?.displayName ||
+        e.context?.buildDefinitionName ||
+        `Build ${e.configuration?.settings?.buildDefinitionId ?? ''}`.trim()
+      const st = e.status ?? 'queued'
+      const done = st === 'approved' || st === 'rejected' || st === 'broken'
+      // An expired build passed once but no longer counts — say so rather than show green.
+      const conclusion = !done ? null : st === 'approved' && !e.context?.isExpired ? 'success' : st === 'approved' ? 'neutral' : 'failure'
+      return {
+        name,
+        status: done ? 'completed' : st === 'queued' ? 'queued' : 'in_progress',
+        conclusion,
+        url: buildId ? azureBuildUrl(r.org, r.project, buildId) : '',
+        ...(buildId ? { hasLog: true } : {})
+      }
+    })
+}
+
+/** PR statuses (external CI and pipelines that post one) and build-validation
+ *  policies. Policies go through `optional`: reading them may need more scope. */
+export async function azurePrChecks(ado: Ado, r: AzureRepo, id: number, optional: Ado = ado): Promise<PrCheck[]> {
+  const [st, pr] = await Promise.all([
+    ado<{ value?: Array<{ state?: string; description?: string; context?: { name?: string; genre?: string }; targetUrl?: string }> }>(
+      `${repoApi(r)}/pullrequests/${id}/statuses?${V}`
+    ).catch(() => ({ value: [] })),
+    ado<AzPr>(`${repoApi(r)}/pullrequests/${id}?${V}`).catch(() => null)
+  ])
+  const statuses = (st.value ?? []).map((s) => statusCheck(r, s))
+  // Policies are listed by the project's id, which only the PR carries.
+  const projectId = pr?.repository?.project?.id
+  const ev = projectId
+    ? await optional<{ value?: AzPolicyEvaluation[] }>(
+        `https://dev.azure.com/${encodeURIComponent(r.org)}/${encodeURIComponent(r.project)}/_apis/policy/evaluations` +
+          `?artifactId=${encodeURIComponent(`vstfs:///CodeReview/CodeReviewId/${projectId}/${id}`)}&api-version=7.1-preview.1`
+      ).catch(() => ({ value: [] as AzPolicyEvaluation[] }))
+    : { value: [] as AzPolicyEvaluation[] }
+  const builds = mapAzureBuildPolicies(r, ev.value ?? [])
+  // A pipeline that also posts a status would show twice; keep the policy row.
+  const seen = new Set(builds.map((b) => b.url.toLowerCase()).filter(Boolean))
+  return [...builds, ...statuses.filter((check) => {
+    const ref = azureBuildRef(r.org, check.url)
+    const url = ref ? azureBuildUrl(r.org, ref.project, ref.buildId) : check.url
+    return !url || !seen.has(url.toLowerCase())
+  })]
+}
+
+interface AzTimelineRecord {
+  type?: string
+  name?: string
+  result?: string | null
+  order?: number
+  log?: { id?: number } | null
+}
+
+/**
+ * Which logs of a build to show, in order: the tasks that failed — where the
+ * reason is — or, when nothing failed, each job's whole log. At most `max`.
+ */
+export function pickBuildLogs(records: readonly AzTimelineRecord[], max = 3): { name: string; logId: number }[] {
+  const withLog = records
+    .filter((r): r is AzTimelineRecord & { log: { id: number } } => typeof r.log?.id === 'number')
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  const failed = withLog.filter((r) => r.type === 'Task' && r.result === 'failed')
+  const pick = failed.length ? failed : withLog.filter((r) => r.type === 'Job')
+  return pick.slice(0, max).map((r) => ({ name: r.name ?? '', logId: r.log.id }))
+}
+
+/** How much of a build's log the page shows, across every part read: the end, where a failure is. */
+const LOG_TAIL_BYTES = 512 * 1024
+
+/**
+ * The log of an Azure Pipelines build a check links to, or null when the link
+ * is not one of this organization's builds or the token cannot read builds
+ * (*Build: Read*). Several failed tasks are shown one after another, each under
+ * its name, sharing the same budget.
+ */
+export async function azureBuildLog(ado: Ado, text: AdoText, r: AzureRepo, link: string): Promise<string | null> {
+  const ref = azureBuildRef(r.org, link)
+  if (!ref) return null
+  const build = `https://dev.azure.com/${encodeURIComponent(r.org)}/${encodeURIComponent(ref.project)}/_apis/build/builds/${ref.buildId}`
+  const timeline = await ado<{ records?: AzTimelineRecord[] }>(`${build}/timeline?${V}`).catch(() => null)
+  const parts = pickBuildLogs(timeline?.records ?? [])
+  if (!parts.length) return null
+  const per = Math.floor(LOG_TAIL_BYTES / parts.length)
+  const logs = await Promise.all(parts.map((p) => text(`${build}/logs/${p.logId}?${V}`, per).catch(() => null)))
+  const shown = parts.flatMap((p, i) => (logs[i] === null ? [] : [parts.length > 1 ? `── ${p.name} ──\n${logs[i]}` : (logs[i] as string)]))
+  return shown.length ? shown.join('\n') : null
 }
 
 /** Files fetched and diffed at most this many at a time — Azure rate-limits bursts. */

@@ -203,7 +203,9 @@ function SigningSection(): React.JSX.Element {
   const repo = activeRepo()
 
   const [cfg, setCfg] = useState<SigningConfig | null>(null)
-  const [busy, setBusy] = useState(false)
+  // The key as it is written in the repository — the field is saved when it
+  // leaves focus, and only if it changed.
+  const [savedKey, setSavedKey] = useState('')
 
   useEffect(() => {
     if (!repo) {
@@ -211,24 +213,46 @@ function SigningSection(): React.JSX.Element {
       return
     }
     let cancelled = false
-    void gitApi.signingConfig(repo.path).then((c) => !cancelled && setCfg(c))
+    void gitApi.signingConfig(repo.path).then((c) => {
+      if (cancelled) return
+      setCfg(c)
+      setSavedKey(c.key)
+    })
     return () => {
       cancelled = true
     }
   }, [repo])
 
-  const save = async (): Promise<void> => {
+  // Saved as it changes, like the rest of Settings. It used to wait for a button
+  // under the fields, so a toggle flipped and the panel closed was simply lost.
+  const persist = async (patch: Partial<SigningConfig>): Promise<void> => {
     if (!repo || !cfg) return
-    setBusy(true)
+    const prev = cfg
+    setCfg({ ...cfg, ...patch })
     try {
-      await gitApi.setSigningConfig(repo.path, { sign: cfg.sign, format: cfg.format, key: cfg.key })
+      await gitApi.setSigningConfig(repo.path, patch)
+      if (patch.key !== undefined) setSavedKey(patch.key)
       toast('success', interp(t('signing.saved'), { repo: repo.name }))
     } catch (err) {
+      setCfg(prev)
       toast('error', err instanceof Error ? err.message : String(err))
-    } finally {
-      setBusy(false)
     }
   }
+  const persistKey = (): void => {
+    if (cfg && cfg.key.trim() !== savedKey) void persist({ key: cfg.key.trim() })
+  }
+  // Closing Settings while the key field still has focus fires no blur: write a
+  // changed key on the way out too.
+  const pending = useRef({ repo, loaded: false, key: '', savedKey: '' })
+  pending.current = { repo, loaded: cfg !== null, key: cfg?.key.trim() ?? '', savedKey }
+  useEffect(
+    () => () => {
+      const { repo: r, loaded, key, savedKey: was } = pending.current
+      if (r && loaded && key !== was) void gitApi.setSigningConfig(r.path, { key }).catch(() => undefined)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run on unmount only; reads the ref
+    []
+  )
 
   return (
     <>
@@ -240,7 +264,7 @@ function SigningSection(): React.JSX.Element {
         <p className="settings-hint">{t('signing.openRepo')}</p>
       ) : !cfg ? (
         <p className="settings-hint">
-          <Loader2 size={13} className="spin" /> Loading…
+          <Loader2 size={13} className="spin" /> {t('common.loading')}
         </p>
       ) : (
         <>
@@ -248,7 +272,7 @@ function SigningSection(): React.JSX.Element {
             <input
               type="checkbox"
               checked={cfg.sign}
-              onChange={(e) => setCfg({ ...cfg, sign: e.target.checked })}
+              onChange={(e) => void persist({ sign: e.target.checked })}
             />
             <span className="settings-toggle-control" aria-hidden="true">
               <span className="settings-toggle-thumb" />
@@ -261,7 +285,7 @@ function SigningSection(): React.JSX.Element {
           <div className="form-row two">
             <label>
               {t('signing.format')}
-              <select value={cfg.format} onChange={(e) => setCfg({ ...cfg, format: e.target.value })}>
+              <select value={cfg.format} onChange={(e) => void persist({ format: e.target.value })}>
                 <option value="openpgp">{t('signing.openpgp')}</option>
                 <option value="ssh">SSH</option>
                 <option value="x509">X.509 (S/MIME)</option>
@@ -273,12 +297,11 @@ function SigningSection(): React.JSX.Element {
                 value={cfg.key}
                 placeholder={cfg.format === 'ssh' ? '~/.ssh/id_ed25519.pub' : t('signing.gpgKeyId')}
                 onChange={(e) => setCfg({ ...cfg, key: e.target.value })}
+                onBlur={persistKey}
+                onKeyDown={(e) => e.key === 'Enter' && persistKey()}
               />
             </label>
           </div>
-          <button className="btn ghost small" onClick={() => void save()} disabled={busy}>
-            {busy ? <Loader2 size={13} className="spin" /> : null} {t('signing.save')}
-          </button>
         </>
       )}
     </>

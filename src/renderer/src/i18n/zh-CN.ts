@@ -3853,7 +3853,6 @@ export const zhCN: Dict = {
   'signing.openpgp': 'OpenPGP (GPG)',
   'signing.signingKey': '签名密钥',
   'signing.gpgKeyId': 'GPG 密钥 id',
-  'signing.save': '保存签名设置',
   'signing.saved': '{repo} 的签名设置已保存',
   'integrations.azurePatPlaceholder': '带 Code（读取）权限的 PAT',
   'settings.azureOrgPlaceholder': '例如 contoso',

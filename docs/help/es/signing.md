@@ -8,7 +8,7 @@ keywords: firmar firma sign signing gpg ssh x509 verificado verified signature i
 
 # Commits firmados
 
-Activa la firma por repositorio (**Ajustes → engranaje del repo**): GPG, SSH o
+Activa la firma por repositorio (**Ajustes → Perfil → Firma de commits**, con ese repositorio abierto — cada cambio se guarda en él al hacerlo): GPG, SSH o
 X.509, con la clave que elijas. Gitcito escribe `commit.gpgsign`, `gpg.format` y
 `user.signingkey` para ese repositorio — la misma configuración que lee
 cualquier otra herramienta.

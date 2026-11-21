@@ -3861,7 +3861,6 @@ export const de: Dict = {
   'signing.openpgp': 'OpenPGP (GPG)',
   'signing.signingKey': 'Signierschlüssel',
   'signing.gpgKeyId': 'GPG-Schlüssel-ID',
-  'signing.save': 'Signiereinstellungen speichern',
   'signing.saved': 'Signiereinstellungen für {repo} gespeichert',
   'integrations.azurePatPlaceholder': 'PAT mit dem Scope Code (lesen)',
   'settings.azureOrgPlaceholder': 'z. B. contoso',

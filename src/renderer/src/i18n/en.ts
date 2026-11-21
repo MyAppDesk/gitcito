@@ -3860,7 +3860,6 @@ export const en = {
   'signing.openpgp': 'OpenPGP (GPG)',
   'signing.signingKey': 'Signing key',
   'signing.gpgKeyId': 'GPG key id',
-  'signing.save': 'Save signing settings',
   'signing.saved': 'Signing settings saved for {repo}',
   'integrations.azurePatPlaceholder': 'PAT with Code (read) scope',
   'settings.azureOrgPlaceholder': 'e.g. contoso',

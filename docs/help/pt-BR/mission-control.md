@@ -23,9 +23,27 @@ só, ordenado pelo que de fato precisa de você:
 
 ## O que uma linha te diz
 
-Branch e seu upstream · ↑à frente / ↓atrás · contagem de não commitados e não
-rastreados · stashes · PRs abertos (quando o repo já está carregado) · um
-**sparkline de commits de 14 dias** · quanto tempo desde o último commit.
+Cada linha se lê da esquerda para a direita, e as colunas se alinham ao longo da
+lista, então as contagens se comparam como numa tabela:
+
+| Coluna | O que mostra |
+|---|---|
+| **Repositório** | Nome, grupo, a branch e seu upstream — ou **sem upstream** em âmbar, já que uma branch assim nunca é enviada por engano, mas também nunca sincroniza |
+| **Último commit** | Assunto e autor: o que o repositório estava fazendo, sem abri-lo |
+| **Contagens** | Conflitos · ↓ para baixar · ↑ para enviar · no stage · modificados · não rastreados · stashes · PRs abertos (quando o repo já está carregado). Passe o mouse para ver o que cada uma conta |
+| **Atividade** | Um sparkline de commits de 14 dias, e quantos commits são |
+| **Idades** | Quanto tempo desde o último commit, e desde o último **fetch** |
+
+Passe o mouse no ícone de status para ver por que a linha está naquela posição —
+"2 para enviar · 1 sem commit".
+
+A idade do fetch está ali porque ler esta tela nunca faz fetch: a contagem "para
+baixar" é tão recente quanto o último fetch. Quando uma branch com upstream está
+sem fetch há um dia ou mais, ou nunca fez, a idade fica âmbar — faça fetch antes
+de confiar num 0. O horário vem do próprio git, então um `git fetch` no terminal
+também conta.
+
+Numa janela estreita, a coluna do último commit sai primeiro; as contagens ficam.
 
 Expanda uma linha (a setinha, ou <kbd>espaço</kbd>) para ver exatamente quais
 commits estão esperando para ser enviados e quais arquivos estão sujos.
@@ -37,6 +55,8 @@ commits estão esperando para ser enviados e quais arquivos estão sujos.
 - Ordene por **urgência**, **nome** ou **atividade**.
 - **Marque vários repos** para buscar neles, ou dê pull só nos que estão atrasados
   (o botão conta para você).
+- **Fetch em N desatualizados** aparece quando há branches com upstream sem fetch
+  há um dia ou mais, e faz fetch só nelas — as que podem estar com o "para baixar" errado.
 - Ela se atualiza sozinha a cada 30 segundos enquanto está aberta.
 
 | Tecla | Ação |

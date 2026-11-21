@@ -23,10 +23,28 @@ Workspace** auf einem Bildschirm, sortiert danach, was dich tatsächlich braucht
 
 ## Was dir eine Zeile sagt
 
-Branch und sein Upstream · ↑voraus / ↓zurück · Anzahl nicht committeter und
-ungetrackter Dateien · Stashes · offene PRs (wenn das Repo schon geladen ist) ·
-eine **Sparkline der Commits über 14 Tage** · wie lange der letzte Commit her
-ist.
+Jede Zeile liest sich von links nach rechts, und die Spalten fluchten über die
+ganze Liste, sodass sich die Zähler wie in einer Tabelle vergleichen lassen:
+
+| Spalte | Was sie zeigt |
+|---|---|
+| **Repository** | Name, Gruppe, der Branch und sein Upstream — oder **kein Upstream** in Bernstein: so ein Branch wird nie aus Versehen gepusht, synchronisiert aber auch nie |
+| **Letzter Commit** | Betreff und Autor: woran das Repository zuletzt war, ohne es zu öffnen |
+| **Zähler** | Konflikte · ↓ zu pullen · ↑ zu pushen · gestaged · geändert · nicht verfolgt · Stashes · offene PRs (wenn das Repo schon geladen ist). Mit der Maus sehen, was jeder zählt |
+| **Aktivität** | Eine 14-Tage-Sparkline der Commits, und wie viele es sind |
+| **Alter** | Wie lange der letzte Commit her ist, und der letzte **Fetch** |
+
+Mit der Maus über dem Status-Symbol steht, warum die Zeile dort steht —
+„2 zu pushen · 1 nicht committet“.
+
+Das Fetch-Alter steht da, weil das Lesen dieser Seite nie fetcht: die Zahl „zu
+pullen“ ist nur so frisch wie der letzte Fetch. Hat ein Branch mit Upstream seit
+einem Tag oder länger nicht gefetcht, oder noch nie, wird das Alter bernsteinfarben
+— vor dem Vertrauen auf eine 0 erst fetchen. Die Zeit liest git selbst, also zählt
+auch ein `git fetch` im Terminal.
+
+In einem schmalen Fenster weicht zuerst die Spalte mit dem letzten Commit; die
+Zähler bleiben.
 
 Klapp eine Zeile auf (das Chevron oder <kbd>Leertaste</kbd>), um genau zu
 sehen, welche Commits auf ihren Push warten und welche Dateien schmutzig sind.
@@ -38,6 +56,8 @@ sehen, welche Commits auf ihren Push warten und welche Dateien schmutzig sind.
 - Sortieren nach **Dringlichkeit**, **Name** oder **Aktivität**.
 - **Häkchen bei mehreren Repos** setzen, um sie zu fetchen — oder nur die zu
   pullen, die zurückhängen (der Knopf zählt sie für dich).
+- **N veraltete fetchen** erscheint, wenn Branches mit Upstream seit einem Tag oder
+  länger nicht gefetcht haben, und fetcht nur diese — die, deren „zu pullen“ falsch sein kann.
 - Solange sie offen ist, aktualisiert sie sich alle 30 Sekunden selbst.
 
 | Taste | Aktion |

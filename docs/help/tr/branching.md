@@ -74,6 +74,22 @@ de çalışır.
 
 ![Eğik çizgiyle ayrılmış dal adlarının ağaca katlanmış hâli](../../screenshots/branch-grouping.webp)
 
+## Bir Azure Boards iş öğesinden dal
+
+Uzak deposu Azure DevOps’ta olan bir depoda komut paleti
+**Create branch from Azure work item…** sunar. İş öğesinin numarasını (ya da
+`AB#1234`) yazın; türünü, başlığını ve durumunu gösterir. **Dal oluştur**,
+alışılmış pencereyi adı doldurulmuş olarak açar — hata için `bugfix/1234-baslik`,
+diğer her şey için `feature/1234-baslik` — ve adı yapay zekânın önermesini
+tercih ederseniz görev olarak `AB#1234 başlık` verilir.
+
+İş öğesi anmaları commit mesajlarında ve pull request metinlerinde bağlantıya
+dönüşür: Azure organizasyonunun bilindiği her yerde `AB#1234`, bir Azure deposunda
+ise yalın `#1234` da; çünkü Azure issue’ları değil iş öğelerini numaralandırır.
+Azure Boards’a bağlı bir GitHub deposunda organizasyon bilinmez; deponun
+[`.gitcito.json`](repo-config.md) dosyasındaki bir `links.tickets` girdisi bunu
+karşılar — desen `AB#(\d+)`, URL `https://dev.azure.com/<org>/_workitems/edit/$1`.
+
 ## Bir dalı yeniden adlandırmak
 
 Üç gün önce `fix` diye adlandırdığın dal, bugün kimsenin yerini kestiremediği

@@ -54,6 +54,21 @@ demande aussi : tous ceux qui tirent la cible reçoivent ses commits, et un push
 ne peut pas être annulé depuis Gitcito. La fusion, elle, ne demande rien — elle
 ne fait qu'ajouter. Fusion et rebase se défont d'un seul **Annuler**.
 
+## Glisser un commit sur une branche
+
+Glissez une ligne de commit du graphe sur le badge d’une **branche locale** :
+
+| Déposé sur | Propose |
+|------------|---------|
+| La branche courante | **Cherry-pick** du commit ici ; **Reset** de la branche sur lui (la boîte de reset, qui dit ce que garde chaque mode) |
+| Une autre branche locale | **L’extraire et faire le cherry-pick** ; **Déplacer la branche** sur le commit (`git branch -f`) |
+
+Déplacer une branche demande confirmation : les commits que seule cette branche
+atteignait ne sont plus sur aucune branche ensuite. Annuler la remet en place.
+Les branches de suivi distantes et les tags n’acceptent pas de commit, git ne les
+déplaçant pas ainsi, et une branche pointant déjà sur le commit ne propose rien.
+Le même glisser sur le chat IA ajoute toujours le commit comme contexte.
+
 ## Fusion
 
 Avance rapide quand c'est possible, ou commit de fusion forcé quand vous voulez

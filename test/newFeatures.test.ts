@@ -1195,6 +1195,16 @@ describe('repoPulse — mission control (playground)', () => {
     expect(p.error).toBeNull()
   })
 
+  it('carries the last commit and the last fetch, from the same reads git would give', async () => {
+    const R = repoPath('absorb')
+    const p = await gitService.repoPulse(R)
+    const [author, subject] = execFileSync('git', ['log', '-1', '--format=%an%x1f%s'], { cwd: R, encoding: 'utf8' })
+      .trim()
+      .split('\x1f')
+    expect(p.lastCommit).toEqual({ subject, author })
+    expect(p.lastFetchAt).toBe(await gitService.lastFetchAt(R))
+  })
+
   it('counts staged, unstaged and untracked separately', async () => {
     const R = cloneFixture('absorb')
     let p = await gitService.repoPulse(R)

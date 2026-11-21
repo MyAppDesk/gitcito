@@ -465,8 +465,41 @@ export async function forgejoJobLog(base: string, token: string, target: string)
   )
   // A redirect to the sign-in page throws (redirect: 'error'); an HTML answer is that page served directly.
   if (!res || !res.ok || (res.headers.get('content-type') ?? '').includes('text/html')) return null
-  const text = await res.text()
-  return text.length > LOG_TAIL_BYTES ? text.slice(-LOG_TAIL_BYTES) : text
+  return readTail(res, LOG_TAIL_BYTES)
+}
+
+/**
+ * The last `max` bytes of a response body, read as it streams: a job that
+ * printed hundreds of megabytes never sits in memory whole — only the tail,
+ * where a failure is, is kept. A cut through a multi-byte character or a line
+ * is trimmed back to the first full line.
+ */
+export async function readTail(res: Response, max: number): Promise<string> {
+  if (!res.body) return ''
+  const chunks: Uint8Array[] = []
+  let kept = 0
+  let cut = false
+  const reader = res.body.getReader()
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+    kept += value.byteLength
+    // Drop whole chunks from the front while the rest still covers `max`.
+    while (chunks.length > 1 && kept - chunks[0].byteLength >= max) {
+      kept -= chunks.shift()!.byteLength
+      cut = true
+    }
+  }
+  let bytes = Buffer.concat(chunks)
+  if (bytes.byteLength > max) {
+    bytes = bytes.subarray(bytes.byteLength - max)
+    cut = true
+  }
+  const text = bytes.toString('utf8')
+  if (!cut) return text
+  const nl = text.indexOf('\n')
+  return nl >= 0 ? text.slice(nl + 1) : text
 }
 
 export async function forgejoComment(base: string, owner: string, repo: string, token: string, number: number, body: string): Promise<void> {

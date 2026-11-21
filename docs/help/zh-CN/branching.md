@@ -56,6 +56,19 @@ keywords: branch 分支 branches create 创建 checkout 检出 rename 重命名 
 
 ![用斜杠分隔的分支名折叠成一棵树](../../screenshots/branch-grouping.webp)
 
+## 从 Azure Boards 工作项创建分支
+
+在远程位于 Azure DevOps 的仓库中，命令面板提供
+**Create branch from Azure work item…**。输入工作项编号（或 `AB#1234`），会显示它的类型、
+标题和状态；**创建分支** 会打开常用对话框并填好名称——缺陷为 `bugfix/1234-title`，其他为
+`feature/1234-title`——如果你更想让 AI 建议名称，`AB#1234 标题` 会作为任务填入。
+
+工作项引用会在提交信息和拉取请求文本中变成链接：凡是已知 Azure 组织的地方 `AB#1234`
+都会链接，在 Azure 仓库中普通的 `#1234` 也会，因为 Azure 编号的是工作项而不是 issue。
+在关联了 Azure Boards 的 GitHub 仓库中，组织是未知的；在仓库的
+[`.gitcito.json`](repo-config.md) 中添加 `links.tickets` 条目即可——模式 `AB#(\d+)`，
+URL `https://dev.azure.com/<org>/_workitems/edit/$1`。
+
 ## 重命名分支
 
 三天前叫 `fix` 的分支，今天谁也说不清它是什么。在你发现问题的地方直接改名：

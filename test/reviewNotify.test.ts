@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { newlyAwaitingReview, notifiesReviewRequests } from '../src/renderer/src/lib/reviewNotify'
+import { awaitingSeenKey, newlyAwaitingReview, notifiesReviewRequests } from '../src/renderer/src/lib/reviewNotify'
 import type { PullRequest } from '../src/shared/types'
 
 const pr = (id: number, awaitingYou = false): PullRequest =>
@@ -30,5 +30,23 @@ describe('newlyAwaitingReview', () => {
     expect(notifiesReviewRequests('gitlab')).toBe(true)
     expect(notifiesReviewRequests('forgejo')).toBe(true)
     expect(notifiesReviewRequests(null)).toBe(false)
+  })
+})
+
+describe('awaitingSeenKey — a profile switch', () => {
+  it('starts the other profile from a first look, so its backlog is not announced', () => {
+    const seen = new Map<string, Set<number>>()
+    const look = (profile: string, prs: PullRequest[]): PullRequest[] => {
+      const key = awaitingSeenKey(profile, '/repo')
+      const r = newlyAwaitingReview(seen.get(key), prs)
+      seen.set(key, r.seen)
+      return r.fresh
+    }
+    expect(look('personal', [pr(1, true)])).toEqual([]) // first look primes
+    // Switching to the work account: its pending reviews are old news, not new requests.
+    expect(look('work', [pr(7, true), pr(8, true)])).toEqual([])
+    // Back to personal, where #2 is genuinely new.
+    expect(look('personal', [pr(1, true), pr(2, true)]).map((p) => p.id)).toEqual([2])
+    expect(awaitingSeenKey('a', '/r')).not.toBe(awaitingSeenKey('b', '/r'))
   })
 })

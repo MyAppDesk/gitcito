@@ -1,0 +1,58 @@
+name: Checks
+
+# The gate from CLAUDE.md — typecheck, the i18n and docs guards, the test
+# suite, the build — on every pull request and every push to main. Until now
+# only a release tag built anything, so a PR's first real run was the release.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push to the same PR makes the older run moot. Pushes to main are
+# not cancelled: each merge keeps its own verdict, so a break is pinned on
+# the merge that caused it.
+concurrency:
+  group: checks-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The suite runs real git against generated playground repos; commits
+      # need an identity, and the fixtures set their own per repository.
+      - name: Git identity
+        run: |
+          git config --global user.name "Gitcito CI"
+          git config --global user.email "ci@example.invalid"
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: i18n guard
+        run: npm run lint:i18n
+
+      - name: Docs guard
+        run: npm run lint:docs
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build

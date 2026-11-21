@@ -76,6 +76,23 @@ branch remoti, tag e stash.
 
 ![Nomi di branch separati da slash raccolti in un albero](../../screenshots/branch-grouping.webp)
 
+## Un branch da un work item di Azure Boards
+
+In un repository con il remote su Azure DevOps, la palette dei comandi offre
+**Create branch from Azure work item…**. Digita il numero del work item (o
+`AB#1234`) e ne mostra tipo, titolo e stato; **Crea branch** apre la solita
+finestra con il nome già compilato — `bugfix/1234-titolo` per un bug,
+`feature/1234-titolo` per il resto — e `AB#1234 titolo` come attività, se preferisci
+che sia l’IA a suggerire un nome.
+
+Le menzioni di work item diventano link nei messaggi di commit e nei testi delle
+pull request: `AB#1234` ovunque sia nota l’organizzazione Azure, e in un
+repository Azure anche un semplice `#1234`, perché Azure numera work item, non
+issue. In un repository GitHub collegato ad Azure Boards l’organizzazione non è
+nota; una voce `links.tickets` nel [`.gitcito.json`](repo-config.md) del
+repository la copre — pattern `AB#(\d+)`, URL
+`https://dev.azure.com/<org>/_workitems/edit/$1`.
+
 ## Rinominare un branch
 
 Un branch chiamato `fix` tre giorni fa è un branch che oggi nessuno sa

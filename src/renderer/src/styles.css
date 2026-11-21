@@ -38,6 +38,15 @@
   --font: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
   --mono: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 
+  /* Names the stylesheet uses that no theme defines. An undefined var() makes the
+     whole declaration invalid, so the text silently inherited its parent's colour —
+     the "dimmed" captions came out as bright as the text above them. Themes set
+     only three text tiers; the fourth reuses the dimmest rather than going below
+     it, since text-2 is already near the contrast floor in several themes. */
+  --text-3: var(--text-2);
+  --danger: var(--red);
+  --warn: var(--yellow);
+
   /* Sign multiplier for horizontal transforms, which have no logical form:
      write `translateX(calc(18px * var(--dir)))` and it mirrors under RTL. */
   --dir: 1;
@@ -3226,7 +3235,7 @@ body.col-resizing .node-ava {
   padding: 4px 7px;
   color: var(--text-2);
   cursor: pointer;
-  font-family: var(--font-mono);
+  font-family: var(--mono);
   font-size: 10px;
   overflow-wrap: anywhere;
 }
@@ -3238,7 +3247,7 @@ body.col-resizing .node-ava {
   overflow: auto;
   border-top: 1px solid var(--border-soft);
   color: var(--text-1);
-  font-family: var(--font-mono);
+  font-family: var(--mono);
   font-size: 10px;
   line-height: 1.45;
   white-space: pre;
@@ -7322,7 +7331,7 @@ body.col-resizing .node-ava {
   border-bottom: 1px solid var(--border-soft);
   font-size: 13px;
   font-weight: 600;
-  color: var(--text0);
+  color: var(--text-0);
 }
 
 .settings-general {
@@ -11369,9 +11378,9 @@ input[type='range']:focus-visible {
   padding: 2px 8px;
   border-radius: 9px;
   background: var(--bg-4);
-  color: var(--text-2);
+  color: var(--text-1);
 }
-.mc-repos { font-size: 11px; color: var(--text-3); }
+.mc-repos { font-size: 11px; color: var(--text-2); }
 .mc-summary { display: flex; align-items: center; gap: 5px; }
 .mc-pill {
   font-size: 10.5px;
@@ -11385,13 +11394,13 @@ input[type='range']:focus-visible {
 .mc-pill.blocked { background: color-mix(in srgb, var(--danger, #f85149) 18%, transparent); color: var(--danger, #f85149); }
 .mc-pill.action { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
 .mc-pill.pending { background: color-mix(in srgb, var(--warn, #d29922) 18%, transparent); color: var(--warn, #d29922); }
-.mc-pill.clean { background: var(--bg-3); color: var(--text-3); }
+.mc-pill.clean { background: var(--bg-3); color: var(--text-2); }
 .mc-filter { margin-inline-start: auto; max-width: 200px; font-size: 12px; padding: 4px 9px; }
 .mc-sorts { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 .mc-sort {
   background: transparent;
   border: 0;
-  color: var(--text-2);
+  color: var(--text-1);
   font-size: 11px;
   padding: 4px 9px;
   cursor: pointer;
@@ -11399,7 +11408,7 @@ input[type='range']:focus-visible {
 .mc-sort.active { background: var(--bg-4); color: var(--text-1); }
 
 /* Workspace-wide totals, under the header. */
-.mc-stats { display: flex; align-items: center; gap: 14px; font-size: 11px; color: var(--text-3); }
+.mc-stats { display: flex; align-items: center; gap: 14px; font-size: 11px; color: var(--text-2); }
 .mc-stat { display: inline-flex; align-items: center; gap: 4px; }
 .mc-stat-right { margin-inline-start: auto; }
 
@@ -11415,15 +11424,28 @@ input[type='range']:focus-visible {
 }
 .mc-bulk-count { font-weight: 600; color: var(--text-1); }
 .mc-loading { display: flex; justify-content: center; padding: 60px; }
-.mc-empty { padding: 40px; text-align: center; color: var(--text-3); font-size: 12.5px; }
-.mc-list { flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 1px; }
+.mc-empty { padding: 40px; text-align: center; color: var(--text-2); font-size: 12.5px; }
+.mc-list {
+  flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 1px;
+  container-type: inline-size;
+}
+/* A grid rather than a flex row, so every column lines up down the list and the
+   counts read like a table: identity, last commit, counts, activity, ages. */
 .mc-row {
-  display: flex;
+  display: grid;
+  grid-template-columns:
+    auto auto auto minmax(170px, 1fr) minmax(0, 1.5fr) 230px 92px 104px auto;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border-radius: 7px;
   min-width: 0;
+}
+/* Narrow window: the last commit goes first, the counts stay. */
+@container (max-width: 900px) {
+  .mc-row { grid-template-columns: auto auto auto minmax(150px, 1fr) 200px 80px 96px auto; }
+  .mc-commit { display: none; }
+  .mc-error { grid-column: span 1; }
 }
 .mc-row:hover { background: var(--bg-4); }
 /* Keyboard cursor: a soft ring around the whole row rather than a bar stuck to
@@ -11439,14 +11461,15 @@ input[type='range']:focus-visible {
   padding: 2px;
   border: 0;
   background: transparent;
-  color: var(--text-3);
+  color: var(--text-2);
   cursor: pointer;
 }
 .mc-expand:hover { color: var(--text-1); }
-.mc-sparkwrap { flex: 0 0 auto; display: flex; align-items: center; color: var(--text-3); }
-.mc-sparkwrap.blocked { color: var(--danger, #f85149); }
-.mc-sparkwrap.action { color: var(--accent); }
-.mc-sparkwrap.pending { color: var(--warn, #d29922); }
+.mc-activity { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; color: var(--text-2); }
+.mc-activity.blocked { color: var(--danger, #f85149); }
+.mc-activity.action { color: var(--accent); }
+.mc-activity.pending { color: var(--warn, #d29922); }
+.mc-activity-n { font-size: 10px; color: var(--text-2); white-space: nowrap; }
 .mc-spark { display: block; opacity: 0.8; }
 
 /* Expanded row: what is waiting to be pushed and what is dirty. */
@@ -11457,11 +11480,11 @@ input[type='range']:focus-visible {
   font-size: 11px;
 }
 .mc-detail-col { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 46%; }
-.mc-detail-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3); }
-.mc-detail-item { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--text-2); }
+.mc-detail-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); }
+.mc-detail-item { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--text-1); }
 .mc-detail-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-detail-item code { font-family: var(--mono, monospace); font-size: 10.5px; color: var(--text-3); flex: 0 0 auto; }
-.mc-detail-empty { color: var(--text-3); }
+.mc-detail-item code { font-family: var(--mono, monospace); font-size: 10.5px; color: var(--text-2); flex: 0 0 auto; }
+.mc-detail-empty { color: var(--text-2); }
 .mc-status.M { color: var(--warn, #d29922); }
 .mc-status.A { color: var(--green); }
 .mc-status.D { color: var(--danger, #f85149); }
@@ -11470,14 +11493,22 @@ input[type='range']:focus-visible {
 .mc-level.blocked { color: var(--danger, #f85149); }
 .mc-level.action { color: var(--accent); }
 .mc-level.pending { color: var(--warn, #d29922); }
-.mc-level.clean { color: var(--text-3); }
-.mc-ident { display: flex; flex-direction: column; gap: 1px; min-width: 0; width: 240px; flex: 0 0 auto; }
+.mc-level.clean { color: var(--text-2); }
+.mc-ident { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mc-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .mc-name { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-where { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-3); min-width: 0; }
-.mc-group { padding: 0 5px; border-radius: 7px; background: var(--bg-4); }
-.mc-branch { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-where { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-2); min-width: 0; }
+.mc-group {
+  flex: 0 0 auto; padding: 0 6px; border-radius: 7px; background: var(--bg-4);
+  font-size: 10px; color: var(--text-2); white-space: nowrap;
+}
+.mc-noupstream { display: inline-flex; align-items: center; gap: 3px; flex: 0 0 auto; color: var(--warn, #d29922); }
+.mc-commit { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mc-subject { font-size: 11.5px; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-author { font-size: 10.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-branch { color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mc-upstream { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-badges { display: flex; align-items: center; gap: 5px; flex: 1; flex-wrap: wrap; min-width: 0; }
+.mc-badges { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; min-width: 0; }
 .mc-badge {
   display: inline-flex;
   align-items: center;
@@ -11487,15 +11518,20 @@ input[type='range']:focus-visible {
   padding: 1px 7px;
   border-radius: 9px;
   background: var(--bg-4);
-  color: var(--text-2);
+  color: var(--text-1);
 }
 .mc-badge.blocked { background: color-mix(in srgb, var(--danger, #f85149) 18%, transparent); color: var(--danger, #f85149); }
 .mc-badge.behind { background: color-mix(in srgb, var(--warn, #d29922) 16%, transparent); color: var(--warn, #d29922); }
 .mc-badge.ahead { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
 .mc-badge.dirty { color: var(--text-1); }
+.mc-badge.staged { background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green); }
 .mc-badge.pr { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); }
-.mc-error { flex: 1; font-size: 11px; color: var(--danger, #f85149); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mc-age { font-size: 10.5px; color: var(--text-3); width: 34px; text-align: end; flex: 0 0 auto; }
+.mc-error { grid-column: span 2; min-width: 0; font-size: 11px; color: var(--danger, #f85149); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-times { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
+.mc-age { font-size: 10.5px; color: var(--text-1); white-space: nowrap; }
+.mc-fetched { font-size: 10px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+/* The behind count is only as fresh as the last fetch — say so when it is old. */
+.mc-fetched.stale { color: var(--warn, #d29922); }
 .mc-actions { display: flex; gap: 4px; flex: 0 0 auto; opacity: 0; }
 .mc-row:hover .mc-actions { opacity: 1; }
 

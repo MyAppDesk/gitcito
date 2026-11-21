@@ -169,6 +169,18 @@ function seedSettings(shot, theme) {
   }
 }
 
+/**
+ * The environment a shot's Electron starts with. ELECTRON_RUN_AS_NODE is
+ * dropped: an editor built on Electron (VS Code, Cursor) sets it for its own
+ * terminals, and inherited it makes Electron start as plain Node — the launch
+ * then fails with nothing but "Process failed to launch".
+ */
+function shotEnv(shot) {
+  const env = { ...process.env, ...(shot.env ?? {}) }
+  delete env.ELECTRON_RUN_AS_NODE
+  return env
+}
+
 async function launch(shot, theme) {
   const userDataDir = await mkdtemp(join(tmpdir(), 'gitcito-shot-'))
   await mkdir(userDataDir, { recursive: true })
@@ -195,11 +207,14 @@ async function launch(shot, theme) {
   const app = await electron.launch({
     // --disable-gpu forces software (CPU) rasterization so pixel output is
     // identical across runs, eliminating GPU/subpixel-antialiasing drift.
-    args: [MAIN, '--shot', `--user-data-dir=${userDataDir}`, '--disable-gpu'],
+    // SHOT_ELECTRON_ARGS adds switches for this machine's display — on a Wayland
+    // desktop whose compositor will not hand Chromium a screenshot,
+    // `--ozone-platform=x11` (with WAYLAND_DISPLAY unset) captures through XWayland.
+    args: [MAIN, '--shot', `--user-data-dir=${userDataDir}`, '--disable-gpu', ...(process.env.SHOT_ELECTRON_ARGS ?? '').split(/\s+/).filter(Boolean)],
     // `shot.env` lets an entry redirect something machine-specific at a
     // throwaway copy — the SSH key list, say, which must never photograph the
     // real one. Honoured by the app only under --shot.
-    env: { ...process.env, ...(shot.env ?? {}) },
+    env: shotEnv(shot),
     cwd: ROOT
   })
   const page = await app.firstWindow()

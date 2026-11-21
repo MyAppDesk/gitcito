@@ -78,31 +78,57 @@ Nenhum provedor publica uma lista ordenada ou curada, então o recorte é do Git
 
 ## O que ela consegue fazer
 
-| Recurso | O que você recebe |
+| Recurso | O que você ganha |
 |---|---|
 | **Mensagem de commit** | Resumo (e corpo opcional) a partir do seu diff preparado, no estilo que você escolheu |
-| **Explicar este arquivo** | Explicação em linguagem simples num painel lateral — Normal, Conciso, ELI5… até Pirata |
+| **Explicar este arquivo** | Explicação em linguagem simples num painel lateral — Normal, Conciso, Para leigos… até Pirata |
 | **Passar o mouse para explicar** | Segure <kbd>⇧</kbd> e aponte para um identificador para uma explicação de uma linha, mais as linhas em que ela se baseou |
-| **Resolução de conflito** | Propõe um merge na saída editável — nunca aplica sozinha |
-| **Revisão de PR** | Resume um diff e sinaliza riscos, cada um ancorado num `path:line` de verdade |
-| **Descrição de PR** · **nomes de branch** | Redigidos a partir dos commits e do diff da branch |
-| **Temas** · **paletas de grafo** | Gerados a partir de um prompt |
+| **Editar seleção com IA** | Selecione linhas num arquivo, descreva a mudança, e o modelo reescreve só aquelas linhas no rascunho do editor |
+| **Resolução de conflitos** | Propõe um merge na saída editável — nunca aplica sozinha |
+| **Revisão de PR** | Resume um diff e aponta riscos, cada um ancorado num `caminho:linha` real |
+| **Descrição de PR** · **nomes de branch** | Rascunhados a partir dos commits e do diff da branch |
+| **Temas** · **paletas do grafo** | Gerados a partir de um prompt |
 | **Staging inteligente** | Sugestões do que pertence a este commit |
-| **Assistente de configuração de IA** | Gera arquivos de configuração do assistente (instruções, agentes, hooks) para o repositório — o botão de varinha no cabeçalho do painel de chat |
+| **[Chat do repositório](repo-chat.md)** | Perguntas ancoradas no código, mais mudanças de arquivo revisadas seguidas de ações Git validadas |
+| **Assistente de configuração de IA** | Gera arquivos de configuração de assistente (instruções, agentes, hooks) para o repositório — o botão de varinha no cabeçalho do painel de chat |
+
+### Edite só as linhas que você selecionar
+
+Na visão de arquivo, arraste sobre as linhas que quer mudar e aperte **Editar
+com IA…** (ou clique com o botão direito numa linha e escolha no menu). Uma
+barra embaixo mostra o intervalo selecionado e recebe a sua instrução —
+"renomeie esta variável", "adicione verificações de nulo", "traduza estas
+strings". O modelo vê as linhas selecionadas e um pouco do contexto em volta, e
+devolve só a substituição daquele intervalo, que vai para o **rascunho do
+editor**, não para o disco. Você revisa ali e salva ou descarta pelo fluxo normal
+de edição, então nada é gravado até você mandar. Funciona em todos os backends
+configurados, não só nas CLIs de agente, porque a resposta é texto, não uma
+chamada de ferramenta. Os limites: reescreve um intervalo contínuo por vez, não
+cria nem apaga arquivos inteiros, e uma seleção que atravessa hunks de diff é
+recusada — selecione na visão de arquivo.
 
 ## Ancorada, não chutando
 
-A revisão vê o diff como **hunks rotulados** e só pode citar aqueles rótulos; o
-Gitcito então resolve cada rótulo para um arquivo e uma linha de verdade. Um modelo
-que inventa uma localização é **rejeitado e questionado de novo**, então os achados
+A revisão vê o diff como **hunks rotulados** e só pode citar esses rótulos; o
+Gitcito então resolve cada rótulo num arquivo e numa linha reais. Um modelo que
+inventa uma localização é **rejeitado e consultado de novo**, então os achados
 sempre apontam para código que existe.
 
-O explicar-ao-passar-o-mouse lê apenas uma janela numerada em volta do token — num
-diff, só os hunks visíveis na tela — então quando uma definição mora em outro lugar
-ele diz isso em vez de inventar. As respostas são cacheadas por versão de arquivo.
+O passar o mouse para explicar lê só uma janela numerada em volta do token —
+num diff, só os hunks visíveis na tela —, então quando uma definição mora em
+outro lugar ele diz isso em vez de inventar. As respostas ficam em cache por
+versão do arquivo.
 
-**Arquivos de segredo mascarados nunca são enviados.** Nem os arquivos cobertos pelas
-regras de mascaramento de segredos.
+O [chat do repositório](repo-chat.md) funciona do mesmo jeito: só pode citar os
+trechos que recebeu, e a requisição em duas etapas escolhe esses trechos a partir
+da lista de arquivos rastreados do próprio Git, não de algo que o modelo escreve.
+Quando ele propõe uma mudança, o Gitcito valida as ações exatas de arquivo,
+calcula os diffs localmente, e depois roda as ações Git seguintes sob a política
+de aprovação configurada.
+
+**Arquivos secretos mascarados nunca são enviados.** Nem arquivos cobertos pelas
+regras de mascaramento de segredos — inclusive um arquivo que você fixa no chat à
+mão, que é recusado com um motivo em vez de lido.
 
 ## Limites
 

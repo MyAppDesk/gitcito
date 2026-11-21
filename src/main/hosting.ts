@@ -94,12 +94,14 @@ import {
   azureComment,
   azureMerge,
   azurePrChecks,
+  azureBuildLog,
   azurePrDetail,
   azurePrFiles,
   azureReply,
   azureReview,
   azureWorkItem,
   type Ado,
+  type AdoText,
   type AzureRepo
 } from './azurePr'
 
@@ -1306,13 +1308,47 @@ interface GhUser {
  * (remoteApiToken) with the same retry-on-revoked-helper-credential the list
  * uses, so azurePr.ts needs to know nothing about auth.
  */
-async function azRepoOf(remoteUrl: string, sent: string | undefined): Promise<{ ado: Ado; repo: AzureRepo }> {
+async function azRepoOf(
+  remoteUrl: string,
+  sent: string | undefined
+): Promise<{ ado: Ado; optional: Ado; text: AdoText; repo: AzureRepo }> {
   const parsed = parseRemoteUrl(remoteUrl)
   if (!parsed || parsed.provider !== 'azure') throw new Error('Not an Azure DevOps repository.')
   const auth = await remoteApiToken(remoteUrl, 'azure', sent)
   if (!auth) throw await noCredential('Azure DevOps', remoteUrl)
   const ado: Ado = (url, init) => withAzureRetry(remoteUrl, auth, (token) => adoJson(url, token, init))
-  return { ado, repo: { org: parsed.owner, project: parsed.project, repo: parsed.repo } }
+  // Calls that need a scope the token may not have (Work Items, Build) skip the
+  // retry: a 401/403 there means "not allowed to read this", not "revoked", and
+  // the retry would drop a working git credential from the helper over it.
+  const optional: Ado = (url, init) => adoJson(url, auth.token, init)
+  const text: AdoText = (url, max) => adoTail(url, auth.token, max)
+  return { ado, optional, text, repo: { org: parsed.owner, project: parsed.project, repo: parsed.repo } }
+}
+
+/**
+ * A plain-text Azure DevOps resource (a build log), keeping only its last `max`
+ * bytes as it streams in — a pipeline that prints hundreds of megabytes never
+ * sits in memory whole. Null when it is refused or answered with a sign-in page.
+ */
+export async function adoTail(url: string, token: string, max: number): Promise<string | null> {
+  const res = await fetch(url, {
+    redirect: 'error',
+    headers: { Authorization: azureAuth(token), Accept: 'text/plain' }
+  }).catch(() => null)
+  if (!res || !res.ok || !res.body || (res.headers.get('content-type') ?? '').includes('text/html')) return null
+  const chunks: Buffer[] = []
+  let size = 0
+  for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
+    chunks.push(Buffer.from(chunk))
+    size += chunk.length
+    while (size - chunks[0].length >= max) size -= chunks.shift()!.length
+  }
+  let buf = Buffer.concat(chunks)
+  if (buf.length <= max) return buf.toString('utf8')
+  buf = buf.subarray(buf.length - max)
+  // Start on a whole line, so the first one shown is not cut mid-character.
+  const nl = buf.indexOf(10)
+  return (nl >= 0 ? buf.subarray(nl + 1) : buf).toString('utf8')
 }
 
 /** Resolve a Forgejo remote to its instance, owner/repo and token — through
@@ -1353,7 +1389,7 @@ async function pullRequestDetail(
   }
   if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
     const a = await azRepoOf(remoteUrl, tokens.azure)
-    return azurePrDetail(a.ado, a.repo, number)
+    return azurePrDetail(a.ado, a.repo, number, a.optional)
   }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
@@ -1477,7 +1513,12 @@ async function pullRequestDetail(
  * Null when it cannot be read here; the page then offers the browser.
  */
 async function pullRequestCheckLog(remoteUrl: string, tokens: HostTokens, url: string): Promise<string | null> {
-  if (parseRemoteUrl(remoteUrl)?.provider !== 'forgejo' || typeof url !== 'string') return null
+  if (typeof url !== 'string') return null
+  if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
+    const a = await azRepoOf(remoteUrl, tokens.azure)
+    return azureBuildLog(a.optional, a.text, a.repo, url)
+  }
+  if (parseRemoteUrl(remoteUrl)?.provider !== 'forgejo') return null
   const f = await fjRepoOf(remoteUrl, tokens.forgejo)
   return forgejoJobLog(f.base, f.token, url)
 }
@@ -1495,7 +1536,7 @@ async function pullRequestChecks(
   }
   if (parseRemoteUrl(remoteUrl)?.provider === 'azure') {
     const a = await azRepoOf(remoteUrl, tokens.azure)
-    return azurePrChecks(a.ado, a.repo, number)
+    return azurePrChecks(a.ado, a.repo, number, a.optional)
   }
   const { owner, repo, token } = await ghRepoOf(remoteUrl, tokens.github)
   const api = `https://api.github.com/repos/${owner}/${repo}`
@@ -2865,7 +2906,8 @@ export function registerHostingHandlers(): void {
   ipcMain.handle('hosting:workItem', async (_e, remoteUrl: string, tokens: HostTokens, id: number) => {
     if (!Number.isInteger(id) || id <= 0) throw new Error('A work item number is a positive integer.')
     const a = await azRepoOf(remoteUrl, tokens.azure)
-    return azureWorkItem(a.ado, a.repo.org, id)
+    // Work Items is a scope a code token may lack: a refusal is shown, never retried.
+    return azureWorkItem(a.optional, a.repo.org, id)
   })
   ipcMain.handle('hosting:prComment', (_e, remoteUrl: string, tokens: HostTokens, number: number, body: string) =>
     commentOnPr(remoteUrl, tokens, number, body)

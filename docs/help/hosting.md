@@ -128,6 +128,16 @@ The sidebar also lists the **work items linked to the PR** — number, title,
 type and state — each opening in the browser. Reading them takes a token that
 can read work items (*Work Items: Read*); without it the row is simply left out.
 
+**Checks** include the branch's **build validation** — the pipeline its policy
+requires, which Azure records as a policy result rather than as a status — next
+to any status a pipeline or an external CI posts. A check that is one of this
+organization's Azure Pipelines builds shows its log under the row: the tasks
+that failed, each under its name, or each job's whole log when nothing failed,
+starting at the end. The token goes only to builds in the PR's own
+organization. Reading logs takes *Build: Read*; without it the row offers the
+browser instead. A token missing a scope is simply refused — the app never
+takes that for a revoked sign-in and never drops the credential git uses.
+
 ## Self-managed GitLab
 
 A company GitLab lives at its own address. Give a profile that address in

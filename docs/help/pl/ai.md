@@ -31,6 +31,17 @@ osiągane przez zgodny z OpenAI endpoint Google.
 
 ### Subskrypcja zamiast klucza API
 
+Podczas pierwszej konfiguracji lub w Ustawieniach → AI wybierz **Użyj mojej subskrypcji**. Wybierz ChatGPT lub Claude i zaloguj się w terminalu odpowiednim poleceniem. Przetestuj połączenie, a następnie dodaj konto.
+
+Po zainstalowaniu CLI kliknij Połącz, aby otworzyć stronę logowania dostawcy. Możesz anulować trwające łączenie.
+
+- ChatGPT (Codex) — `codex login`
+- Claude (Claude Code) — `claude auth login`
+
+Test wysyła krótką wiadomość do dostawcy i zużywa część limitu planu. Limit wykorzystany. Spróbuj ponownie po jego odnowieniu.
+
+![Użyj mojej subskrypcji](../../screenshots/ai-subscription.webp)
+
 Wybierz dostawcę **Lokalne CLI**, aby odpowiadało CLI agenta już zainstalowane i
 zalogowane na tej maszynie — `claude`, `gemini` lub `codex`. Gitcito uruchamia
 program z twoim zapytaniem i czyta odpowiedź; nie ma klucza API do wklejenia ani

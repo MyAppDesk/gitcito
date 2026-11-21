@@ -1605,6 +1605,12 @@ export const en = {
   'settings.cliDevin': 'Devin CLI (devin)',
   'settings.cliPath': 'Path to the command',
   'settings.cliFound': 'Found at {path}',
+  'settings.cliDefaultModel': 'CLI default model',
+  'settings.usePlan': 'Use my subscription',
+  'settings.planLogin': 'Install the CLI, then run {command} in a terminal and sign in with your subscription.',
+  'settings.planTestHint': 'The test sends a short prompt to your provider and uses your plan allowance.',
+  'settings.planLimit': 'Plan limit reached. Retry after your allowance resets.',
+  'settings.planFailed': 'Connection failed. Check your network and CLI version, then retry.',
   'settings.cliNotFound': 'Not found on your PATH. Install it, or type its full path above.',
   'settings.cliPrivacyHint':
     'Answers come from your own signed-in session, so no API key is needed. Your prompts still reach that vendor exactly as they would with a key.',

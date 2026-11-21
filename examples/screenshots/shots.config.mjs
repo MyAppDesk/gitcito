@@ -538,6 +538,18 @@ export const shots = [
     }
   },
   {
+    out: 'ai-subscription',
+    clipTo: '.subscription-setup',
+    clipPad: 0,
+    repos: ['octopus-merge'],
+    themes: ['light'],
+    drive: async (page) => {
+      await page.evaluate(() => window.__shot.ui.getState().openModal({ kind: 'settings', page: 'ai' }))
+      await page.getByRole('button', { name: 'Use my subscription' }).click()
+      await page.getByRole('button', { name: 'Test connection' }).waitFor()
+    }
+  },
+  {
     out: 'settings-ai',
     repos: ['octopus-merge'],
     themes: ['light'],

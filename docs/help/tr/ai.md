@@ -31,6 +31,17 @@ ulaşılır.
 
 ### API anahtarı yerine abonelik kullanmak
 
+İlk kurulumda veya Ayarlar → Yapay zekâ bölümünde **Aboneliğimi kullan** seçeneğini seçin. ChatGPT veya Claude için ilgili komutu terminalde çalıştırıp oturum açın. Bağlantıyı test edin ve test başarılı olunca hesabı ekleyin.
+
+CLI kurulduktan sonra sağlayıcının oturum açma sayfasını açmak için Bağlan düğmesine basın. Bekleyen bağlantıyı iptal edebilirsiniz.
+
+- ChatGPT (Codex) — `codex login`
+- Claude (Claude Code) — `claude auth login`
+
+Test sağlayıcınıza kısa bir istek gönderir ve plan kotanızı kullanır. Plan sınırına ulaşıldı. Kota yenilendikten sonra tekrar deneyin.
+
+![Aboneliğimi kullan](../../screenshots/ai-subscription.webp)
+
 Bu makinede kurulu ve oturumu açık bir aracı CLI ile cevap almak için **Yerel
 CLI** sağlayıcısını seç — `claude`, `gemini` ya da `codex`. Gitcito ikili dosyayı
 isteminle çalıştırır ve cevabını okur; yapıştırılacak bir API anahtarı yoktur,

@@ -10,10 +10,12 @@ import {
   type AIFeature,
   type AIProvider,
   type DetectedCli,
+  type SubscriptionCli,
   type ModelCatalog
 } from '../../../shared/types'
 import { accountLabel, accountNeedsKey, modelFor, newAccount } from '../../../shared/aiAccounts'
 import { aiApi } from '../infrastructure/api'
+import { SubscriptionSetup } from './SubscriptionSetup'
 import { useModelCatalogs } from './useModelCatalogs'
 import { useUIStore } from '../stores/ui'
 import { interp, useT, type TranslationKey } from '../i18n'
@@ -200,6 +202,7 @@ function AccountCard({
     onEdit({
       ...account,
       provider: id,
+      subscription: undefined,
       endpoint: next.endpoint,
       model: next.defaultModel,
       // A label the user never renamed should follow the provider rather than
@@ -266,7 +269,7 @@ function AccountCard({
             {t('settings.cliBinary')}
             <select
               value={account.cli ?? 'claude'}
-              onChange={(e) => onEdit({ ...account, cli: e.target.value as AICliBinary, model: '' })}
+              onChange={(e) => onEdit({ ...account, cli: e.target.value as AICliBinary, cliPath: undefined, subscription: undefined, model: '' })}
             >
               {CLI_BINARIES.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -324,6 +327,7 @@ function AccountCard({
             placeholder={preset.defaultModel || 'model-name'}
             models={models}
             allModels={catalog?.allModels}
+            emptyLabel={account.provider === 'cli' ? t('settings.cliDefaultModel') : undefined}
             onChange={(model) => onEdit({ ...account, model })}
           />
           <button
@@ -369,6 +373,7 @@ export function AIAccountsEditor({
 }): React.JSX.Element {
   const t = useT()
   const toast = useUIStore((s) => s.toast)
+  const [setup, setSetup] = useState(false)
   const [clis, setClis] = useState<DetectedCli[]>([])
   const accounts = ai.accounts ?? []
   const { catalogs, loading, refresh } = useModelCatalogs(ai)
@@ -395,6 +400,18 @@ export function AIAccountsEditor({
     // Adding one is only useful if it is also the one now on screen.
     setEditingId(account.id)
     onChange({ ...ai, accounts: [...accounts, account] })
+  }
+
+  const connect = (binary: SubscriptionCli, label: string, cliPath: string): void => {
+    const account = { ...newAccount(accounts, 'cli'), cli: binary, subscription: true, cliPath, label }
+    const starter = accounts.length === 1 && accounts[0].id === 'default' && accountNeedsKey(accounts[0])
+    onChange({
+      ...ai,
+      accounts: [...accounts, account],
+      defaultAccountId: starter || !accounts.length ? account.id : ai.defaultAccountId
+    })
+    setEditingId(account.id)
+    setSetup(false)
   }
 
   const deleteAccount = (id: string): void => {
@@ -437,12 +454,16 @@ export function AIAccountsEditor({
             ))}
           </select>
         )}
-        <button type="button" className="btn ghost small" onClick={addAccount}>
+        <button type="button" className="btn ghost small" disabled={ai.enabled === false} aria-expanded={setup} onClick={() => setSetup(!setup)}>
+          {t('settings.usePlan')}
+        </button>
+        <button type="button" className="btn ghost small" onClick={() => { setSetup(false); addAccount() }}>
           <Plus size={13} /> {t('settings.addAccount')}
         </button>
       </div>
 
-      {editing && (
+      {setup && ai.enabled !== false && <SubscriptionSetup onConnect={connect} />}
+      {!setup && editing && (
         <AccountCard
           key={editing.id}
           ai={ai}

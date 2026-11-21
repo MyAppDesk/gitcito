@@ -7,6 +7,8 @@ import type {
   RepoConfig,
   RepoConfigResult,
   DetectedCli,
+  SubscriptionCli,
+  SubscriptionTest,
   ModelCatalog,
   BlameLine,
   BranchCompareResult,
@@ -699,6 +701,11 @@ export const aiApi = {
   commitMessage: (diff: string, cfg: AIConfig, ctx: { branch: string }) =>
     window.api.ai.commitMessage(diff, cfg, ctx) as Promise<{ summary: string; description: string }>,
   listModels: (cfg: AIConfig, force = false) => window.api.ai.listModels(cfg, force) as Promise<ModelCatalog>,
+  signInSubscription: (binary: SubscriptionCli, path: string, requestId: string) =>
+    window.api.ai.signInSubscription(binary, path, requestId) as Promise<SubscriptionTest>,
+  cancelSubscriptionSignIn: (requestId: string) => window.api.ai.cancelSubscriptionSignIn(requestId),
+  testSubscription: (binary: SubscriptionCli, path: string) =>
+    window.api.ai.testSubscription(binary, path) as Promise<SubscriptionTest>,
   detectCli: () => window.api.ai.detectCli() as Promise<DetectedCli[]>,
   explainCode: (code: string, lang: string, cfg: AIConfig) =>
     window.api.ai.explainCode(code, lang, cfg) as Promise<string>,

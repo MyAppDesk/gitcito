@@ -137,6 +137,9 @@ interface PreloadApi {
   ai: {
     commitMessage(diff: string, cfg: unknown, ctx: unknown): Promise<unknown>
     listModels(cfg: unknown, force?: boolean): Promise<unknown>
+    signInSubscription(binary: string, path: string, requestId: string): Promise<unknown>
+    cancelSubscriptionSignIn(requestId: string): Promise<void>
+    testSubscription(binary: string, path: string): Promise<unknown>
     detectCli(): Promise<unknown>
     explainCode(code: string, lang: string, cfg: unknown): Promise<unknown>
     editSelection(req: unknown, cfg: unknown): Promise<unknown>

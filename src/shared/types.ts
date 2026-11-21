@@ -1200,6 +1200,9 @@ export function aiProviderPreset(id: AIProvider): AIProviderPreset {
   return AI_PROVIDERS.find((p) => p.id === id) ?? AI_PROVIDERS[AI_PROVIDERS.length - 1]
 }
 
+export type SubscriptionCli = 'codex' | 'claude'
+export type SubscriptionTest = 'connected' | 'missing' | 'login' | 'limit' | 'failed'
+
 /**
  * One configured way of reaching a model: a provider, where to reach it, and
  * how it authenticates. Several can coexist — an OpenAI key for work, a
@@ -1221,6 +1224,8 @@ export interface AIAccount {
   cli?: AICliBinary
   /** `cli` accounts only: an explicit path, when the binary is not on PATH. */
   cliPath?: string
+  /** Require the CLI to authenticate with the user’s subscription. */
+  subscription?: boolean
   /** Used by any feature that has no assignment of its own. */
   model: string
 }
@@ -1293,6 +1298,8 @@ export interface AIConfig {
   /** `cli` transport only. */
   cli?: AICliBinary
   cliPath?: string
+  /** Require the CLI to authenticate with the user’s subscription. */
+  subscription?: boolean
   /** `cli` transport only: working directory for the call — the repo the
    *  feature is about, so agent CLIs (devin, claude, codex) can read its files.
    *  Renderer stamps it per call; never persisted with the account. */

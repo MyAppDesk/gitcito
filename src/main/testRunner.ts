@@ -1,6 +1,6 @@
 import { execFile, type ChildProcess } from 'child_process'
 import { existsSync, readFileSync, statSync } from 'fs'
-import { mkdtemp, readFile, rm } from 'fs/promises'
+import { mkdtemp, readFile, realpath, rm } from 'fs/promises'
 import { tmpdir } from 'os'
 import { delimiter, isAbsolute, join, relative } from 'path'
 import { ipcMain } from 'electron'
@@ -228,7 +228,7 @@ export async function runTests(repoPath: string): Promise<TestRunResult> {
       const tail = stripAnsi(printed).trim().slice(-MESSAGE_CAP)
       return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms, error: tail, ...(timedOut ? { timedOut: true } : {}) }
     }
-    return { ...parseTestReport(json, repoPath, runner), ms }
+    return { ...parseTestReport(json, await realpath(repoPath), runner), ms }
   } finally {
     if (running.get(repoPath)?.id === runId) running.delete(repoPath)
     cancelled.delete(runId)

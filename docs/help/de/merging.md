@@ -52,6 +52,21 @@ Push fragt ebenfalls: Wer das Ziel pullt, bekommt seine Commits, und ein Push
 lässt sich in Gitcito nicht rückgängig machen. Merge fragt nicht — es fügt nur
 hinzu. Merge und Rebase holt ein einziges **Rückgängig** zurück.
 
+## Einen Commit auf einen Branch ziehen
+
+Ziehe eine Commit-Zeile aus dem Graphen auf das Badge eines **lokalen Branches**:
+
+| Abgelegt auf | Angeboten |
+|--------------|-----------|
+| Dem ausgecheckten Branch | **Cherry-Pick** des Commits hierher; **Reset** des Branches darauf (der Reset-Dialog, der sagt, was jeder Modus behält) |
+| Einem anderen lokalen Branch | **Auschecken und Cherry-Pick**; **Branch verschieben** auf den Commit (`git branch -f`) |
+
+Das Verschieben eines Branches fragt vorher nach: Commits, die nur dieser Branch
+erreichte, liegen danach auf keinem Branch mehr. Rückgängig setzt den Branch
+zurück. Remote-Tracking-Branches und Tags nehmen keinen Commit an, da git sie so
+nicht verschiebt, und ein Branch, der schon auf den Commit zeigt, bietet nichts
+an. Derselbe Zug auf den KI-Chat fügt den Commit weiterhin als Kontext hinzu.
+
 ## Merge
 
 Fast-forward, wenn möglich, oder erzwungener Merge-Commit, wenn du die

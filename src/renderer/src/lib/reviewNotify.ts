@@ -24,3 +24,12 @@ export function newlyAwaitingReview(
 export function notifiesReviewRequests(provider: HostingProvider): boolean {
   return provider === 'gitlab' || provider === 'forgejo'
 }
+
+/**
+ * Where the last look is remembered: per profile as well as per repository.
+ * Another account's requests, seen for the first time after a profile switch,
+ * are not news — that first look only primes, like any first look.
+ */
+export function awaitingSeenKey(profileId: string, repoPath: string): string {
+  return `${profileId}\u0000${repoPath}`
+}

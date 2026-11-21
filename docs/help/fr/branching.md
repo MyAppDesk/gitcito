@@ -82,6 +82,23 @@ remisages.
 
 ![Des noms de branche séparés par des barres obliques, repliés en arborescence](../../screenshots/branch-grouping.webp)
 
+## Une branche à partir d’un work item Azure Boards
+
+Dans un dépôt dont le remote est sur Azure DevOps, la palette de commandes propose
+**Create branch from Azure work item…**. Tapez le numéro du work item (ou
+`AB#1234`) : son type, son titre et son état s’affichent ; **Créer la branche**
+ouvre la boîte de dialogue habituelle avec le nom prérempli — `bugfix/1234-titre`
+pour un bug, `feature/1234-titre` pour le reste — et `AB#1234 titre` comme tâche,
+si vous préférez que l’IA propose un nom.
+
+Les mentions de work items deviennent des liens dans les messages de commit et
+les textes de pull request : `AB#1234` partout où l’organisation Azure est
+connue, et sur un dépôt Azure un simple `#1234` aussi, car Azure numérote des
+work items, pas des issues. Sur un dépôt GitHub lié à Azure Boards,
+l’organisation n’est pas connue ; une entrée `links.tickets` dans le
+[`.gitcito.json`](repo-config.md) du dépôt y remédie — motif `AB#(\d+)`, URL
+`https://dev.azure.com/<org>/_workitems/edit/$1`.
+
 ## Renommer une branche
 
 Une branche nommée `fix` il y a trois jours est une branche que personne ne

@@ -1,6 +1,6 @@
 import { execFile, type ChildProcess } from 'child_process'
 import { existsSync, readFileSync, statSync } from 'fs'
-import { mkdtemp, readFile, rm } from 'fs/promises'
+import { mkdtemp, readFile, realpath, rm } from 'fs/promises'
 import { tmpdir } from 'os'
 import { delimiter, isAbsolute, join, relative } from 'path'
 import { ipcMain } from 'electron'
@@ -172,64 +172,76 @@ function nodeCommand(): { cmd: string; env: Record<string, string> } {
   return { cmd: process.execPath, env: { ELECTRON_RUN_AS_NODE: '1' } }
 }
 
-const running = new Map<string, ChildProcess>()
-/** Runs the user stopped: their result is dropped, not shown as a failure. */
-const cancelled = new Set<string>()
+/** The run in flight per repository, by its id — a cancelled run must not be confused with the next one. */
+const running = new Map<string, { child: ChildProcess | null; id: number }>()
+/** Ids of runs the user stopped: their result is dropped, not shown as a failure. */
+const cancelled = new Set<number>()
+let nextRunId = 1
 
 export async function runTests(repoPath: string): Promise<TestRunResult> {
   const started = Date.now()
   cancelTests(repoPath)
-  cancelled.delete(repoPath)
+  const runId = nextRunId++
   const { runner } = installedRunner(repoPath)
   const entry = runner ? runnerEntry(repoPath, runner) : null
   // Not a failure to report in English: the panel already says which, translated.
   if (!runner || !entry) return { runner: runner ?? 'vitest', files: [], passed: 0, failed: 0, skipped: 0, ms: 0, unavailable: true }
-  // A private directory, so the report's name is not guessable in the shared tmp.
-  const dir = await mkdtemp(join(tmpdir(), 'gitcito-tests-'))
-  const out = join(dir, 'report.json')
-  const args =
-    runner === 'vitest'
-      ? ['run', '--reporter=json', `--outputFile=${out}`]
-      : ['--json', `--outputFile=${out}`, '--testLocationInResults']
-  const node = nodeCommand()
-  const { printed, timedOut } = await new Promise<{ printed: string; timedOut: boolean }>((done) => {
-    // No shell: every argument reaches the runner whole, and nothing in a path
-    // (a space, an `&`) is ever read as a command.
-    const child = execFile(
-      node.cmd,
-      [entry, ...args],
-      {
-        cwd: repoPath,
-        timeout: TEST_TIMEOUT,
-        maxBuffer: 64 * 1024 * 1024,
-        windowsHide: true,
-        // CI: no watch mode, no interactive prompts. Colour off: the report is read, not shown.
-        env: { ...process.env, ...node.env, CI: '1', FORCE_COLOR: '0', NO_COLOR: '1' }
-      },
-      // A failing suite exits non-zero — that is the normal case, not an error.
-      (err, stdout, stderr) =>
-        done({ printed: `${stderr}\n${stdout}`, timedOut: !!err && err.killed === true && !cancelled.has(repoPath) })
-    )
-    running.set(repoPath, child)
-  })
-  running.delete(repoPath)
-  const ms = Date.now() - started
-  const json = await readFile(out, 'utf8').catch(() => null)
-  await rm(dir, { recursive: true, force: true })
-  if (cancelled.delete(repoPath)) return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms, cancelled: true }
-  if (!json) {
-    const tail = stripAnsi(printed).trim().slice(-MESSAGE_CAP)
-    return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms, error: tail, ...(timedOut ? { timedOut: true } : {}) }
+  const run = { child: null as ChildProcess | null, id: runId }
+  running.set(repoPath, run)
+  let dir: string | undefined
+  try {
+    // A private directory, so the report's name is not guessable in the shared tmp.
+    dir = await mkdtemp(join(tmpdir(), 'gitcito-tests-'))
+    if (cancelled.has(runId)) {
+      return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms: Date.now() - started, cancelled: true }
+    }
+    const out = join(dir, 'report.json')
+    const args =
+      runner === 'vitest'
+        ? ['run', '--reporter=json', `--outputFile=${out}`]
+        : ['--json', `--outputFile=${out}`, '--testLocationInResults']
+    const node = nodeCommand()
+    const { printed, timedOut } = await new Promise<{ printed: string; timedOut: boolean }>((done) => {
+      // No shell: every argument reaches the runner whole, and nothing in a path
+      // (a space, an `&`) is ever read as a command.
+      const child = execFile(
+        node.cmd,
+        [entry, ...args],
+        {
+          cwd: repoPath,
+          timeout: TEST_TIMEOUT,
+          maxBuffer: 64 * 1024 * 1024,
+          windowsHide: true,
+          // CI: no watch mode, no interactive prompts. Colour off: the report is read, not shown.
+          env: { ...process.env, ...node.env, CI: '1', FORCE_COLOR: '0', NO_COLOR: '1' }
+        },
+        // A failing suite exits non-zero — that is the normal case, not an error.
+        (err, stdout, stderr) =>
+          done({ printed: `${stderr}\n${stdout}`, timedOut: !!err && err.killed === true && !cancelled.has(runId) })
+      )
+      run.child = child
+    })
+    const ms = Date.now() - started
+    const json = await readFile(out, 'utf8').catch(() => null)
+    if (cancelled.has(runId)) return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms, cancelled: true }
+    if (!json) {
+      const tail = stripAnsi(printed).trim().slice(-MESSAGE_CAP)
+      return { runner, files: [], passed: 0, failed: 0, skipped: 0, ms, error: tail, ...(timedOut ? { timedOut: true } : {}) }
+    }
+    return { ...parseTestReport(json, await realpath(repoPath), runner), ms }
+  } finally {
+    if (running.get(repoPath)?.id === runId) running.delete(repoPath)
+    cancelled.delete(runId)
+    if (dir) await rm(dir, { recursive: true, force: true })
   }
-  return { ...parseTestReport(json, repoPath, runner), ms }
 }
 
 export function cancelTests(repoPath: string): void {
-  const child = running.get(repoPath)
-  if (!child) return
-  cancelled.add(repoPath)
+  const run = running.get(repoPath)
+  if (!run) return
+  cancelled.add(run.id)
   try {
-    child.kill()
+    run.child?.kill()
   } catch {
     /* already gone */
   }

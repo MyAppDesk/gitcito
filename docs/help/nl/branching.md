@@ -73,6 +73,23 @@ werken op remote branches, tags en stashes.
 
 ![Branchnamen met schuine strepen, opgevouwen tot een boom](../../screenshots/branch-grouping.webp)
 
+## Een branch vanuit een Azure Boards-work-item
+
+In een repository met een remote op Azure DevOps biedt het opdrachtenpalet
+**Create branch from Azure work item…**. Typ het nummer van het work item (of
+`AB#1234`) en je ziet type, titel en status; **Branch aanmaken** opent het
+gewone venster met de naam al ingevuld — `bugfix/1234-titel` voor een bug,
+`feature/1234-titel` voor al het andere — en `AB#1234 titel` als taak, mocht je
+liever de AI een naam laten voorstellen.
+
+Vermeldingen van work items worden links in commitberichten en
+pull-requestteksten: `AB#1234` overal waar de Azure-organisatie bekend is, en in
+een Azure-repository ook een kale `#1234`, omdat Azure work items nummert, geen
+issues. In een GitHub-repository die aan Azure Boards gekoppeld is, is de
+organisatie niet bekend; een item `links.tickets` in de
+[`.gitcito.json`](repo-config.md) van de repository dekt dat — patroon
+`AB#(\d+)`, URL `https://dev.azure.com/<org>/_workitems/edit/$1`.
+
 ## Een branch hernoemen
 
 Een branch die je drie dagen geleden `fix` noemde, is vandaag een branch die

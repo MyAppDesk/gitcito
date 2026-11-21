@@ -1,5 +1,6 @@
 import { ipcMain, shell } from 'electron'
 import { simpleGit, SimpleGit, type StatusResult } from 'simple-git'
+import { isGuardedEnvKey } from '@simple-git/argv-parser'
 import { basename, dirname, isAbsolute, join, relative, resolve as resolvePath, sep } from 'path'
 import { pathToFileURL } from 'url'
 import { readFile, writeFile, unlink, stat, chmod, mkdir, readdir, rename, cp, open, mkdtemp, rm, realpath, lstat } from 'fs/promises'
@@ -978,6 +979,31 @@ const CLONE_ENV_UNSAFE = {
   allowUnsafePager: true,
   allowUnsafeSshCommand: true,
   allowUnsafeTemplateDir: true
+}
+
+/**
+ * The simple-git instance a clone runs on, with `env` as its whole environment:
+ * the app's own — which carries the user's GIT_SSH_COMMAND or proxy, as fetch
+ * and push get — plus the profile's credential when there is one. simple-git ≥ 4
+ * drops every git-related variable it inherits and refuses one handed to
+ * `.env()` unless it is named in allowEnvironment; without that, an EDITOR or
+ * GIT_EDITOR in the environment failed every signed-in clone before it started.
+ */
+export function cloneGit(
+  parentDir: string,
+  env: NodeJS.ProcessEnv,
+  onProgress?: (p: CloneProgress) => void
+): SimpleGit {
+  const git = simpleGit({
+    baseDir: parentDir,
+    progress: onProgress
+      ? ({ stage, progress, processed, total }) => onProgress({ stage, progress, processed, total })
+      : undefined,
+    unsafe: CLONE_ENV_UNSAFE,
+    allowEnvironment: Object.keys(env).filter((k) => isGuardedEnvKey(k))
+  })
+  git.env(env)
+  return git
 }
 
 /** Map a remote URL's hostname to the provider whose PAT can authenticate it. */
@@ -2443,6 +2469,8 @@ export const gitService = {
       conflicted: 0,
       stashes: 0,
       lastCommitAt: 0,
+      lastCommit: null,
+      lastFetchAt: null,
       operation: null,
       activity: [],
       error: null
@@ -2479,13 +2507,19 @@ export const gitService = {
       return pulse
     }
 
-    const [stashes, lastCommit, operation] = await Promise.all([
+    // The last commit's time, author and subject come back from the one `log`
+    // the timestamp already needed, so the richer row costs no extra process.
+    const [stashes, lastCommit, operation, lastFetchAt] = await Promise.all([
       runGit(repoPath, ['stash', 'list']).catch(() => ''),
-      runGit(repoPath, ['log', '-1', '--format=%ct']).catch(() => ''),
-      gitService.mergeState(repoPath).catch(() => null)
+      runGit(repoPath, ['log', '-1', '--format=%ct%x1f%an%x1f%s']).catch(() => ''),
+      gitService.mergeState(repoPath).catch(() => null),
+      gitService.lastFetchAt(repoPath)
     ])
     pulse.stashes = stashes.split('\n').filter(Boolean).length
-    pulse.lastCommitAt = Number(lastCommit.trim()) || 0
+    const [at, author, subject] = lastCommit.replace(/\n$/, '').split(SEP)
+    pulse.lastCommitAt = Number(at) || 0
+    if (pulse.lastCommitAt) pulse.lastCommit = { subject: subject ?? '', author: author ?? '' }
+    pulse.lastFetchAt = lastFetchAt
     pulse.operation = operation
 
     // Commits per day for the last fortnight, oldest bucket first — the row's
@@ -7188,14 +7222,7 @@ export const gitService = {
     if (credEnv) await assertGitSupportsCredentialEnv()
     // Streaming the underlying `git clone --progress` so the UI can show real progress;
     // simpleGit auto-appends --progress when a progress handler is configured.
-    const git = simpleGit({
-      baseDir: parentDir,
-      progress: onProgress
-        ? ({ stage, progress, processed, total }) => onProgress({ stage, progress, processed, total })
-        : undefined,
-      ...(credEnv ? { unsafe: CLONE_ENV_UNSAFE } : {})
-    })
-    if (credEnv) git.env({ ...noPromptEnv(), ...credEnv })
+    const git = cloneGit(parentDir, { ...noPromptEnv(), ...(credEnv ?? {}) }, onProgress)
     const args: string[] = []
     // A blob filter (e.g. "blob:none") makes this a partial clone — history without
     // file blobs, fetched on demand. Great for very large repos.

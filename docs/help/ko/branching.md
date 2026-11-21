@@ -65,6 +65,21 @@ Gitcito는 병합을 표시하지 않고, 해당 브랜치가 이미 체크아�
 
 ![슬래시로 나뉜 브랜치 이름이 트리로 묶인 모습](../../screenshots/branch-grouping.webp)
 
+## Azure Boards 작업 항목에서 브랜치 만들기
+
+원격이 Azure DevOps에 있는 저장소에서는 명령 팔레트에
+**Create branch from Azure work item…**이 있습니다. 작업 항목 번호(또는 `AB#1234`)를
+입력하면 유형, 제목, 상태가 표시됩니다. **브랜치 만들기**는 이름이 채워진 평소의 대화
+상자를 엽니다 — 버그면 `bugfix/1234-title`, 그 밖에는 `feature/1234-title` — 그리고 AI가
+이름을 제안하게 하고 싶을 때를 위해 `AB#1234 제목`이 작업으로 들어갑니다.
+
+작업 항목 언급은 커밋 메시지와 풀 리퀘스트 본문에서 링크가 됩니다. Azure 조직을 아는
+곳이면 어디서나 `AB#1234`가, Azure 저장소에서는 평범한 `#1234`도 링크가 됩니다. Azure는
+이슈가 아니라 작업 항목에 번호를 매기기 때문입니다. Azure Boards와 연결된 GitHub
+저장소에서는 조직을 알 수 없습니다. 저장소의 [`.gitcito.json`](repo-config.md)에
+`links.tickets` 항목을 두면 해결됩니다 — 패턴 `AB#(\d+)`, URL
+`https://dev.azure.com/<org>/_workitems/edit/$1`.
+
 ## 브랜치 이름 바꾸기
 
 사흘 전에 `fix`라고 지은 브랜치는 오늘은 아무도 위치를 짚지 못하는 브랜치입니다.

@@ -198,7 +198,7 @@ export function RepositoriesPage(): React.JSX.Element {
   // Assigned from the unfiltered list so a section keeps its colour mid-search.
   const defaultColors = useMemo(() => defaultSectionColors(allSections, GROUP_COLORS), [allSections])
 
-  // Status is opt-in because it is expensive: repoPulse spawns roughly five git
+  // Status is opt-in because it is expensive: repoPulse spawns roughly six git
   // processes per repository, and this page can list every repo on the machine.
   // Only expanded sections are fetched, only once per visit, and never on a
   // timer — you open this page to find something, not to watch it.

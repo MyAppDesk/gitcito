@@ -52,6 +52,21 @@ pregunta: todo el que haga pull del destino recibe sus commits, y un push no se
 puede deshacer desde Gitcito. La fusión no pregunta — solo añade. La fusión y el
 rebase se revierten con un solo **Deshacer**.
 
+## Arrastra un commit sobre una rama
+
+Arrastra una fila de commit del grafo sobre la etiqueta de una **rama local**:
+
+| Soltado en | Ofrece |
+|------------|--------|
+| La rama activa | **Cherry-pick** del commit aquí; **Reset** de la rama a él (el diálogo de reset, que explica qué conserva cada modo) |
+| Otra rama local | **Cambiar a ella y hacer cherry-pick**; **Mover la rama** al commit (`git branch -f`) |
+
+Mover una rama pide confirmación: los commits que solo esa rama alcanzaba dejan
+de estar en ninguna rama. Deshacer la devuelve a su sitio. Las ramas remotas y
+las etiquetas no aceptan un commit, porque git no las mueve así, y una rama que
+ya apunta al commit no ofrece nada. El mismo arrastre sobre el chat de IA sigue
+añadiendo el commit como contexto.
+
 ## Merge
 
 Fast-forward cuando se puede, o fuerza un commit de fusión cuando quieres dejar

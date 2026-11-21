@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { testsApi } from '../infrastructure/api'
 import type { AnalyzeResult, CodeTodo, Problem, ProblemSeverity, TestRunner, TestRunResult, TodoScanResult } from '../../../shared/types'
 import type { TodoGroupBy } from '../lib/codeTodos'
 import { useUIStore } from './ui'
@@ -71,6 +72,9 @@ export interface ProblemsState {
   cancelTests(repoPath: string): void
   setFailedOnly(on: boolean): void
 }
+
+/** Per repository, the id of the test run whose result the panel should show. */
+const testRun: Record<string, number> = {}
 
 export const useProblemsStore = create<ProblemsState>((set, get) => ({
   resultByRepo: {},
@@ -168,29 +172,35 @@ export const useProblemsStore = create<ProblemsState>((set, get) => ({
   todosFor: (repoPath) => get().todoByRepo[repoPath]?.todos ?? [],
 
   detectTests: async (repoPath) => {
-    const found = await window.api.tests.detect(repoPath).catch(() => ({ runner: null, installed: false }))
+    const found = await testsApi.detect(repoPath).catch(() => ({ runner: null, installed: false }))
     set((s) => ({ testRunnerByRepo: { ...s.testRunnerByRepo, [repoPath]: found } }))
   },
 
   runTests: async (repoPath) => {
     if (get().testRunningByRepo[repoPath]) return
-    // Ask again: dependencies may have been installed since the panel opened.
-    await get().detectTests(repoPath)
-    if (!get().testRunnerByRepo[repoPath]?.installed) return // the panel says why, translated
+    // Marked before any await, so a double click starts one run, not two.
+    const run = (testRun[repoPath] = (testRun[repoPath] ?? 0) + 1)
+    const current = (): boolean => testRun[repoPath] === run
     set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: true } }))
     try {
-      const result = await window.api.tests.run(repoPath)
-      // A stopped run has nothing to show; keep what the last real run said.
-      if (!result.cancelled && !result.unavailable) set((s) => ({ testByRepo: { ...s.testByRepo, [repoPath]: result } }))
+      // Ask again: dependencies may have been installed since the panel opened.
+      await get().detectTests(repoPath)
+      if (!current() || !get().testRunnerByRepo[repoPath]?.installed) return // the panel says why, translated
+      const result = await testsApi.run(repoPath)
+      // A stopped run has nothing to show, and neither has one a newer run replaced.
+      if (current() && !result.cancelled && !result.unavailable)
+        set((s) => ({ testByRepo: { ...s.testByRepo, [repoPath]: result } }))
     } catch (e) {
-      useUIStore.getState().toast('error', e instanceof Error ? e.message : String(e))
+      if (current()) useUIStore.getState().toast('error', e instanceof Error ? e.message : String(e))
     } finally {
-      set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: false } }))
+      if (current()) set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: false } }))
     }
   },
 
   cancelTests: (repoPath) => {
-    window.api.tests.cancel(repoPath)
+    // The cancelled run is no longer current: whatever it returns is ignored.
+    testRun[repoPath] = (testRun[repoPath] ?? 0) + 1
+    testsApi.cancel(repoPath)
     set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: false } }))
   },
 

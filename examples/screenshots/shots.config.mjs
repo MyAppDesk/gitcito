@@ -14,6 +14,7 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { writeFile, mkdir, rm, chmod } from 'node:fs/promises'
+import { chmodSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { execFileSync } from 'node:child_process'
 
@@ -22,6 +23,20 @@ const ASSETS = join(dirname(fileURLToPath(import.meta.url)), 'assets')
 /** Throwaway SSH keys for the ssh-keys shot. Outside the repository on purpose:
  *  disposable or not, these are real private key files. */
 const DEMO_SSH = join(tmpdir(), 'gitcito-demo-ssh')
+
+/** A neutral shell for terminal shots. The real one runs the machine's profile,
+ *  whose prompt prints the user, the host name and often the LAN address.
+ *  `bash --noprofile --norc` reads none of it; the prompt is a bare `$ `. */
+const DEMO_SHELL = join(tmpdir(), 'gitcito-demo-shell.sh')
+/** Its own HOME, not DEMO_HOME: the credential shot wipes that one in `prepare`,
+ *  which under --jobs would pull it from under a running terminal. */
+const DEMO_SHELL_HOME = join(tmpdir(), 'gitcito-demo-shell-home')
+const neutralShell = () => {
+  writeFileSync(DEMO_SHELL, '#!/bin/sh\nexport PS1="$ "\nexec bash --noprofile --norc\n')
+  chmodSync(DEMO_SHELL, 0o755)
+  mkdirSync(DEMO_SHELL_HOME, { recursive: true })
+  return { SHELL: DEMO_SHELL, HOME: DEMO_SHELL_HOME }
+}
 
 /** A throwaway HOME for the credential-helper shot: the real one holds this
  *  machine's global git config and possibly live passwords. */
@@ -936,6 +951,7 @@ export const shots = [
     repos: ['deep-history-monorepo'],
     themes: ['dark'],
     appTheme: 'midnight',
+    env: neutralShell(),
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
       await page.evaluate((p) => window.__shot.repo.getState().select(p, { type: 'wip' }), repo)
@@ -2239,6 +2255,7 @@ export const shots = [
     repos: ['deep-history-monorepo'],
     themes: ['dark'],
     appTheme: 'midnight',
+    env: neutralShell(),
     drive: async (page, repoPaths) => {
       const repo = repoPaths['deep-history-monorepo']
       await page.evaluate((p) => {

@@ -46,12 +46,26 @@ The bridge ships nothing in a normal build: it only attaches when the app is
 launched with `--shot` (the flag is forwarded into the renderer by the main
 process).
 
+## Running it on Linux, or from an editor
+
+- **From VS Code, Cursor or another Electron editor**: their terminals export
+  `ELECTRON_RUN_AS_NODE=1`, which turns Electron into plain Node. The capture
+  drops it before launching the app, so nothing needs unsetting by hand.
+- **On a Wayland desktop** whose compositor will not hand Chromium a
+  screenshot (every shot times out in `page.screenshot`), capture through
+  XWayland: `env -u WAYLAND_DISPLAY SHOT_ELECTRON_ARGS=--ozone-platform=x11 npm run screenshots`.
+  `SHOT_ELECTRON_ARGS` passes any extra switches to the app.
+
 ## Keeping the machine out of the picture
 
 Shots run against the playground, so their content is deterministic — except
 where a feature reads something outside the repository. **The SSH key list is
 the one place that would otherwise photograph the person who ran the capture**:
 real fingerprints, and usually a real email in a key comment.
+
+Terminal shots are the other one: the shell would run the machine's profile,
+and its prompt prints the user, the host name and often the LAN address. They
+run a neutral shell instead — `bash --noprofile --norc` with a bare `$ ` prompt.
 
 So that entry generates a throwaway pair with `ssh-keygen` in a temp dir and
 points the app at it:

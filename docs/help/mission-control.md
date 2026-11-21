@@ -3,7 +3,7 @@ title: Mission control
 category: Sync & many repos
 order: 51
 summary: Every repository of the workspace on one screen, worst first.
-keywords: mission control dashboard all repos overview status dirty unpushed behind workspace
+keywords: mission control dashboard all repos overview status dirty unpushed behind workspace last commit last fetch stale
 ---
 
 # Mission control
@@ -23,9 +23,27 @@ screen, ordered by what actually needs you:
 
 ## What a row tells you
 
-Branch and its upstream · ↑ahead / ↓behind · uncommitted and untracked counts ·
-stashes · open PRs (when the repo is already loaded) · a **14-day commit
-sparkline** · how long since the last commit.
+Each row reads left to right, and the columns line up down the list so the
+counts compare like a table:
+
+| Column | What it shows |
+|---|---|
+| **Repository** | Name, its group, the branch and its upstream — or **no upstream** in amber, since such a branch can never be pushed by mistake but also never syncs |
+| **Last commit** | Its subject and author: what the repository was last doing, without opening it |
+| **Counts** | Conflicts · ↓ to pull · ↑ to push · staged · modified · untracked · stashes · open PRs (when the repo is already loaded). Hover any of them for what it counts |
+| **Activity** | A 14-day commit sparkline, and how many commits that is |
+| **Ages** | How long since the last commit, and since the last **fetch** |
+
+Hover the status icon for the reasons the row ranks where it does — "2 to push ·
+1 uncommitted".
+
+The fetch age is there because reading this page never fetches: the "to pull"
+count is only as fresh as the last fetch. When a tracking branch has not
+fetched for a day or more, or never has, the age turns amber — fetch it before
+trusting a 0. The dashboard reads the fetch time from git itself, so a
+`git fetch` in a terminal counts too.
+
+On a narrow window the last-commit column steps aside first; the counts stay.
 
 Expand a row (the chevron, or <kbd>space</kbd>) to see exactly which commits are
 waiting to be pushed and which files are dirty.
@@ -37,6 +55,8 @@ waiting to be pushed and which files are dirty.
 - Sort by **urgency**, **name** or **activity**.
 - **Tick several repos** to fetch them, or pull just the ones that are behind
   (the button counts them for you).
+- **Fetch N stale** shows up when some tracking branches have not fetched for a
+  day or more, and fetches only those — the ones whose "to pull" may be wrong.
 - It refreshes itself every 30 seconds while it is open.
 
 | Key | Action |

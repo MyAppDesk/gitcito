@@ -154,4 +154,35 @@ describe('runTests — a real vitest run', () => {
     expect(r.cancelled).toBe(true)
     expect(r.error).toBeUndefined()
   }, 20_000)
+
+  it('cancels before the report directory is ready and the process has started', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
+    temp.push(dir)
+    mkdirSync(join(dir, 'node_modules'), { recursive: true })
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ devDependencies: { vitest: '*' } }))
+    symlinkSync(resolve('node_modules', 'vitest'), join(dir, 'node_modules', 'vitest'), 'junction')
+    const result = runTests(dir)
+    cancelTests(dir)
+    expect(await result).toMatchObject({ cancelled: true, files: [] })
+  })
+
+  it('keeps a stopped run cancelled when a new run starts before it has exited', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
+    temp.push(dir)
+    mkdirSync(join(dir, 'node_modules', 'vitest'), { recursive: true })
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ devDependencies: { vitest: '*' } }))
+    writeFileSync(join(dir, 'node_modules', 'vitest', 'package.json'), JSON.stringify({ bin: { vitest: 'slow-exit.cjs' } }))
+    // Takes a moment to die after SIGTERM, so the next run starts while it is still going.
+    writeFileSync(
+      join(dir, 'node_modules', 'vitest', 'slow-exit.cjs'),
+      "process.on('SIGTERM', () => setTimeout(() => process.exit(1), 200)); setTimeout(() => {}, 5000)\n"
+    )
+    const first = runTests(dir)
+    await new Promise((r) => setTimeout(r, 300))
+    cancelTests(dir)
+    const second = runTests(dir) // Run, clicked again right away
+    expect((await first).cancelled).toBe(true)
+    cancelTests(dir)
+    expect((await second).cancelled).toBe(true)
+  }, 20_000)
 })

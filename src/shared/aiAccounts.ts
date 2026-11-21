@@ -102,6 +102,7 @@ export function resolveAI(ai: AIConfig, feature?: AIFeature): AIConfig {
     accountId: account.id,
     transport: preset.transport,
     cli: account.cli,
+    subscription: account.subscription,
     cliPath: account.cliPath
   }
 }

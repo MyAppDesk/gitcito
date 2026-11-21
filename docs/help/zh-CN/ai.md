@@ -26,6 +26,17 @@ Anthropic 使用自己的 `/v1/messages` 接口，而不是 OpenAI 形状的调�
 
 ### 用订阅代替 API 密钥
 
+在初始设置或「设置 → AI」中选择「**使用我的订阅**」。选择 ChatGPT 或 Claude，在终端使用对应的命令登录。连接测试成功后，添加账号。
+
+安装 CLI 后，点击连接按钮打开提供商的登录页面。等待连接时可以取消。
+
+- ChatGPT (Codex) — `codex login`
+- Claude (Claude Code) — `claude auth login`
+
+测试会向提供商发送一条简短请求，并消耗套餐额度。 已达到套餐上限。请在额度重置后重试。
+
+![使用我的订阅](../../screenshots/ai-subscription.webp)
+
 选择 **本地 CLI** 服务商，让本机上已安装并已登录的智能体 CLI 来作答——`claude`、
 `gemini` 或 `codex`。Gitcito 把提示词交给该可执行文件运行并读取回复；没有 API
 密钥要粘贴，也不会保存任何令牌。

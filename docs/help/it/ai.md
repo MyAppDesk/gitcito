@@ -31,6 +31,17 @@ Google.
 
 ### Usare un abbonamento al posto di una chiave API
 
+Durante la configurazione iniziale o in Impostazioni → IA, scegli **Usa il mio abbonamento**. Seleziona ChatGPT o Claude e accedi dal terminale con il comando corrispondente. Verifica la connessione, quindi aggiungi l’account.
+
+Dopo aver installato la CLI, premi Connetti per aprire la pagina di accesso del fornitore. Puoi annullare la connessione in corso.
+
+- ChatGPT (Codex) — `codex login`
+- Claude (Claude Code) — `claude auth login`
+
+Il test invia un breve messaggio al fornitore e consuma la quota del piano. Quota esaurita. Riprova dopo il rinnovo della quota.
+
+![Usa il mio abbonamento](../../screenshots/ai-subscription.webp)
+
 Scegli il provider **CLI locale** per rispondere con una CLI agente già
 installata e autenticata su questa macchina — `claude`, `gemini` o `codex`.
 Gitcito esegue il binario con il tuo prompt e ne legge la risposta; non c'è

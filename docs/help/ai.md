@@ -28,7 +28,31 @@ through Google's OpenAI-compatible endpoint.
 
 ### Using a subscription instead of an API key
 
-Pick the **Local CLI** provider to answer with an agent CLI already installed
+In onboarding’s AI step or **Settings → AI**, choose **Use my subscription**.
+Select the plan you use, then open **Documentation** for the provider's installation instructions.
+Once installed, choose **Connect ChatGPT (Codex)** or **Connect Claude (Claude Code)**.
+The provider's CLI opens its sign-in page in your browser and stores its own session.
+An existing subscription session is reused. **Cancel** stops a pending connection.
+A sign-in that takes more than three minutes stops and can be retried.
+
+| Plan | Required CLI | Sign in from a terminal |
+| --- | --- | --- |
+| ChatGPT with Codex access | Codex CLI | `codex login` and choose ChatGPT |
+| Claude with Claude Code access | Claude Code | `claude auth login` and choose your subscription account |
+
+Connecting also tests the session. If you signed in from a terminal, choose **Test connection**. Gitcito checks the CLI’s sign-in method and sends a short test
+prompt from an empty temporary directory. The request counts toward your provider’s allowance.
+After **Connected**, choose **Add account**. On a fresh profile this becomes the default.
+For an existing setup, use **Make default** or assign individual features below.
+To skip setup, continue onboarding and return to Settings when ready.
+
+If Gitcito cannot find the CLI, install it or enter its full executable path and test again.
+If sign-in has expired or the CLI is using an API key, sign in with the subscription account.
+If you reach a usage limit, wait for the provider’s quota to reset.
+
+![Connecting a subscription from AI settings](../screenshots/ai-subscription.webp)
+
+For manual setup, pick the **Local CLI** provider to answer with an agent CLI already installed
 and signed in on this machine — `claude`, `gemini`, `codex` or `devin`. Gitcito runs the
 binary with your prompt and reads its reply; there is no API key to paste and no
 token is stored.
@@ -39,8 +63,7 @@ interpreted as a command.
 
 Each call starts the CLI with the repository as its working directory, so
 agent CLIs like Devin can open the files you are asking about instead of
-answering blind. Features that have no repository (theme generation, the
-account test button) run it from the app's own directory.
+answering blind. Features that have no repository (theme generation) run it from the app's own directory.
 
 > **This is not more private than an API key.** Your prompts still reach the
 > same vendor, under your own account, exactly as they would with a key. What

@@ -2,9 +2,9 @@ import { ipcMain } from 'electron'
 import type { AIConfig, AppThemeColors, AskAction, AskPlan, BranchNamingStyle, CodeThemeColors, ConflictStyle, EditSelectionRequest, ExplainStyle, PRReviewResult, RepoStatus } from '../shared/types'
 import { recordAIUsage } from './analytics'
 import { activeProfileAiKey } from './settings'
-import { callModel, missingCredential, type ChatMessage, type ModelCallOptions } from './aiTransport'
+import { callModel, missingCredential, transportOf, type ChatMessage, type ModelCallOptions } from './aiTransport'
 import { listAccountModels } from './aiModels'
-import { detectCliBinaries } from './aiCli'
+import { detectCliBinaries, signInSubscription, testSubscription } from './aiCli'
 import { createHash } from 'node:crypto'
 import { normalizeGitmojiConventional, normalizeGitmojiUnicode } from '../shared/gitmoji'
 import {
@@ -68,7 +68,7 @@ const TICKET_RE = /([A-Z][A-Z0-9]+-\d+)/
  * comes back belongs to that account rather than to whichever one is default.
  */
 export async function withStoredKey(cfg: AIConfig): Promise<AIConfig> {
-  if (cfg.apiKey && cfg.apiKey.trim()) return cfg
+  if (transportOf(cfg) === 'cli' || cfg.apiKey?.trim()) return cfg
   const key = await activeProfileAiKey(cfg.accountId)
   return key ? { ...cfg, apiKey: key } : cfg
 }
@@ -209,9 +209,9 @@ async function chatComplete(
   const cfg = await withStoredKey(input)
   if (missingCredential(cfg)) throw new Error('No AI API key configured. Add one in Settings → AI.')
 
-  const model = cfg.model || 'gpt-4o-mini'
+  const model = cfg.model || (transportOf(cfg) === 'cli' ? '' : 'gpt-4o-mini')
   const reply = await callModel({ ...cfg, model }, messages, temperature, options)
-  void recordAIUsage(feature, model, reply.usage)
+  void recordAIUsage(feature, model || cfg.cli || 'claude', reply.usage)
   return reply.text
 }
 
@@ -1052,6 +1052,25 @@ Rules:
 }
 
 export function registerAiHandlers(): void {
+  const signIns = new Map<string, AbortController>()
+  ipcMain.handle('ai:signInSubscription', async (event, binary, path, requestId: unknown) => {
+    if (typeof requestId !== 'string' || requestId.length > 64) return 'failed'
+    const key = `${event.sender.id}:${requestId}`
+    if (signIns.has(key)) return 'failed'
+    const controller = new AbortController()
+    const cancel = (): void => controller.abort()
+    signIns.set(key, controller)
+    event.sender.once('destroyed', cancel)
+    try {
+      return await signInSubscription(binary, path, controller.signal)
+    } finally {
+      event.sender.removeListener('destroyed', cancel)
+      signIns.delete(key)
+    }
+  })
+  ipcMain.handle('ai:cancelSubscriptionSignIn', (event, requestId: unknown) => {
+    if (typeof requestId === 'string') signIns.get(`${event.sender.id}:${requestId}`)?.abort()
+  })
   ipcMain.handle('ai:planActions', (_e, prompt: string, status: RepoStatus, cfg: AIConfig) =>
     planRepoActions(prompt, status, cfg)
   )
@@ -1061,6 +1080,7 @@ export function registerAiHandlers(): void {
   ipcMain.handle('ai:listModels', async (_e, cfg: AIConfig, force?: boolean) =>
     listAccountModels(await withStoredKey(cfg), force === true)
   )
+  ipcMain.handle('ai:testSubscription', (_event, binary, path) => testSubscription(binary, path))
   ipcMain.handle('ai:detectCli', () => detectCliBinaries())
   ipcMain.handle('ai:explainCode', (_e, code: string, lang: string, cfg: AIConfig) => explainCode(code, lang, cfg))
   ipcMain.handle('ai:editSelection', (_e, req: EditSelectionRequest, cfg: AIConfig) => editSelection(req, cfg))

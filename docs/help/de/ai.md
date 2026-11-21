@@ -30,6 +30,17 @@ scheinen. Gemini wird über Googles OpenAI-kompatiblen Endpunkt angesprochen.
 
 ### Ein Abo statt eines API-Schlüssels nutzen
 
+Wähle bei der Einrichtung oder unter Einstellungen → KI **Mein Abo verwenden**. Wähle ChatGPT oder Claude und melde dich mit dem passenden Befehl im Terminal an. Teste die Verbindung und füge das Konto nach erfolgreichem Test hinzu.
+
+Klicke nach der CLI-Installation auf Verbinden, um die Anmeldeseite des Anbieters zu öffnen. Eine laufende Verbindung kannst du abbrechen.
+
+- ChatGPT (Codex) — `codex login`
+- Claude (Claude Code) — `claude auth login`
+
+Der Test sendet eine kurze Anfrage an den Anbieter und nutzt dein Kontingent. Kontingent erschöpft. Versuche es nach der Erneuerung erneut.
+
+![Mein Abo verwenden](../../screenshots/ai-subscription.webp)
+
 Wähle den Anbieter **Lokale CLI**, um mit einer Agent-CLI zu antworten, die auf
 diesem Rechner bereits installiert und angemeldet ist — `claude`, `gemini` oder
 `codex`. Gitcito startet das Programm mit deiner Eingabe und liest die Antwort;

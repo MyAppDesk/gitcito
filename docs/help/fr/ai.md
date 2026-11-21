@@ -32,6 +32,17 @@ Google.
 
 ### Utiliser un abonnement plutôt qu'une clé d'API
 
+Lors de la configuration initiale ou dans Paramètres → IA, choisissez **Utiliser mon abonnement**. Sélectionnez ChatGPT ou Claude et connectez-vous dans un terminal avec la commande correspondante. Testez la connexion, puis ajoutez le compte.
+
+Après avoir installé la CLI, cliquez sur Connecter pour ouvrir la page de connexion du fournisseur. Vous pouvez annuler la connexion en cours.
+
+- ChatGPT (Codex) — `codex login`
+- Claude (Claude Code) — `claude auth login`
+
+Le test envoie un court message au fournisseur et utilise votre quota. Quota atteint. Réessayez après son renouvellement.
+
+![Utiliser mon abonnement](../../screenshots/ai-subscription.webp)
+
 Choisissez le fournisseur **CLI locale** pour répondre avec une CLI d'agent déjà
 installée et connectée sur cette machine — `claude`, `gemini` ou `codex`.
 Gitcito lance le binaire avec votre requête et lit sa réponse ; aucune clé d'API

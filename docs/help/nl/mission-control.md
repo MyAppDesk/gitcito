@@ -23,9 +23,28 @@ Mission control beantwoordt hem. Elke repository van de **actieve workspace** op
 
 ## Wat een rij je vertelt
 
-Branch en zijn upstream · ↑voor / ↓achter · aantallen niet-gecommit en untracked ·
-stashes · openstaande PR's (wanneer de repo al geladen is) · een **sparkline van
-14 dagen commits** · hoe lang geleden de laatste commit was.
+Elke rij lees je van links naar rechts, en de kolommen lijnen uit over de hele
+lijst, zodat de tellingen zich vergelijken als in een tabel:
+
+| Kolom | Wat ze toont |
+|---|---|
+| **Repository** | Naam, groep, de branch en zijn upstream — of **geen upstream** in amber: zo’n branch wordt nooit per ongeluk gepusht, maar synchroniseert ook nooit |
+| **Laatste commit** | Onderwerp en auteur: waar de repository het laatst mee bezig was, zonder hem te openen |
+| **Tellingen** | Conflicten · ↓ te pullen · ↑ te pushen · gestaged · gewijzigd · niet gevolgd · stashes · open PR’s (als de repo al geladen is). Hover voor wat elke telling telt |
+| **Activiteit** | Een sparkline van 14 dagen commits, en hoeveel het er zijn |
+| **Leeftijden** | Hoe lang geleden de laatste commit was, en de laatste **fetch** |
+
+Hover over het statusicoon voor de redenen waarom de rij daar staat —
+"2 te pushen · 1 niet gecommit".
+
+De fetch-leeftijd staat er omdat deze pagina lezen nooit fetcht: de telling "te
+pullen" is maar zo vers als de laatste fetch. Heeft een branch met upstream een dag
+of langer niet gefetcht, of nooit, dan wordt de leeftijd amber — fetch voordat je
+een 0 gelooft. De tijd komt van git zelf, dus een `git fetch` in een terminal telt
+ook.
+
+In een smal venster wijkt eerst de kolom met de laatste commit; de tellingen
+blijven.
 
 Klap een rij uit (het pijltje, of <kbd>spatie</kbd>) om precies te zien welke
 commits op pushen wachten en welke bestanden vuil zijn.

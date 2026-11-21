@@ -23,9 +23,27 @@ sola schermata, ordinato in base a chi ha davvero bisogno di te:
 
 ## Cosa ti dice una riga
 
-Branch e suo upstream · ↑avanti / ↓indietro · conteggi di file non committati e
-non tracciati · stash · PR aperte (quando il repo è già caricato) · uno
-**sparkline dei commit su 14 giorni** · quanto tempo è passato dall'ultimo commit.
+Ogni riga si legge da sinistra a destra, e le colonne sono allineate lungo tutta
+la lista, così i conteggi si confrontano come in una tabella:
+
+| Colonna | Cosa mostra |
+|---|---|
+| **Repository** | Nome, gruppo, il branch e il suo upstream — oppure **senza upstream** in ambra: un branch così non viene mai pushato per sbaglio, ma non si sincronizza nemmeno |
+| **Ultimo commit** | Oggetto e autore: cosa stava facendo il repository, senza aprirlo |
+| **Conteggi** | Conflitti · ↓ da scaricare · ↑ da pushare · in stage · modificati · non tracciati · stash · PR aperte (se il repo è già caricato). Passa il mouse per sapere cosa conta ognuno |
+| **Attività** | Uno sparkline dei commit di 14 giorni, e quanti sono |
+| **Età** | Da quanto c’è stato l’ultimo commit, e l’ultimo **fetch** |
+
+Passa il mouse sull’icona di stato per vedere perché la riga è lì —
+"2 da pushare · 1 senza commit".
+
+L’età del fetch c’è perché leggere questa pagina non fa mai fetch: il conteggio
+"da scaricare" è fresco quanto l’ultimo fetch. Quando un branch con upstream non fa
+fetch da un giorno o più, o mai, l’età diventa ambra — fai fetch prima di fidarti
+di uno 0. L’ora la legge git stesso, quindi conta anche un `git fetch` da terminale.
+
+In una finestra stretta, la colonna dell’ultimo commit è la prima a sparire; i
+conteggi restano.
 
 Espandi una riga (con il chevron, o con <kbd>spazio</kbd>) per vedere esattamente
 quali commit aspettano di essere pubblicati e quali file sono sporchi.

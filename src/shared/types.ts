@@ -360,6 +360,11 @@ export interface RepoPulse {
   stashes: number
   /** Unix seconds of the last commit, 0 for an empty repo. */
   lastCommitAt: number
+  /** HEAD's subject and author — what the repo was last doing. Null for an empty repo. */
+  lastCommit: { subject: string; author: string } | null
+  /** Epoch ms of the last fetch (FETCH_HEAD's mtime), null when it never fetched.
+   *  The behind count is only as fresh as this, since reading never fetches. */
+  lastFetchAt: number | null
   /** A merge/rebase/cherry-pick left in progress, if any. */
   operation: ConflictOpKind | null
   /** Commits per day over the last fortnight, oldest first (row sparkline). */

@@ -202,6 +202,7 @@ import {
   orderPulses,
   pulseTotals,
   pulseVerdict,
+  isFetchStale,
   sortPulses,
   sparklinePoints
 } from '../src/renderer/src/lib/missionControl'
@@ -3783,7 +3784,10 @@ describe('mission control ranking', () => {
     conflicted: 0,
     stashes: 0,
     lastCommitAt: 1000,
+    lastCommit: { subject: 'feat: something', author: 'Ada Lovelace' },
+    lastFetchAt: null,
     operation: null,
+    activity: [],
     error: null,
     ...over
   })
@@ -3797,7 +3801,7 @@ describe('mission control ranking', () => {
   it('treats an interrupted operation or conflicts as blocking', () => {
     expect(pulseVerdict(pulse({ operation: 'rebase' })).level).toBe('blocked')
     expect(pulseVerdict(pulse({ conflicted: 2 })).level).toBe('blocked')
-    expect(pulseVerdict(pulse({ error: 'not a repo' }))).toMatchObject({ level: 'blocked', reasons: ['unreadable'] })
+    expect(pulseVerdict(pulse({ error: 'not a repo' }))).toMatchObject({ level: 'blocked', reasons: [{ key: 'mission.reason.unreadable' }] })
   })
 
   it('ranks sync work above uncommitted work, and both above quiet repos', () => {
@@ -3814,13 +3818,36 @@ describe('mission control ranking', () => {
 
   it('explains each row in words', () => {
     const v = pulseVerdict(pulse({ ahead: 2, unstaged: 1, untracked: 4, stashes: 1 }))
-    expect(v.reasons).toEqual(['2 to push', '1 uncommitted', '4 untracked', '1 stashed'])
+    expect(v.reasons).toEqual([
+      { key: 'mission.reason.ahead', n: 2 },
+      { key: 'mission.reason.uncommitted', n: 1 },
+      { key: 'mission.reason.untracked', n: 4 },
+      { key: 'mission.reason.stashed', n: 1 }
+    ])
     expect(v.level).toBe('action')
+  })
+
+  it('names an interrupted operation in its reason', () => {
+    expect(pulseVerdict(pulse({ operation: 'rebase' })).reasons[0]).toEqual({
+      key: 'mission.reason.operation',
+      op: 'rebase'
+    })
+  })
+
+  it('warns that the behind count is stale only for a tracking branch fetched long ago', () => {
+    const now = 10 * 86400 * 1000
+    expect(isFetchStale(pulse({ lastFetchAt: now - 3600 * 1000 }), now)).toBe(false)
+    expect(isFetchStale(pulse({ lastFetchAt: now - 2 * 86400 * 1000 }), now)).toBe(true)
+    // Never fetched is the stalest of all.
+    expect(isFetchStale(pulse({ lastFetchAt: null }), now)).toBe(true)
+    // Nothing to be behind of: no warning.
+    expect(isFetchStale(pulse({ upstream: null, lastFetchAt: null }), now)).toBe(false)
+    expect(isFetchStale(pulse({ error: 'gone', lastFetchAt: null }), now)).toBe(false)
   })
 
   it('nudges a branch with no upstream, quietly', () => {
     const v = pulseVerdict(pulse({ upstream: null }))
-    expect(v.reasons).toEqual(['no upstream'])
+    expect(v.reasons).toEqual([{ key: 'mission.reason.noUpstream' }])
     // Not enough to promote it out of "clean" on its own.
     expect(v.level).toBe('clean')
   })

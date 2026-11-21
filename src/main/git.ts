@@ -2443,6 +2443,8 @@ export const gitService = {
       conflicted: 0,
       stashes: 0,
       lastCommitAt: 0,
+      lastCommit: null,
+      lastFetchAt: null,
       operation: null,
       activity: [],
       error: null
@@ -2479,13 +2481,19 @@ export const gitService = {
       return pulse
     }
 
-    const [stashes, lastCommit, operation] = await Promise.all([
+    // The last commit's time, author and subject come back from the one `log`
+    // the timestamp already needed, so the richer row costs no extra process.
+    const [stashes, lastCommit, operation, lastFetchAt] = await Promise.all([
       runGit(repoPath, ['stash', 'list']).catch(() => ''),
-      runGit(repoPath, ['log', '-1', '--format=%ct']).catch(() => ''),
-      gitService.mergeState(repoPath).catch(() => null)
+      runGit(repoPath, ['log', '-1', '--format=%ct%x1f%an%x1f%s']).catch(() => ''),
+      gitService.mergeState(repoPath).catch(() => null),
+      gitService.lastFetchAt(repoPath)
     ])
     pulse.stashes = stashes.split('\n').filter(Boolean).length
-    pulse.lastCommitAt = Number(lastCommit.trim()) || 0
+    const [at, author, subject] = lastCommit.replace(/\n$/, '').split(SEP)
+    pulse.lastCommitAt = Number(at) || 0
+    if (pulse.lastCommitAt) pulse.lastCommit = { subject: subject ?? '', author: author ?? '' }
+    pulse.lastFetchAt = lastFetchAt
     pulse.operation = operation
 
     // Commits per day for the last fortnight, oldest bucket first — the row's

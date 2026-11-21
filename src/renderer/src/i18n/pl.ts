@@ -2731,7 +2731,6 @@ export const pl: Dict = {
   'mission.pull': 'Pull',
   'mission.open.row': 'Otwórz',
   'mission.reason.unreadable': 'nie można odczytać',
-  'mission.reason.operation': '{op} w toku',
   'mission.reason.conflicted': '{n} w konflikcie',
   'mission.reason.behind': '{n} do pobrania',
   'mission.reason.ahead': '{n} do wypchnięcia',
@@ -2753,6 +2752,8 @@ export const pl: Dict = {
   'mission.fetched': 'fetch {t}',
   'mission.neverFetched': 'nigdy nie pobrano (fetch)',
   'mission.fetchStale': 'Brak fetcha od dnia lub dłużej: liczba do pobrania może być nieaktualna. Zrób fetch, aby mieć pewność.',
+  'mission.fetchStaleButton': 'Fetch {n} nieaktualnych',
+  'mission.fetchStaleHint': 'Robi fetch tylko w repozytoriach bez fetcha od dnia lub dłużej, których licznik do pobrania może być nieaktualny',
   'mission.noUpstream': 'brak upstreamu',
 
   // Okno sparse-checkout

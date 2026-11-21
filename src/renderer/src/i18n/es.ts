@@ -2732,7 +2732,6 @@ export const es: Dict = {
   'mission.pull': 'Pull',
   'mission.open.row': 'Abrir',
   'mission.reason.unreadable': 'no se puede leer',
-  'mission.reason.operation': '{op} en curso',
   'mission.reason.conflicted': '{n} en conflicto',
   'mission.reason.behind': '{n} por bajar',
   'mission.reason.ahead': '{n} por subir',
@@ -2754,6 +2753,8 @@ export const es: Dict = {
   'mission.fetched': 'fetch {t}',
   'mission.neverFetched': 'nunca se hizo fetch',
   'mission.fetchStale': 'Sin fetch desde hace un día o más: el número por bajar puede estar desactualizado. Haz fetch para asegurarte.',
+  'mission.fetchStaleButton': 'Fetch en {n} desactualizados',
+  'mission.fetchStaleHint': 'Hace fetch solo en los repositorios sin fetch desde hace un día o más, cuyo recuento por bajar puede estar desactualizado',
   'mission.noUpstream': 'sin upstream',
 
   // Sparse checkout modal

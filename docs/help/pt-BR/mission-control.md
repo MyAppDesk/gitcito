@@ -55,6 +55,8 @@ commits estão esperando para ser enviados e quais arquivos estão sujos.
 - Ordene por **urgência**, **nome** ou **atividade**.
 - **Marque vários repos** para buscar neles, ou dê pull só nos que estão atrasados
   (o botão conta para você).
+- **Fetch em N desatualizados** aparece quando há branches com upstream sem fetch
+  há um dia ou mais, e faz fetch só nelas — as que podem estar com o "para baixar" errado.
 - Ela se atualiza sozinha a cada 30 segundos enquanto está aberta.
 
 | Tecla | Ação |

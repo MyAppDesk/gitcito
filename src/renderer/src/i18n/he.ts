@@ -2734,7 +2734,6 @@ export const he: Dict = {
   'mission.pull': 'משיכה',
   'mission.open.row': 'פתיחה',
   'mission.reason.unreadable': 'לא ניתן לקריאה',
-  'mission.reason.operation': '{op} בתהליך',
   'mission.reason.conflicted': '{n} בהתנגשות',
   'mission.reason.behind': '{n} למשיכה',
   'mission.reason.ahead': '{n} לדחיפה',
@@ -2756,6 +2755,8 @@ export const he: Dict = {
   'mission.fetched': 'fetch {t}',
   'mission.neverFetched': 'לא בוצע fetch',
   'mission.fetchStale': 'לא בוצע fetch יום או יותר: מספר הקומיטים למשיכה עשוי להיות לא עדכני. בצעו fetch כדי לוודא.',
+  'mission.fetchStaleButton': 'fetch ל-{n} לא עדכניים',
+  'mission.fetchStaleHint': 'מבצע fetch רק למאגרים שלא בוצע בהם fetch יום או יותר, שמספר הקומיטים למשיכה בהם עשוי להיות לא עדכני',
   'mission.noUpstream': 'אין upstream',
 
   // Sparse checkout modal

@@ -2731,7 +2731,6 @@ export const ko: Dict = {
   'mission.pull': '풀',
   'mission.open.row': '열기',
   'mission.reason.unreadable': '읽을 수 없음',
-  'mission.reason.operation': '{op} 진행 중',
   'mission.reason.conflicted': '{n}개 충돌',
   'mission.reason.behind': '{n}개 풀 대기',
   'mission.reason.ahead': '{n}개 푸시 대기',
@@ -2753,6 +2752,8 @@ export const ko: Dict = {
   'mission.fetched': '페치 {t}',
   'mission.neverFetched': '페치한 적 없음',
   'mission.fetchStale': '하루 이상 페치하지 않았습니다. 풀 대기 수가 오래되었을 수 있습니다. 확실히 하려면 페치하세요.',
+  'mission.fetchStaleButton': '오래된 {n}개 페치',
+  'mission.fetchStaleHint': '하루 이상 페치하지 않아 풀 대기 수가 오래되었을 수 있는 저장소만 페치합니다',
   'mission.noUpstream': 'upstream 없음',
 
   // 희소 체크아웃 모달

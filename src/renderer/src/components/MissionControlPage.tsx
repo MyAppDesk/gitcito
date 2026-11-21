@@ -29,6 +29,8 @@ import {
   activityTotal,
   bulkTargets,
   isFetchStale,
+  OP_LABEL,
+  staleFetchTargets,
   orderPulses,
   pulseTotals,
   pulseVerdict,
@@ -62,7 +64,7 @@ function agoLabel(t: Translate, at: number | null): string | null {
 /** A row's reasons as one line — the level icon's tooltip. */
 function reasonsLabel(t: Translate, reasons: PulseReason[]): string {
   if (!reasons.length) return t('mission.reason.clean')
-  return reasons.map((r) => interp(t(r.key), { n: String(r.n ?? ''), op: r.op ?? '' })).join(' · ')
+  return reasons.map((r) => interp(t(r.key), { n: String(r.n ?? '') })).join(' · ')
 }
 
 const LEVEL_ICON: Record<PulseLevel, typeof CircleCheck> = {
@@ -320,6 +322,9 @@ export function MissionControlPage(): React.JSX.Element {
   }, [ordered.length, cursor])
 
   const bulk = useMemo(() => bulkTargets(ordered.filter((p) => selected.has(p.path))), [ordered, selected])
+  // Over the visible rows, like "Fetch all": a filter narrows what both act on.
+  // Recomputed with every refresh, which is when a fetch age can cross the line.
+  const stale = useMemo(() => staleFetchTargets(ordered, Date.now()), [ordered])
 
   const levelChip = (kind: PulseLevel, label: string): React.JSX.Element | null =>
     totals[kind] === 0 && kind !== 'clean' ? null : (
@@ -372,6 +377,16 @@ export function MissionControlPage(): React.JSX.Element {
         >
           {busy === '*' ? <Loader2 size={13} className="spin" /> : <Download size={13} />} {t('mission.fetchAll')}
         </button>
+        {stale.length > 0 && (
+          <button
+            className="btn ghost small mc-fetch-stale"
+            disabled={busy !== null}
+            title={t('mission.fetchStaleHint')}
+            onClick={() => void run(stale, 'fetch')}
+          >
+            <Download size={13} /> {interp(t('mission.fetchStaleButton'), { n: String(stale.length) })}
+          </button>
+        )}
         <button className="btn ghost small" disabled={loading} onClick={() => void refresh()}>
           <RefreshCw size={13} /> {t('mission.refresh')}
         </button>
@@ -429,7 +444,7 @@ export function MissionControlPage(): React.JSX.Element {
             const prs = repos[p.path]?.prs?.length ?? 0
             const isOpen = expanded === p.path
             const detail = details[p.path]
-            const stale = isFetchStale(p, Date.now())
+            const fetchStale = isFetchStale(p, Date.now())
             const badges = rowBadges(p, prs)
             return (
               <div key={p.path} className={`mc-row-wrap ${i === cursor ? 'cursor' : ''}`}>
@@ -499,7 +514,7 @@ export function MissionControlPage(): React.JSX.Element {
                         )}
                       </div>
                       <div className="mc-badges">
-                        {p.operation && <span className="mc-badge blocked">{p.operation}</span>}
+                        {p.operation && <span className="mc-badge blocked">{t(OP_LABEL[p.operation])}</span>}
                         {badges.map((b) => (
                           <span key={b.cls} className={`mc-badge ${b.cls}`} title={interp(t(b.title), { n: String(b.n) })}>
                             <b.Icon size={11} /> {b.n}
@@ -521,8 +536,8 @@ export function MissionControlPage(): React.JSX.Element {
                     </span>
                     {p.upstream && !p.error && (
                       <span
-                        className={`mc-fetched ${stale ? 'stale' : ''}`}
-                        title={stale ? t('mission.fetchStale') : undefined}
+                        className={`mc-fetched ${fetchStale ? 'stale' : ''}`}
+                        title={fetchStale ? t('mission.fetchStale') : undefined}
                       >
                         {p.lastFetchAt
                           ? interp(t('mission.fetched'), { t: agoLabel(t, p.lastFetchAt) ?? '' })

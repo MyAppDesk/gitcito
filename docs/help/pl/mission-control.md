@@ -57,6 +57,8 @@ commity czekają na pusha i które pliki są brudne.
 - Sortuj po **pilności**, **nazwie** albo **aktywności**.
 - **Zaznacz kilka repozytoriów**, żeby zrobić na nich fetch, albo pull tylko na
   tych, które są w tyle (przycisk sam je zliczy).
+- **Fetch N nieaktualnych** pojawia się, gdy gałęzie z upstreamem nie robiły fetcha od
+  dnia lub dłużej, i robi fetch tylko w nich — tych, w których „do pobrania” może być błędne.
 - Odświeża się samo co 30 sekund, dopóki jest otwarte.
 
 | Klawisz | Akcja |

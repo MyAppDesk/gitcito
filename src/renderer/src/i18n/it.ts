@@ -2686,7 +2686,6 @@ export const it: Dict = {
   'mission.pull': 'Pull',
   'mission.open.row': 'Apri',
   'mission.reason.unreadable': 'illeggibile',
-  'mission.reason.operation': '{op} in corso',
   'mission.reason.conflicted': '{n} in conflitto',
   'mission.reason.behind': '{n} da scaricare',
   'mission.reason.ahead': '{n} da pushare',
@@ -2708,6 +2707,8 @@ export const it: Dict = {
   'mission.fetched': 'fetch {t}',
   'mission.neverFetched': 'mai fatto fetch',
   'mission.fetchStale': 'Nessun fetch da un giorno o più: il numero da scaricare potrebbe essere vecchio. Fai fetch per esserne certo.',
+  'mission.fetchStaleButton': 'Fetch dei {n} non aggiornati',
+  'mission.fetchStaleHint': 'Fa fetch solo dei repository senza fetch da un giorno o più, il cui conteggio da scaricare può essere vecchio',
   'mission.noUpstream': 'senza upstream',
 
   'sparse.title': 'Sparse-checkout',

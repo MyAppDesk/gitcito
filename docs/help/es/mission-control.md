@@ -56,6 +56,8 @@ commits esperan a ser publicados y qué archivos están sucios.
 - Ordena por **urgencia**, **nombre** o **actividad**.
 - **Marca varios repositorios** para hacerles fetch, o pull solo de los que van
   por detrás (el botón te los cuenta).
+- **Fetch en N desactualizados** aparece cuando hay ramas con upstream sin fetch
+  desde hace un día o más, y solo hace fetch en esas — las que pueden tener mal el "por bajar".
 - Se refresca solo cada 30 segundos mientras está abierto.
 
 | Tecla | Acción |

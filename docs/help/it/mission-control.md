@@ -55,6 +55,8 @@ quali commit aspettano di essere pubblicati e quali file sono sporchi.
 - Ordina per **urgenza**, **nome** o **attività**.
 - **Spunta più repo** per recuperarli, o fai pull solo su quelli indietro (il
   pulsante li conta per te).
+- **Fetch dei N non aggiornati** compare quando alcuni branch con upstream non fanno
+  fetch da un giorno o più, e fa fetch solo di quelli — quelli il cui "da scaricare" può essere sbagliato.
 - Si aggiorna da solo ogni 30 secondi finché resta aperto.
 
 | Tasto | Azione |

@@ -1,4 +1,4 @@
-import type { RepoPulse } from '../../../shared/types'
+import type { ConflictOpKind, RepoPulse } from '../../../shared/types'
 import type { TranslationKey } from '../i18n'
 
 /**
@@ -20,11 +20,27 @@ export interface PulseVerdict {
   reasons: PulseReason[]
 }
 
-/** One reason a repo ranks where it does. `n` fills `{n}`, `op` fills `{op}`. */
+/** One reason a repo ranks where it does. `n` fills `{n}`. */
 export interface PulseReason {
   key: TranslationKey
   n?: number
-  op?: string
+}
+
+/** One sentence per operation rather than an interpolated noun — the same keys
+ *  the repo's mood line uses, since "a merge" and "a rebase" decline differently. */
+const OP_REASON: Record<ConflictOpKind, TranslationKey> = {
+  merge: 'mood.opMerge',
+  rebase: 'mood.opRebase',
+  'cherry-pick': 'mood.opCherryPick',
+  revert: 'mood.opRevert'
+}
+
+/** The operation's short name, for the row's badge. */
+export const OP_LABEL: Record<ConflictOpKind, TranslationKey> = {
+  merge: 'conflict.opMerge',
+  rebase: 'conflict.opRebase',
+  'cherry-pick': 'conflict.opCherryPick',
+  revert: 'conflict.opRevert'
 }
 
 export function pulseVerdict(p: RepoPulse): PulseVerdict {
@@ -38,7 +54,7 @@ export function pulseVerdict(p: RepoPulse): PulseVerdict {
   if (p.operation) {
     score += 500
     level = 'blocked'
-    reasons.push({ key: 'mission.reason.operation', op: p.operation })
+    reasons.push({ key: OP_REASON[p.operation] })
   }
   if (p.conflicted) {
     score += 400 + p.conflicted
@@ -148,4 +164,9 @@ export const FETCH_STALE_MS = 24 * 3600 * 1000
 export function isFetchStale(p: RepoPulse, now: number): boolean {
   if (!p.upstream || p.error) return false
   return p.lastFetchAt === null || now - p.lastFetchAt >= FETCH_STALE_MS
+}
+
+/** The repos whose behind count may be lying — what "Fetch stale" fetches. */
+export function staleFetchTargets(pulses: RepoPulse[], now: number): string[] {
+  return pulses.filter((p) => isFetchStale(p, now)).map((p) => p.path)
 }

@@ -2678,7 +2678,6 @@ export const ja: Dict = {
   'mission.pull': 'プル',
   'mission.open.row': '開く',
   'mission.reason.unreadable': '読み取れません',
-  'mission.reason.operation': '{op} の途中',
   'mission.reason.conflicted': '競合 {n} 件',
   'mission.reason.behind': 'プル待ち {n} 件',
   'mission.reason.ahead': 'プッシュ待ち {n} 件',
@@ -2700,6 +2699,8 @@ export const ja: Dict = {
   'mission.fetched': 'フェッチ {t}',
   'mission.neverFetched': '未フェッチ',
   'mission.fetchStale': '1日以上フェッチしていません。プル待ちの件数が古い可能性があります。確実にするにはフェッチしてください。',
+  'mission.fetchStaleButton': '古い {n} 件をフェッチ',
+  'mission.fetchStaleHint': '1 日以上フェッチしていない、プル待ちの件数が古い可能性があるリポジトリだけをフェッチします',
   'mission.noUpstream': 'upstream なし',
 
   'sparse.title': 'スパースチェックアウト',

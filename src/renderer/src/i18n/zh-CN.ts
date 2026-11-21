@@ -2731,7 +2731,6 @@ export const zhCN: Dict = {
   'mission.pull': '拉取',
   'mission.open.row': '打开',
   'mission.reason.unreadable': '无法读取',
-  'mission.reason.operation': '{op} 进行中',
   'mission.reason.conflicted': '{n} 个冲突',
   'mission.reason.behind': '{n} 个待拉取',
   'mission.reason.ahead': '{n} 个待推送',
@@ -2753,6 +2752,8 @@ export const zhCN: Dict = {
   'mission.fetched': '{t}获取',
   'mission.neverFetched': '从未获取',
   'mission.fetchStale': '已有一天或更久没有获取：待拉取数量可能已过时。请获取以确认。',
+  'mission.fetchStaleButton': '获取 {n} 个过时的',
+  'mission.fetchStaleHint': '只获取一天或更久未获取、待拉取数量可能已过时的仓库',
   'mission.noUpstream': '无上游',
 
   // Sparse checkout modal

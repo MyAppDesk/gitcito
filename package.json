@@ -134,7 +134,7 @@
     "simple-git": "^4.1.0",
     "three": "^0.185.1",
     "web-tree-sitter": "^0.24.7",
-    "xlsx": "^0.18.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zustand": "^4.5.5"
   },
   "optionalDependencies": {

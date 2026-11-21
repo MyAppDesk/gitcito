@@ -860,6 +860,12 @@ export const infoApi = {
   importAll: (data: InfoExport) => window.api.info.importAll(data) as Promise<void>
 }
 
+export const testsApi = {
+  detect: (repoPath: string) => window.api.tests.detect(repoPath),
+  run: (repoPath: string) => window.api.tests.run(repoPath),
+  cancel: (repoPath: string) => window.api.tests.cancel(repoPath)
+}
+
 export const shellApi = {
   selectDirectory: (title?: string) => window.api.selectDirectory(title),
   selectDirectories: (title?: string) => window.api.selectDirectories(title),

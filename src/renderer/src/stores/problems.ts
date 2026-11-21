@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { testsApi } from '../infrastructure/api'
 import type { AnalyzeResult, CodeTodo, Problem, ProblemSeverity, TestRunner, TestRunResult, TodoScanResult } from '../../../shared/types'
 import type { TodoGroupBy } from '../lib/codeTodos'
 import { useUIStore } from './ui'
@@ -171,7 +172,7 @@ export const useProblemsStore = create<ProblemsState>((set, get) => ({
   todosFor: (repoPath) => get().todoByRepo[repoPath]?.todos ?? [],
 
   detectTests: async (repoPath) => {
-    const found = await window.api.tests.detect(repoPath).catch(() => ({ runner: null, installed: false }))
+    const found = await testsApi.detect(repoPath).catch(() => ({ runner: null, installed: false }))
     set((s) => ({ testRunnerByRepo: { ...s.testRunnerByRepo, [repoPath]: found } }))
   },
 
@@ -184,8 +185,8 @@ export const useProblemsStore = create<ProblemsState>((set, get) => ({
     try {
       // Ask again: dependencies may have been installed since the panel opened.
       await get().detectTests(repoPath)
-      if (!get().testRunnerByRepo[repoPath]?.installed) return // the panel says why, translated
-      const result = await window.api.tests.run(repoPath)
+      if (!current() || !get().testRunnerByRepo[repoPath]?.installed) return // the panel says why, translated
+      const result = await testsApi.run(repoPath)
       // A stopped run has nothing to show, and neither has one a newer run replaced.
       if (current() && !result.cancelled && !result.unavailable)
         set((s) => ({ testByRepo: { ...s.testByRepo, [repoPath]: result } }))
@@ -199,7 +200,7 @@ export const useProblemsStore = create<ProblemsState>((set, get) => ({
   cancelTests: (repoPath) => {
     // The cancelled run is no longer current: whatever it returns is ignored.
     testRun[repoPath] = (testRun[repoPath] ?? 0) + 1
-    window.api.tests.cancel(repoPath)
+    testsApi.cancel(repoPath)
     set((s) => ({ testRunningByRepo: { ...s.testRunningByRepo, [repoPath]: false } }))
   },
 

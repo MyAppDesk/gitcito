@@ -22,6 +22,13 @@ key, a personal key, a local model, a CLI you are already signed into.
 Presets cover **OpenAI, Anthropic, Google Gemini, OpenRouter, Groq, Mistral**
 and **Ollama** (entirely local), plus any OpenAI-compatible endpoint.
 
+**A key never travels unencrypted off this machine.** An account with a key
+reaches its endpoint over `https://`, or over plain `http://` only on this
+computer (`localhost`, `127.x`, `::1`). A call that would send the key over
+`http://` to another host is refused before anything leaves, and says so. An
+endpoint without a key — Ollama on another machine of your network — keeps
+working over `http://`.
+
 Anthropic uses its own `/v1/messages` API rather than an OpenAI-shaped call, so
 Claude models work directly instead of only appearing to. Gemini is reached
 through Google's OpenAI-compatible endpoint.

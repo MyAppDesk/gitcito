@@ -23,6 +23,13 @@ As predefinições cobrem **OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,
 Mistral** e **Ollama** (inteiramente local), além de qualquer endpoint
 compatível com OpenAI.
 
+**Uma chave nunca sai desta máquina sem criptografia.** Uma conta com chave
+chega ao endpoint por `https://`, ou por `http://` simples só neste computador
+(`localhost`, `127.x`, `::1`). Uma chamada que mandaria a chave por `http://`
+para outro host é recusada antes de qualquer envio, com o motivo. Um endpoint
+sem chave — o Ollama em outra máquina da sua rede — continua funcionando por
+`http://`.
+
 A Anthropic usa a própria API `/v1/messages` em vez de uma chamada no formato
 OpenAI, então os modelos Claude funcionam de fato em vez de apenas parecer.
 O Gemini é alcançado pelo endpoint compatível com OpenAI do Google.

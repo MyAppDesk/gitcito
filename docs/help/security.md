@@ -60,4 +60,14 @@ While it is off, the token field in Integrations says so — *Saved only until y
 workspaces as an **encrypted bundle** — secrets are only ever included when you
 tick the box.
 
+## Reporting a problem
+
+**Report issue** on an error opens a pre-filled GitHub issue — and opening it
+already sends the text to GitHub, before you choose to post. So the message is
+cleaned first: a credential written into a URL, tokens, your home folder (and
+with it your user name), private servers and repository paths, e-mails and LAN
+addresses are replaced. Public hosts such as `github.com` stay, and git's own
+message stays readable. Read the issue before posting it all the same: the
+cleaning recognises known shapes, not everything private.
+
 **See also:** [Vault](vault.md) · [Secure share](secure-share.md)

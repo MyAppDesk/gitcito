@@ -155,6 +155,17 @@ describe('runTests — a real vitest run', () => {
     expect(r.error).toBeUndefined()
   }, 20_000)
 
+  it('cancels before the report directory is ready and the process has started', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
+    temp.push(dir)
+    mkdirSync(join(dir, 'node_modules'), { recursive: true })
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ devDependencies: { vitest: '*' } }))
+    symlinkSync(resolve('node_modules', 'vitest'), join(dir, 'node_modules', 'vitest'), 'junction')
+    const result = runTests(dir)
+    cancelTests(dir)
+    expect(await result).toMatchObject({ cancelled: true, files: [] })
+  })
+
   it('keeps a stopped run cancelled when a new run starts before it has exited', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'gitcito-tests-'))
     temp.push(dir)

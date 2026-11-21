@@ -47,7 +47,7 @@ import { isProtectedBranch } from '../lib/repoConfig'
 import { commitHookFailureHint } from '../lib/commitLint'
 import { isLockErrorMessage, lockRepairPlan } from '../lib/gitLocks'
 import { forkUpstream, prsFromFork } from '../lib/hosting'
-import { newlyAwaitingReview, notifiesReviewRequests } from '../lib/reviewNotify'
+import { awaitingSeenKey, newlyAwaitingReview, notifiesReviewRequests } from '../lib/reviewNotify'
 import { parseRouteConflict } from '../lib/stackOrder'
 import { timeAgo } from '../lib/timeAgo'
 import { splitCommitMessage } from '../lib/commitMenuCapabilities'
@@ -604,7 +604,7 @@ async function doRefresh(path: string, slices: RefreshSlice[]): Promise<void> {
   }
 }
 
-/** Per repository, the PRs that were waiting for your review at the last look. */
+/** Per profile and repository, the PRs that were waiting for your review at the last look. */
 const awaitingSeen = new Map<string, Set<number>>()
 
 /**
@@ -612,10 +612,16 @@ const awaitingSeen = new Map<string, Set<number>>()
  * (GitLab and Forgejo; GitHub's come from its inbox). Clicking one opens the PR
  * page. Off unless desktop notifications are on in Settings.
  */
-function announceReviewRequests(path: string, remoteUrl: string, provider: HostingProvider, prs: PullRequest[]): void {
-  const { fresh, seen } = newlyAwaitingReview(awaitingSeen.get(path), prs)
-  awaitingSeen.set(path, seen)
+function announceReviewRequests(
+  path: string, remoteUrl: string, provider: HostingProvider, prs: PullRequest[], profileId: string
+): void {
   const settings = useSettingsStore.getState()
+  // A request begun by the previous profile can finish after a switch.
+  // Keep that result out of the new profile's seen set and notifications.
+  if (settings.settings.activeProfileId !== profileId) return
+  const key = awaitingSeenKey(profileId, path)
+  const { fresh, seen } = newlyAwaitingReview(awaitingSeen.get(key), prs)
+  awaitingSeen.set(key, seen)
   if (!fresh.length || !notifiesReviewRequests(provider) || !settings.settings.desktopNotifications) return
   const repoName = path.split(/[\\/]/).pop() ?? path
   for (const pr of fresh) {
@@ -795,7 +801,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         path
       )
       get().patch(path, { prs, prProvider: provider })
-      announceReviewRequests(path, origin.url, provider, prs)
+      announceReviewRequests(path, origin.url, provider, prs, profile.id)
     } catch (err) {
       if (!opts?.silent) toast('error', err instanceof Error ? err.message : String(err))
     }

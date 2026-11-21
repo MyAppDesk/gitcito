@@ -114,6 +114,7 @@ import { ansiToSpans } from '../lib/ansi'
 import { editInstance, tokenInstance, tokenMatchesInstance, forgejoTokenUrl, gitlabTokenUrl, normalizeGitlabUrl } from '../../../shared/gitlabInstance'
 import { EnvironmentPage } from './EnvironmentSettings'
 import { readableError } from '../lib/gitErrorHint'
+import { repoActions } from '../stores/repo'
 import { useT, interp, type TranslationKey } from '../i18n'
 import { resolveAI } from '../../../shared/aiAccounts'
 import { AIAccountsEditor } from './AIAccounts'
@@ -197,62 +198,70 @@ const BRANCH_NAMING_STYLES: { id: BranchNamingStyle; key: TranslationKey }[] = [
  * currently active repo. Lives under the profile page next to the git identity.
  */
 function SigningSection(): React.JSX.Element {
-  const t = useT()
-  const { activeRepo } = useSettingsStore()
-  const toast = useUIStore((s) => s.toast)
-  const repo = activeRepo()
+  const repo = useSettingsStore((s) => s.activeRepo())
+  // Each repository owns its draft and cleanup, even if selection changes
+  // while a read or write is still in flight.
+  return <SigningControls key={repo?.path ?? ''} repo={repo} />
+}
 
+function SigningControls({ repo }: {
+  repo: { path: string; name: string } | null
+}): React.JSX.Element {
+  const t = useT()
+  const toast = useUIStore((s) => s.toast)
   const [cfg, setCfg] = useState<SigningConfig | null>(null)
-  // The key as it is written in the repository — the field is saved when it
-  // leaves focus, and only if it changed.
-  const [savedKey, setSavedKey] = useState('')
+  const [busy, setBusy] = useState(false)
+  const saved = useRef<SigningConfig | null>(null)
+  const draftKey = useRef('')
+  const mounted = useRef(true)
 
   useEffect(() => {
-    if (!repo) {
-      setCfg(null)
-      return
-    }
+    mounted.current = true
+    if (!repo) return
     let cancelled = false
-    void gitApi.signingConfig(repo.path).then((c) => {
+    void gitApi.signingConfig(repo.path).then((value) => {
       if (cancelled) return
-      setCfg(c)
-      setSavedKey(c.key)
+      saved.current = value
+      draftKey.current = value.key
+      setCfg(value)
+    }).catch((error: unknown) => {
+      if (!cancelled) toast('error', error instanceof Error ? error.message : String(error))
     })
     return () => {
       cancelled = true
+      mounted.current = false
+      const previous = saved.current
+      const key = draftKey.current.trim()
+      if (previous && key !== previous.key) {
+        void repoActions.setSigningConfig(repo.path, repo.name, { key })
+      }
     }
-  }, [repo])
+    // The keyed parent remounts these controls when the repository changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repo?.path])
 
-  // Saved as it changes, like the rest of Settings. It used to wait for a button
-  // under the fields, so a toggle flipped and the panel closed was simply lost.
   const persist = async (patch: Partial<SigningConfig>): Promise<void> => {
-    if (!repo || !cfg) return
-    const prev = cfg
-    setCfg({ ...cfg, ...patch })
-    try {
-      await gitApi.setSigningConfig(repo.path, patch)
-      if (patch.key !== undefined) setSavedKey(patch.key)
-      toast('success', interp(t('signing.saved'), { repo: repo.name }))
-    } catch (err) {
-      setCfg(prev)
-      toast('error', err instanceof Error ? err.message : String(err))
+    const previous = saved.current
+    if (!repo || !previous || busy) return
+    // Mark the queued value immediately so closing during a save does not
+    // enqueue the same key a second time.
+    saved.current = { ...previous, ...patch }
+    if (patch.key !== undefined) draftKey.current = patch.key
+    setCfg((value) => value && { ...value, ...patch })
+    setBusy(true)
+    const success = await repoActions.setSigningConfig(repo.path, repo.name, patch)
+    if (!success) {
+      saved.current = previous
+      draftKey.current = previous.key
+      if (mounted.current) setCfg(previous)
     }
+    if (mounted.current) setBusy(false)
   }
+
   const persistKey = (): void => {
-    if (cfg && cfg.key.trim() !== savedKey) void persist({ key: cfg.key.trim() })
+    const key = draftKey.current.trim()
+    if (saved.current && key !== saved.current.key) void persist({ key })
   }
-  // Closing Settings while the key field still has focus fires no blur: write a
-  // changed key on the way out too.
-  const pending = useRef({ repo, loaded: false, key: '', savedKey: '' })
-  pending.current = { repo, loaded: cfg !== null, key: cfg?.key.trim() ?? '', savedKey }
-  useEffect(
-    () => () => {
-      const { repo: r, loaded, key, savedKey: was } = pending.current
-      if (r && loaded && key !== was) void gitApi.setSigningConfig(r.path, { key }).catch(() => undefined)
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run on unmount only; reads the ref
-    []
-  )
 
   return (
     <>
@@ -271,6 +280,7 @@ function SigningSection(): React.JSX.Element {
           <label className="settings-toggle-card">
             <input
               type="checkbox"
+              disabled={busy}
               checked={cfg.sign}
               onChange={(e) => void persist({ sign: e.target.checked })}
             />
@@ -285,7 +295,7 @@ function SigningSection(): React.JSX.Element {
           <div className="form-row two">
             <label>
               {t('signing.format')}
-              <select value={cfg.format} onChange={(e) => void persist({ format: e.target.value })}>
+              <select disabled={busy} value={cfg.format} onChange={(e) => void persist({ format: e.target.value })}>
                 <option value="openpgp">{t('signing.openpgp')}</option>
                 <option value="ssh">SSH</option>
                 <option value="x509">X.509 (S/MIME)</option>
@@ -294,9 +304,13 @@ function SigningSection(): React.JSX.Element {
             <label>
               {t('signing.signingKey')}
               <input
+                disabled={busy}
                 value={cfg.key}
                 placeholder={cfg.format === 'ssh' ? '~/.ssh/id_ed25519.pub' : t('signing.gpgKeyId')}
-                onChange={(e) => setCfg({ ...cfg, key: e.target.value })}
+                onChange={(e) => {
+                  draftKey.current = e.target.value
+                  setCfg({ ...cfg, key: e.target.value })
+                }}
                 onBlur={persistKey}
                 onKeyDown={(e) => e.key === 'Enter' && persistKey()}
               />

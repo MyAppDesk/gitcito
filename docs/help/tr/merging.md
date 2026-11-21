@@ -51,6 +51,21 @@ da dal zaten yayımlanmışsa force push demektir. Push da sorar: hedefi pull ed
 herkes onun commit'lerini alır ve bir push Gitcito'dan geri alınamaz. Birleştirme
 sormaz — yalnızca ekler. Birleştirme ve rebase tek bir **Geri al** ile geri döner.
 
+## Bir commit’i bir dalın üzerine sürükleyin
+
+Graftan bir commit satırını bir **yerel dalın** etiketinin üzerine sürükleyin:
+
+| Bırakılan yer | Sunar |
+|---------------|-------|
+| Geçerli dal | Commit’i buraya **cherry-pick**; dalı ona **reset** (her modun neyi koruduğunu söyleyen reset penceresi) |
+| Başka bir yerel dal | **Ona geçip cherry-pick**; **dalı commit’e taşıma** (`git branch -f`) |
+
+Bir dalı taşımak önce onay ister: yalnızca o dalın ulaştığı commit’ler bundan
+sonra hiçbir dalda olmaz. Geri al, dalı yerine koyar. Uzak izleme dalları ve
+etiketler commit kabul etmez, çünkü git onları bu şekilde taşımaz; zaten o
+commit’i gösteren bir dal da hiçbir şey sunmaz. Aynı sürükleme yapay zekâ
+sohbetine yapılırsa commit’i yine bağlam olarak ekler.
+
 ## Birleştirme
 
 Mümkün olduğunda fast-forward yapın ya da topolojinin kayda geçmesini

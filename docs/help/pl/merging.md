@@ -51,6 +51,21 @@ pyta: każdy, kto pobierze cel, dostanie jego commity, a pusha nie da się cofn�
 z poziomu Gitcito. Merge nie pyta — on tylko dokłada. Merge i rebase cofa jedno
 **Cofnij**.
 
+## Przeciągnij commit na gałąź
+
+Przeciągnij wiersz commita z grafu na etykietę **gałęzi lokalnej**:
+
+| Upuszczony na | Proponuje |
+|---------------|-----------|
+| Bieżącą gałąź | **Cherry-pick** commita tutaj; **Reset** gałęzi do niego (okno resetu, które mówi, co zachowuje każdy tryb) |
+| Inną gałąź lokalną | **Przełączenie i cherry-pick**; **Przeniesienie gałęzi** na commit (`git branch -f`) |
+
+Przeniesienie gałęzi najpierw pyta o potwierdzenie: commity osiągalne tylko z tej
+gałęzi nie będą potem na żadnej gałęzi. Cofnij przywraca gałąź. Gałęzie śledzące
+zdalne i tagi nie przyjmują commita, bo git ich tak nie przesuwa, a gałąź, która
+już wskazuje na commit, nic nie proponuje. To samo przeciągnięcie na czat AI
+nadal dodaje commit jako kontekst.
+
 ## Merge
 
 Fast-forward, kiedy się da, albo wymuszony commit scalający, kiedy chcesz mieć

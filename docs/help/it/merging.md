@@ -52,6 +52,21 @@ chiede: chiunque faccia pull del target riceve i suoi commit, e un push non si
 può annullare da Gitcito. Il merge non chiede — si limita ad aggiungere. Merge e
 rebase si annullano con un solo **Annulla**.
 
+## Trascinare un commit su un branch
+
+Trascina una riga di commit dal grafo sul badge di un **branch locale**:
+
+| Rilasciato su | Offre |
+|---------------|-------|
+| Il branch attivo | **Cherry-pick** del commit qui; **Reset** del branch su di esso (la finestra di reset, che dice cosa conserva ogni modalità) |
+| Un altro branch locale | **Passare a esso e fare cherry-pick**; **Spostare il branch** sul commit (`git branch -f`) |
+
+Spostare un branch chiede conferma: i commit raggiunti solo da quel branch non
+saranno più su nessun branch. Annulla lo rimette a posto. I branch remoti di
+tracciamento e i tag non accettano un commit, perché git non li sposta così, e un
+branch che punta già al commit non offre nulla. Lo stesso trascinamento sulla
+chat IA aggiunge ancora il commit come contesto.
+
 ## Merge
 
 Fast-forward quando possibile, o commit di merge forzato quando vuoi che la

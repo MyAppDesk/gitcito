@@ -46,6 +46,24 @@ aterrissar. As ações da linha aparecem no hover, para o título manter a largu
 Ler os checks custa uma requisição por pull request, e só quando a lista é
 atualizada.
 
+## Os seus pull requests no repositório de origem de um fork
+
+Num fork, os pull requests que importam costumam ser os que você abriu no
+repositório de onde fez o fork, e eles moram lá, não no seu fork. Por isso,
+quando um repositório tem um remote `upstream` que aponta para um repositório do
+GitHub diferente do `origin`, a lista também pergunta ao `upstream` pelos pull
+requests abertos e mantém **só os cuja branch vem do seu fork**. Eles aparecem
+abaixo dos do seu fork, sob uma legenda com o nome do repositório de origem,
+**Em dono/repo**. Um clique abre a mesma tela de detalhes, com checks e review,
+no repositório de origem.
+
+![O pull request do próprio fork e, abaixo, os pull requests dele no repositório de origem, em On example/pr-ready-branch](../../screenshots/fork-upstream-prs.webp)
+
+*Limites:* só GitHub, e só um remote chamado `upstream`. Os outros pull requests
+do repositório de origem ficam de fora de propósito: aquela é a fila dele, não o
+seu trabalho. Pilhas e buscas de branch continuam usando só a lista do `origin`.
+Listar o repositório de origem custa mais uma requisição por atualização.
+
 ## Revisando — GitHub e GitLab
 
 ![Página do pull request com conversa e revisores](../../screenshots/pull-request-page.webp)

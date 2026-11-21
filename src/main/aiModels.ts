@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { aiProviderPreset, type AIConfig, type ModelCatalog } from '../shared/types'
-import { authHeaders, baseUrl, fetchFailureReason, isLocal, transportOf } from './aiTransport'
+import { assertKeyTransport, authHeaders, baseUrl, fetchFailureReason, isLocal, transportOf } from './aiTransport'
 import { cliModels } from './aiCli'
 import { buildModelLists, chatModelsOnly, normalizeModelIds } from '../shared/aiModelNames'
 
@@ -124,6 +124,7 @@ async function fetchModels(cfg: AIConfig): Promise<{ models: string[]; allModels
   }
 
   const { url, headers } = listRequest(cfg)
+  assertKeyTransport(cfg, url)
   let res: Response
   try {
     res = await fetch(url, { headers })

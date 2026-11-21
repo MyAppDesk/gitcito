@@ -33,6 +33,12 @@ describe('azureBuildRef — which links are this organization\'s builds', () => 
     })
   })
 
+  it('accepts the legacy collection segment', () => {
+    expect(azureBuildRef('example-org',
+      'https://example-org.visualstudio.com/DefaultCollection/My%20Project/_build/results?buildId=42'
+    )).toEqual({ project: 'My Project', buildId: 42 })
+  })
+
   it('refuses everything else, so the token is never sent there', () => {
     const refused = [
       'https://dev.azure.com/other-org/p/_build/results?buildId=42',
@@ -45,6 +51,7 @@ describe('azureBuildRef — which links are this organization\'s builds', () => 
       'https://dev.azure.com/example-org/p/_build/results?buildId=abc',
       'https://dev.azure.com/example-org/p/_release/results?buildId=42',
       'https://ci.example.com/job/42',
+      'https://dev.azure.com/example-org/%E0%A4%A/_build/results?buildId=42',
       'not a url'
     ]
     for (const link of refused) expect(azureBuildRef('example-org', link), link).toBeNull()
@@ -89,7 +96,7 @@ describe('build validation as checks', () => {
           value: [
             { state: 'succeeded', context: { genre: 'ci', name: 'lint' }, targetUrl: 'https://ci.example.com/7' },
             // The same build the policy reports: listed once.
-            { state: 'succeeded', context: { name: 'pipeline' }, targetUrl: azureBuildUrl('example-org', 'My Project', 42) }
+            { state: 'succeeded', context: { name: 'pipeline' }, targetUrl: 'https://example-org.visualstudio.com/My%20Project/_build/results?buildId=42&view=logs' }
           ]
         }
       if (url.includes('/pullrequests/5?')) return { pullRequestId: 5, title: 'x', status: 'active', repository: { project: { id: 'proj-guid' } } }
@@ -195,6 +202,9 @@ describe('adoTail — a log read over real HTTP', () => {
         // Two hundred thousand lines, written in pieces: only the end may stay.
         for (let i = 0; i < 200_000; i++) res.write(`line ${i}\n`)
         res.end()
+      } else if (req.url === '/redirect') {
+        res.writeHead(302, { location: '/signin' })
+        res.end()
       } else if (req.url === '/signin') {
         res.writeHead(203, { 'content-type': 'text/html' })
         res.end('<html>sign in</html>')
@@ -221,6 +231,7 @@ describe('adoTail — a log read over real HTTP', () => {
   it('is null for a sign-in page or a refusal', async () => {
     expect(await adoTail(`${base}/signin`, 'pat', 1000)).toBeNull()
     expect(await adoTail(`${base}/denied`, 'pat', 1000)).toBeNull()
+    expect(await adoTail(`${base}/redirect`, 'pat', 1000)).toBeNull()
   })
 })
 

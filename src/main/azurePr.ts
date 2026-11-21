@@ -230,20 +230,21 @@ export const azureBuildUrl = (org: string, project: string, buildId: number): st
  */
 export function azureBuildRef(org: string, link: string): { project: string; buildId: number } | null {
   let u: URL
+  let parts: string[]
   try {
     u = new URL(link)
+    parts = u.pathname.split('/').filter(Boolean).map((part) => decodeURIComponent(part))
   } catch {
     return null
   }
   if (u.protocol !== 'https:') return null
-  const parts = u.pathname.split('/').filter(Boolean).map((p) => decodeURIComponent(p))
   const host = u.hostname.toLowerCase()
   let rest: string[]
   if (host === 'dev.azure.com') {
     if ((parts[0] ?? '').toLowerCase() !== org.toLowerCase()) return null
     rest = parts.slice(1)
   } else if (host === `${org.toLowerCase()}.visualstudio.com`) {
-    rest = parts
+    rest = parts[0]?.toLowerCase() === 'defaultcollection' ? parts.slice(1) : parts
   } else return null
   const buildId = Number(u.searchParams.get('buildId'))
   if (rest.length !== 3 || rest[1] !== '_build' || rest[2] !== 'results' || !Number.isInteger(buildId) || buildId <= 0) {
@@ -314,8 +315,12 @@ export async function azurePrChecks(ado: Ado, r: AzureRepo, id: number, optional
     : { value: [] as AzPolicyEvaluation[] }
   const builds = mapAzureBuildPolicies(r, ev.value ?? [])
   // A pipeline that also posts a status would show twice; keep the policy row.
-  const seen = new Set(builds.map((b) => b.url).filter(Boolean))
-  return [...builds, ...statuses.filter((c) => !c.url || !seen.has(c.url))]
+  const seen = new Set(builds.map((b) => b.url.toLowerCase()).filter(Boolean))
+  return [...builds, ...statuses.filter((check) => {
+    const ref = azureBuildRef(r.org, check.url)
+    const url = ref ? azureBuildUrl(r.org, ref.project, ref.buildId) : check.url
+    return !url || !seen.has(url.toLowerCase())
+  })]
 }
 
 interface AzTimelineRecord {

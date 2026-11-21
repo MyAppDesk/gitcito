@@ -134,7 +134,8 @@ to any status a pipeline or an external CI posts. A check that is one of this
 organization's Azure Pipelines builds shows its log under the row: the tasks
 that failed, each under its name, or each job's whole log when nothing failed,
 starting at the end. The token goes only to builds in the PR's own
-organization. Reading logs takes *Build: Read*; without it the row offers the
+organization. The panel reads at most three logs, sharing a 512 KB tail budget.
+Reading logs takes *Build: Read*; without it the row offers the
 browser instead. A token missing a scope is simply refused — the app never
 takes that for a revoked sign-in and never drops the credential git uses.
 

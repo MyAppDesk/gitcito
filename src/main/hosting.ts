@@ -17,6 +17,7 @@ import {
   forgejoMerge,
   forgejoPullChecks,
   forgejoJobLog,
+  readTail,
   forgejoPullDetail,
   forgejoPullFiles,
   forgejoReview,
@@ -1336,19 +1337,7 @@ export async function adoTail(url: string, token: string, max: number): Promise<
     headers: { Authorization: azureAuth(token), Accept: 'text/plain' }
   }).catch(() => null)
   if (!res || !res.ok || !res.body || (res.headers.get('content-type') ?? '').includes('text/html')) return null
-  const chunks: Buffer[] = []
-  let size = 0
-  for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
-    chunks.push(Buffer.from(chunk))
-    size += chunk.length
-    while (size - chunks[0].length >= max) size -= chunks.shift()!.length
-  }
-  let buf = Buffer.concat(chunks)
-  if (buf.length <= max) return buf.toString('utf8')
-  buf = buf.subarray(buf.length - max)
-  // Start on a whole line, so the first one shown is not cut mid-character.
-  const nl = buf.indexOf(10)
-  return (nl >= 0 ? buf.subarray(nl + 1) : buf).toString('utf8')
+  return readTail(res, max)
 }
 
 /** Resolve a Forgejo remote to its instance, owner/repo and token — through

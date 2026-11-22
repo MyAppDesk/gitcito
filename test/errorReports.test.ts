@@ -66,6 +66,28 @@ describe('what a reported error leaves out', () => {
     expect(redactForReport('connect ECONNREFUSED 192.168.1.20:11434')).toBe('connect ECONNREFUSED <lan-ip>:11434')
   })
 
+  it('hides a private host that git, ssh or the AI key guard name outside a URL', () => {
+    expect(redactForReport("fatal: unable to access 'https://git.acme.internal/team/app.git/': Could not resolve host: git.acme.internal")).toBe(
+      "fatal: unable to access 'https://<host>/…': Could not resolve host: <host>"
+    )
+    expect(redactForReport('ssh: Could not resolve hostname git.acme.internal: Name or service not known')).toBe(
+      'ssh: Could not resolve hostname <host>: Name or service not known'
+    )
+    expect(redactForReport('ssh: connect to host git.acme.internal port 22: Connection refused')).toBe(
+      'ssh: connect to host <host> port 22: Connection refused'
+    )
+    expect(redactForReport('Failed to connect to github.com port 443')).toBe('Failed to connect to github.com port 443')
+    expect(
+      redactForReport('Refusing to send the API key to ai.intranet:8080 over unencrypted http://. Use an https:// endpoint.')
+    ).toBe('Refusing to send the API key to <host> over unencrypted http://. Use an https:// endpoint.')
+  })
+
+  it('keeps prose after a scheme word, but not a credential', () => {
+    const hint = 'remote: Support for password authentication was removed. Please use a token authentication instead.'
+    expect(redactForReport(hint)).toBe(hint)
+    expect(redactForReport('header token abcdefghijk1mnop')).toBe('header <redacted>')
+  })
+
   it('leaves the failing call and the git message readable', () => {
     const msg = "Error invoking remote method 'git': Error: CONFLICT (content): Merge conflict in src/app.ts"
     expect(redactForReport(msg)).toBe(msg)

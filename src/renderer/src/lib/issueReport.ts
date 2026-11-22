@@ -24,7 +24,9 @@ const TOKENS: RegExp[] = [
   /\bglpat-[A-Za-z0-9_-]{16,}\b/g,
   /\bsk-[A-Za-z0-9_-]{16,}\b/g,
   /\bAIza[0-9A-Za-z_-]{30,}\b/g,
-  /\b(Bearer|Basic|token)\s+[A-Za-z0-9._~+/=-]{12,}/gi
+  // A credential after its scheme word has a digit somewhere; prose such as
+  // "a token authentication" does not, and git's hint stays readable.
+  /\b(Bearer|Basic|token)\s+(?=[A-Za-z._~+/=-]*\d)[A-Za-z0-9._~+/=-]{12,}/gi
 ]
 
 /**
@@ -41,11 +43,18 @@ export function redactForReport(text: string): string {
   for (const re of TOKENS) out = out.replace(re, '<redacted>')
   // URLs: a public host stays (it helps the diagnosis), a private one does not;
   // the path names repositories and organisations either way.
-  out = out.replace(/\b([a-z][a-z0-9+.-]*):\/\/([^/\s?#'"`<>)]+)([^\s'"`<>)]*)/gi, (_m, scheme: string, host: string, rest: string) => {
+  out = out.replace(/\b([a-z][a-z0-9+.-]*):\/\/([a-z0-9[][^/\s?#'"`<>)]*)([^\s'"`<>)]*)/gi, (_m, scheme: string, host: string, rest: string) => {
     const bare = host.toLowerCase().replace(/:\d+$/, '')
     const shownHost = PUBLIC_HOSTS.has(bare) ? host : '<host>'
     return `${scheme}://${shownHost}${rest && rest !== '/' ? '/…' : ''}`
   })
+  // A host named outside a URL: git, curl and ssh say which one they could not
+  // reach, and so does the refusal to send an AI key over http.
+  out = out.replace(
+    /\b(resolve host:?|resolve hostname|connect to host|Failed to connect to|send the API key to)(\s+)([a-z0-9][\w.-]*(?::\d+)?)/gi,
+    (_m, lead: string, gap: string, host: string) =>
+      `${lead}${gap}${PUBLIC_HOSTS.has(host.toLowerCase().replace(/:\d+$/, '')) ? host : '<host>'}`
+  )
   // scp-style git remotes: git@host:owner/repo.git
   out = out.replace(/\b[\w.-]+@([\w.-]+):[\w./~-]+/g, (_m, host: string) =>
     PUBLIC_HOSTS.has(host.toLowerCase()) ? `git@${host}:…` : 'git@<host>:…'

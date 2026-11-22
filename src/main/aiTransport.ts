@@ -66,8 +66,42 @@ export function baseUrl(cfg: AIConfig): string {
   return raw
 }
 
+/** This machine: localhost (and `*.localhost`), the 127/8 loopback range, ::1, 0.0.0.0. */
 export function isLocal(url: string): boolean {
-  return /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)([:/]|$)/.test(url)
+  let host: string
+  try {
+    host = new URL(url).hostname.toLowerCase().replace(/^\[|\]$/g, '')
+  } catch {
+    return false
+  }
+  return (
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    /^127(\.\d{1,3}){3}$/.test(host) ||
+    host === '::1' ||
+    host === '0.0.0.0'
+  )
+}
+
+/**
+ * Refuse to put an API key on a plaintext connection that leaves this machine.
+ * A gateway set up as `http://ai.intranet/v1` would otherwise receive the key
+ * readable by anything on the network path. Without a key — a LAN Ollama, say —
+ * there is nothing to protect and the call goes ahead.
+ */
+export function assertKeyTransport(cfg: AIConfig, url: string): void {
+  if (!(cfg.apiKey ?? '').trim()) return
+  if (!/^http:\/\//i.test(url) || isLocal(url)) return
+  let host = url
+  try {
+    host = new URL(url).host
+  } catch {
+    /* keep the raw value */
+  }
+  throw new Error(
+    `Refusing to send the API key to ${host} over unencrypted http://. ` +
+      'Use an https:// endpoint, or remove the key if this provider does not need one.'
+  )
 }
 
 export function authHeaders(cfg: AIConfig): Record<string, string> {
@@ -180,6 +214,7 @@ async function callOpenAI(
   }
 
   const post = async (body: Record<string, unknown>): Promise<Response> => {
+    assertKeyTransport(cfg, base)
     try {
       return await fetch(`${base}/chat/completions`, {
         method: 'POST',
@@ -236,6 +271,7 @@ async function callAnthropic(
   // shape for a few callers.
   if (turns.length === 0) turns.push({ role: 'user', content: 'Proceed.' })
 
+  assertKeyTransport(cfg, base)
   let res: Response
   try {
     res = await fetch(`${base}/v1/messages`, {

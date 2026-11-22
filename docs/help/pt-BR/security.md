@@ -62,4 +62,14 @@ O [compartilhamento seguro](secure-share.md) exporta configurações, entradas d
 cofre ou workspaces inteiros como um **bundle criptografado** — segredos só são
 incluídos quando você marca a caixa.
 
+## Reportar um problema
+
+O **Report issue** de um erro abre uma issue já preenchida no GitHub — e abrir já
+manda o texto ao GitHub, antes de você decidir publicar. Por isso a mensagem é
+limpa antes: credenciais escritas numa URL, tokens, a sua pasta pessoal (e com
+ela o seu usuário), servidores privados e caminhos de repositório, e-mails e
+endereços da rede local são trocados. Hosts públicos como `github.com` ficam, e a
+mensagem do próprio git continua legível. Mesmo assim, leia a issue antes de
+publicar: a limpeza reconhece formatos conhecidos, não tudo o que é privado.
+
 **Veja também:** [Cofre](vault.md) · [Compartilhamento seguro](secure-share.md)
